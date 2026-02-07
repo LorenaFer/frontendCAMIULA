@@ -9,6 +9,8 @@ export interface NavItem {
 	permission?: string;
 	/** Badge count for notifications */
 	badge?: number;
+	/** Group label for sidebar section headers */
+	group?: string;
 }
 
 export interface UserProfile {

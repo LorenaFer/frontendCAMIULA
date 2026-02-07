@@ -101,9 +101,9 @@
 {#if tenantId}
 	{@const navItems: NavItem[] = [
 		{ id: 'dashboard', label: 'Dashboard', href: '', icon: dashboardIcon },
-		{ id: 'appointments', label: 'Appointments', href: 'appointments', icon: appointmentsIcon, permission: 'appointments:read' },
-		{ id: 'patients', label: 'Patient Data', href: 'patients', icon: patientsIcon, permission: 'patients:read' },
-		{ id: 'inventory', label: 'Inventory', href: 'inventory', icon: inventoryIcon, permission: 'inventory:read' }
+		{ id: 'appointments', label: 'Appointments', href: 'appointments', icon: appointmentsIcon, permission: 'appointments:read', group: 'Clinical' },
+		{ id: 'patients', label: 'Patient Data', href: 'patients', icon: patientsIcon, permission: 'patients:read', group: 'Clinical' },
+		{ id: 'inventory', label: 'Inventory', href: 'inventory', icon: inventoryIcon, permission: 'inventory:read', group: 'Operations' }
 	]}
 
 	<TenantLayout

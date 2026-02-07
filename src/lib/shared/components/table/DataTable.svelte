@@ -143,7 +143,7 @@
 
   <div class="overflow-x-auto">
     <table class="w-full border-collapse">
-      <thead class="bg-slate-50 border-b border-slate-200">
+      <thead class="border-b border-slate-200/60 sticky top-0 z-10 glass-subtle">
         <tr>
           {#if selectable}
             <th class="px-3 py-2 w-8">
@@ -197,7 +197,7 @@
           {/if}
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100 bg-white">
+      <tbody class="divide-y divide-slate-100/50 bg-white">
         {#if loading}
           <tr>
             <td colspan={totalColSpan} class="px-4 py-12">
@@ -229,7 +229,7 @@
               onclick={onRowClick ? () => onRowClick(row, index) : undefined}
               class="
                 group transition-colors duration-100
-                {onRowClick ? 'cursor-pointer hover:bg-slate-100/70' : ''}
+                {onRowClick ? 'cursor-pointer hover:bg-slate-50/80 hover:shadow-[inset_3px_0_0_var(--color-viking-400)]' : ''}
                 {isSelected ? 'bg-viking-50' : ''}
               "
             >
@@ -267,7 +267,7 @@
                         title={action.label}
                         class="
                           p-1.5 rounded transition-all
-                          {action.hoverOnly ? 'opacity-0 group-hover:opacity-100' : ''}
+                          {action.hoverOnly ? 'opacity-0 group-hover:opacity-100 transition-opacity duration-150' : ''}
                           {action.variant === 'danger'
                             ? 'text-slate-400 hover:text-red-600 hover:bg-red-50'
                             : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}

@@ -157,8 +157,8 @@
 		>
 			<!-- Backdrop -->
 			<div
-				class="bg-gray-900/60 animate-in fade-in duration-200"
-				style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);"
+				class="bg-gray-900/50 animate-in fade-in duration-200"
+				style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; -webkit-backdrop-filter: blur(12px) saturate(180%); backdrop-filter: blur(12px) saturate(180%);"
 				onclick={onClose}
 				aria-hidden="true"
 				role="presentation"
@@ -166,7 +166,7 @@
 
 			<!-- Dialog - drawer on mobile, modal on desktop -->
 			<div
-				class="relative w-full sm:max-w-2xl bg-white shadow-2xl overflow-hidden rounded-t-2xl sm:rounded-xl animate-in fade-in dialog-panel duration-200"
+				class="relative w-full sm:max-w-2xl bg-white/95 shadow-[var(--shadow-4)] overflow-hidden rounded-t-2xl sm:rounded-xl animate-in fade-in dialog-panel duration-200"
 				role="dialog"
 				aria-modal="true"
 				style="position: relative; z-index: 1;"
@@ -381,7 +381,7 @@
 
 				<!-- Keyboard Hints -->
 				<div
-					class="flex items-center gap-4 px-4 py-2.5 border-t border-gray-100 bg-gray-50/50"
+					class="flex items-center gap-4 px-4 py-2.5 border-t border-gray-100 bg-slate-50/80"
 				>
 					<div class="flex items-center gap-1.5 text-xs text-gray-500">
 						<kbd

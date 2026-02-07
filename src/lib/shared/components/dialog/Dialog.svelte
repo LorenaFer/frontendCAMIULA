@@ -112,8 +112,8 @@
 		>
 			<!-- Backdrop -->
 			<div
-				class="bg-gray-900/60 animate-in fade-in duration-200"
-				style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);"
+				class="bg-gray-900/50 animate-in fade-in duration-200"
+				style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; -webkit-backdrop-filter: blur(12px) saturate(180%); backdrop-filter: blur(12px) saturate(180%);"
 				onclick={handleBackdropClick}
 				aria-hidden="true"
 				role="presentation"
@@ -123,7 +123,7 @@
 			<div
 				bind:this={dialogEl}
 				class="
-					w-full bg-white shadow-xl flex flex-col
+					w-full bg-white shadow-[var(--shadow-4)] flex flex-col
 					max-h-[85vh] sm:max-h-[90vh]
 					rounded-t-2xl sm:rounded-xl
 					animate-in fade-in dialog-panel duration-200

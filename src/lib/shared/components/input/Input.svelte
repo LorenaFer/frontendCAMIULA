@@ -61,8 +61,8 @@
 
 	const getStateClasses = (err?: string) =>
 		err
-			? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100'
-			: 'border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-100';
+			? 'border-red-300 bg-red-50/30 focus:border-red-400 focus:ring-2 focus:ring-red-100/60 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.08)]'
+			: 'border-slate-200 hover:border-slate-300 focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60 focus:shadow-[0_0_0_3px_rgba(46,163,181,0.08)]';
 
 	const disabledClasses =
 		'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed disabled:hover:border-slate-200';
@@ -98,7 +98,7 @@
 			</div>
 		</div>
 		{#if error || hint}
-			<p class="mt-1.5 text-xs {error ? 'text-red-600' : 'text-slate-500'}">
+			<p class="mt-1.5 text-xs {error ? 'text-red-600 animate-slide-down' : 'text-slate-500'}">
 				{error || hint}
 			</p>
 		{/if}
@@ -131,7 +131,7 @@
 			/>
 		</div>
 		{#if error || hint}
-			<p class="mt-1.5 text-xs {error ? 'text-red-600' : 'text-slate-500'}">
+			<p class="mt-1.5 text-xs {error ? 'text-red-600 animate-slide-down' : 'text-slate-500'}">
 				{error || hint}
 			</p>
 		{/if}

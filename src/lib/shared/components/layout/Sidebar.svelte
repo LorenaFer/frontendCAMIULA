@@ -96,6 +96,30 @@
 	function getNavItemHref(itemHref: string): string {
 		return itemHref === '' ? `/${tenantId}` : `/${tenantId}/${itemHref}`;
 	}
+
+	// --- Nav grouping ---
+	let groupedItems = $derived.by(() => {
+		const groups: { label: string | null; items: typeof navItems }[] = [];
+		let currentGroup: string | null = null;
+		let currentItems: typeof navItems = [];
+
+		for (const item of navItems) {
+			const group = item.group ?? null;
+			if (group !== currentGroup) {
+				if (currentItems.length > 0) {
+					groups.push({ label: currentGroup, items: currentItems });
+				}
+				currentGroup = group;
+				currentItems = [item];
+			} else {
+				currentItems.push(item);
+			}
+		}
+		if (currentItems.length > 0) {
+			groups.push({ label: currentGroup, items: currentItems });
+		}
+		return groups;
+	});
 </script>
 
 <!-- Mobile overlay -->
@@ -288,51 +312,60 @@
 	</div>
 
 	<!-- Navigation items -->
-	<nav class="flex-1 px-3 py-2 overflow-y-auto custom-scrollbar-subtle">
-		<ul class="space-y-0.5">
-			{#each navItems as item (item.id)}
-				{@const href = getNavItemHref(item.href)}
-				{@const active = isNavItemActive(item.href, $page.url.pathname)}
-				<li>
-					<a
-						{href}
-						onclick={handleNavClick}
-						class="relative flex items-center gap-2.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-colors {active
-							? 'text-slate-900 bg-slate-100/70'
-							: 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}"
-					>
-						<span
-							class="w-4 h-4 flex-shrink-0 transition-colors {active
-								? 'text-viking-600'
-								: 'text-slate-400'}"
-						>
-							{@render item.icon()}
+	<nav class="flex-1 px-3 py-3 overflow-y-auto custom-scrollbar-subtle">
+		<ul class="space-y-1">
+			{#each groupedItems as group}
+				{#if group.label}
+					<li class="pt-4 pb-1.5 px-2.5 first:pt-0">
+						<span class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+							{group.label}
 						</span>
-						<span class="flex-1">{item.label}</span>
-						{#if item.badge !== undefined && item.badge > 0}
+					</li>
+				{/if}
+				{#each group.items as item (item.id)}
+					{@const href = getNavItemHref(item.href)}
+					{@const active = isNavItemActive(item.href, $page.url.pathname)}
+					<li>
+						<a
+							{href}
+							onclick={handleNavClick}
+							class="relative flex items-center gap-2.5 py-2 text-[13px] font-medium rounded-md transition-all duration-150 border-l-[3px] pl-[7px] pr-2.5 {active
+								? 'text-slate-900 bg-viking-50/50 border-l-viking-500'
+								: 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/70 border-l-transparent'}"
+						>
 							<span
-								class="bg-red-500 text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+								class="w-4 h-4 flex-shrink-0 transition-colors [&>svg]:stroke-[1.75] {active
+									? 'text-viking-600'
+									: 'text-slate-400'}"
 							>
-								{item.badge > 99 ? '99+' : item.badge}
+								{@render item.icon()}
 							</span>
-						{/if}
-					</a>
-				</li>
+							<span class="flex-1">{item.label}</span>
+							{#if item.badge !== undefined && item.badge > 0}
+								<span
+									class="bg-red-500 text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+								>
+									{item.badge > 99 ? '99+' : item.badge}
+								</span>
+							{/if}
+						</a>
+					</li>
+				{/each}
 			{/each}
 		</ul>
 	</nav>
 
 	<!-- UserSection -->
-	<div class="border-t border-slate-200/60 px-3 py-2 space-y-0.5">
+	<div class="border-t border-slate-200/60 px-3 py-3">
 		<button
 			onclick={onProfileClick}
-			class="flex items-center gap-2.5 px-2.5 py-1.5 w-full rounded-md hover:bg-slate-50 transition-colors"
+			class="flex items-center gap-2.5 px-2.5 py-2 w-full rounded-md hover:bg-slate-50 transition-colors"
 		>
 			{#if user.avatar}
-				<img src={user.avatar} alt={user.name} class="w-7 h-7 rounded-md object-cover" />
+				<img src={user.avatar} alt={user.name} class="w-8 h-8 rounded-md object-cover" />
 			{:else}
 				<div
-					class="w-7 h-7 rounded-md bg-viking-100 text-viking-700 flex items-center justify-center font-medium text-[10px]"
+					class="w-8 h-8 rounded-md bg-viking-100 text-viking-700 flex items-center justify-center font-medium text-[11px]"
 				>
 					{user.initials}
 				</div>

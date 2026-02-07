@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { page } from '$app/stores';
 	import Sidebar from './Sidebar.svelte';
 	import Header from './Header.svelte';
 	import SearchDialog from '$shared/components/search-dialog/SearchDialog.svelte';
@@ -80,8 +81,12 @@
 			onMenuClick={() => (sidebarOpen = true)}
 		/>
 
-		<main class="flex-1 p-4 lg:p-6">
-			{@render children()}
+		<main class="flex-1 p-4 lg:p-8">
+			{#key $page.url.pathname}
+				<div class="animate-page-enter">
+					{@render children()}
+				</div>
+			{/key}
 		</main>
 	</div>
 

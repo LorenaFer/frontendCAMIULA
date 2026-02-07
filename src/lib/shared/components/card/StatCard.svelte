@@ -4,6 +4,14 @@
 
 	type IconColor = 'default' | 'red' | 'amber' | 'green' | 'blue' | 'violet';
 	type TrendDirection = 'up' | 'down' | 'neutral';
+	type AccentColor = 'viking' | 'sage' | 'honey' | 'iris';
+
+	const accentStyles: Record<AccentColor, string> = {
+		viking: 'border-t-2 border-t-viking-400',
+		sage: 'border-t-2 border-t-sage-400',
+		honey: 'border-t-2 border-t-honey-400',
+		iris: 'border-t-2 border-t-iris-400'
+	};
 
 	const iconColorStyles: Record<IconColor, string> = {
 		default: 'bg-slate-100/70 text-slate-500',
@@ -27,6 +35,7 @@
 		trend,
 		icon,
 		iconColor = 'default',
+		accent,
 		class: className = '',
 		onclick,
 		visualization
@@ -40,22 +49,23 @@
 		};
 		icon?: Snippet;
 		iconColor?: IconColor;
+		accent?: AccentColor;
 		class?: string;
 		onclick?: () => void;
 		visualization?: Snippet;
 	} = $props();
 </script>
 
-<Card class={className} variant="default" padding="lg" hover={!!onclick} {onclick}>
+<Card class="{accent ? accentStyles[accent] : ''} {className}" variant="default" padding="lg" hover={!!onclick} {onclick}>
 	<div class="flex items-start justify-between gap-4">
 		<div class="flex-1 min-w-0 space-y-3">
 			<!-- Title - small and secondary -->
 			<div class="flex items-center gap-2.5">
 				{#if icon}
 					<div
-						class="w-9 h-9 rounded-lg flex items-center justify-center {iconColorStyles[iconColor]}"
+						class="w-10 h-10 rounded-lg flex items-center justify-center {iconColorStyles[iconColor]}"
 					>
-						<span class="w-4 h-4 [&>svg]:w-4 [&>svg]:h-4">
+						<span class="w-[18px] h-[18px] [&>svg]:w-[18px] [&>svg]:h-[18px]">
 							{@render icon()}
 						</span>
 					</div>
@@ -66,7 +76,7 @@
 			<!-- Value - THE HERO -->
 			<div class="flex items-baseline gap-2">
 				<span
-					class="text-3xl font-semibold text-slate-900 tabular-nums tracking-tight font-mono"
+					class="text-[36px] data-hero text-slate-900"
 				>
 					{value}
 				</span>

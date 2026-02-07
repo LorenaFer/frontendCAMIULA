@@ -43,6 +43,49 @@
   --color-slate-900: #0f172a;
   --color-slate-950: #020617;
 
+  /* ═══════════════════════════════════════════════════════════════════════════
+     ACCENT COLOR SYSTEM - Complementary colors for categorization & delight
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Sage: complementary green for positive metrics, health, growth */
+  --color-sage-50: #f6f9f4;
+  --color-sage-100: #e8f0e3;
+  --color-sage-200: #d1e1c8;
+  --color-sage-300: #aecb9e;
+  --color-sage-400: #85ad6f;
+  --color-sage-500: #639150;
+  --color-sage-600: #4d753e;
+  --color-sage-700: #3d5c33;
+  --color-sage-800: #344a2d;
+  --color-sage-900: #2c3e27;
+  --color-sage-950: #142112;
+
+  /* Honey: warm amber for alerts, warnings, attention */
+  --color-honey-50: #fefaec;
+  --color-honey-100: #fcf0c9;
+  --color-honey-200: #f9de8e;
+  --color-honey-300: #f6c853;
+  --color-honey-400: #f4b42b;
+  --color-honey-500: #ee9512;
+  --color-honey-600: #d2700d;
+  --color-honey-700: #ae4f0e;
+  --color-honey-800: #8e3e12;
+  --color-honey-900: #753312;
+  --color-honey-950: #431905;
+
+  /* Iris: cool violet for special actions, info, secondary accents */
+  --color-iris-50: #f5f3ff;
+  --color-iris-100: #ede9fe;
+  --color-iris-200: #ddd6fe;
+  --color-iris-300: #c4b5fd;
+  --color-iris-400: #a78bfa;
+  --color-iris-500: #8b5cf6;
+  --color-iris-600: #7c3aed;
+  --color-iris-700: #6d28d9;
+  --color-iris-800: #5b21b6;
+  --color-iris-900: #4c1d95;
+  --color-iris-950: #2e1065;
+
   /* Surface colors - warm, not clinical white */
   --color-surface: #fafbfc;
   --color-surface-warm: #fefdfb;
@@ -65,6 +108,36 @@
   /* Legacy compatibility */
   --color-snow: #fafbfc;
   --color-midnight: #1a2332;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     5-LEVEL ELEVATION SHADOW SYSTEM - Colored shadows for real depth
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --shadow-0: none;
+  --shadow-1: 0 1px 2px rgba(26, 35, 50, 0.04), 0 1px 3px rgba(26, 35, 50, 0.06);
+  --shadow-2: 0 2px 4px rgba(26, 35, 50, 0.04), 0 4px 12px rgba(26, 35, 50, 0.08);
+  --shadow-3: 0 4px 8px rgba(26, 35, 50, 0.06), 0 8px 24px rgba(26, 35, 50, 0.10);
+  --shadow-4: 0 8px 16px rgba(26, 35, 50, 0.08), 0 16px 48px rgba(26, 35, 50, 0.12);
+  --shadow-5: 0 12px 24px rgba(26, 35, 50, 0.10), 0 24px 64px rgba(26, 35, 50, 0.14);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     MOTION TOKENS - Intentional, expressive animation system
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 350ms;
+  --duration-slower: 500ms;
+
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-gentle: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Stagger delay for sequential card animations */
+  --stagger-1: 0ms;
+  --stagger-2: 60ms;
+  --stagger-3: 120ms;
+  --stagger-4: 180ms;
+  --stagger-5: 240ms;
+  --stagger-6: 300ms;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -108,6 +181,23 @@ body {
   letter-spacing: -0.02em;
 }
 
+/* Display/hero typography for large headings */
+.text-display {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+/* Data hero - large mono numbers for stat cards */
+.data-hero {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
 /* Dense mode for data-heavy interfaces */
 .dense-mode {
   --spacing-multiplier: 0.75;
@@ -128,12 +218,31 @@ body {
   );
 }
 
-/* Card elevation with colored shadow */
+/* Card elevation with colored shadow - uses token system */
 .card-elevated {
-  box-shadow:
-    0 1px 2px rgba(30, 41, 59, 0.04),
-    0 4px 12px rgba(30, 41, 59, 0.06),
-    0 8px 24px rgba(30, 41, 59, 0.04);
+  box-shadow: var(--shadow-1);
+  transition: box-shadow var(--duration-normal) var(--ease-gentle),
+              transform var(--duration-normal) var(--ease-gentle);
+}
+
+.card-elevated:hover {
+  box-shadow: var(--shadow-2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLASSMORPHISM UTILITIES - Refined frosted glass effect
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.glass {
+  background: rgba(248, 249, 251, 0.72);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  backdrop-filter: blur(12px) saturate(180%);
+}
+
+.glass-subtle {
+  background: rgba(255, 255, 255, 0.85);
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
+  backdrop-filter: blur(8px) saturate(150%);
 }
 
 /* Sidebar solid border - "anchored" feel */
@@ -186,25 +295,21 @@ body {
   }
 }
 
-/* Dialog animations */
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATION KEYFRAMES - Expressive, intentional motion
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Fade in */
 @-webkit-keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
+/* Zoom in from 95% */
 @-webkit-keyframes zoom-in-95 {
   from {
     opacity: 0;
@@ -217,7 +322,6 @@ body {
     transform: scale(1);
   }
 }
-
 @keyframes zoom-in-95 {
   from {
     opacity: 0;
@@ -230,6 +334,145 @@ body {
     transform: scale(1);
   }
 }
+
+/* Slide up - mobile drawer */
+@-webkit-keyframes slide-up {
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(100%);
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+}
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(100%);
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+}
+
+/* Slide in from right - step transitions */
+@-webkit-keyframes slide-in-from-right {
+  from {
+    opacity: 0;
+    -webkit-transform: translateX(1rem);
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+  }
+}
+@keyframes slide-in-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Fade in + rise up - staggered card entrance */
+@-webkit-keyframes fade-in-up {
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(8px);
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Skeleton shimmer for loading states */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Shake for form validation errors */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+
+/* Slide down for error messages */
+@-webkit-keyframes slide-down {
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(-4px);
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+}
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Page content entrance on route change */
+@-webkit-keyframes page-enter {
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(6px);
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+}
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATION UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .animate-in {
   -webkit-animation-duration: 200ms;
@@ -250,36 +493,14 @@ body {
   animation-name: zoom-in-95;
 }
 
-/* Mobile drawer animation */
-@-webkit-keyframes slide-up {
-  from {
-    opacity: 0;
-    -webkit-transform: translateY(100%);
-    transform: translateY(100%);
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: translateY(0);
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    -webkit-transform: translateY(100%);
-    transform: translateY(100%);
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: translateY(0);
-    transform: translateY(0);
-  }
-}
-
 .slide-up {
   -webkit-animation-name: slide-up;
   animation-name: slide-up;
+}
+
+.slide-in-from-right-4 {
+  -webkit-animation-name: slide-in-from-right;
+  animation-name: slide-in-from-right;
 }
 
 /* Responsive dialog animations - drawer on mobile, modal on desktop */
@@ -295,37 +516,53 @@ body {
   }
 }
 
-/* Step transition animations */
-@-webkit-keyframes slide-in-from-right {
-  from {
-    opacity: 0;
-    -webkit-transform: translateX(1rem);
-    transform: translateX(1rem);
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: translateX(0);
-    transform: translateX(0);
-  }
+/* Staggered fade-in-up for cards */
+.animate-fade-in-up {
+  -webkit-animation: fade-in-up var(--duration-slow) var(--ease-spring) both;
+  animation: fade-in-up var(--duration-slow) var(--ease-spring) both;
 }
 
-@keyframes slide-in-from-right {
-  from {
-    opacity: 0;
-    transform: translateX(1rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.stagger-1 { -webkit-animation-delay: var(--stagger-1); animation-delay: var(--stagger-1); }
+.stagger-2 { -webkit-animation-delay: var(--stagger-2); animation-delay: var(--stagger-2); }
+.stagger-3 { -webkit-animation-delay: var(--stagger-3); animation-delay: var(--stagger-3); }
+.stagger-4 { -webkit-animation-delay: var(--stagger-4); animation-delay: var(--stagger-4); }
+.stagger-5 { -webkit-animation-delay: var(--stagger-5); animation-delay: var(--stagger-5); }
+.stagger-6 { -webkit-animation-delay: var(--stagger-6); animation-delay: var(--stagger-6); }
+
+/* Page entrance animation */
+.animate-page-enter {
+  -webkit-animation: page-enter var(--duration-slow) var(--ease-gentle) both;
+  animation: page-enter var(--duration-slow) var(--ease-gentle) both;
 }
 
-.slide-in-from-right-4 {
-  -webkit-animation-name: slide-in-from-right;
-  animation-name: slide-in-from-right;
+/* Skeleton loading placeholder */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-slate-100) 25%,
+    var(--color-slate-200) 50%,
+    var(--color-slate-100) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
+  border-radius: 0.375rem;
 }
 
-/* Custom scrollbar */
+/* Form error shake */
+.animate-shake {
+  animation: shake 0.4s var(--ease-gentle);
+}
+
+/* Error message slide-down entrance */
+.animate-slide-down {
+  -webkit-animation: slide-down var(--duration-normal) var(--ease-spring) both;
+  animation: slide-down var(--duration-normal) var(--ease-spring) both;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CUSTOM SCROLLBARS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--color-viking-300) transparent;

@@ -6,15 +6,15 @@
 
 	const paddingStyles: Record<CardPadding, string> = {
 		none: '',
-		sm: 'p-3',
-		md: 'p-4',
-		lg: 'p-5',
-		xl: 'p-6'
+		sm: 'p-3.5',
+		md: 'p-5',
+		lg: 'p-6',
+		xl: 'p-7'
 	};
 
 	const variantStyles: Record<CardVariant, string> = {
-		default: 'bg-white border border-slate-200/60',
-		elevated: 'bg-white border border-slate-200/50 shadow-sm',
+		default: 'bg-white border border-slate-200/60 shadow-[var(--shadow-1)]',
+		elevated: 'bg-white border border-slate-200/50 shadow-[var(--shadow-2)]',
 		ghost: 'bg-slate-50/80 border border-slate-200/40',
 		flat: 'bg-white'
 	};
@@ -40,10 +40,10 @@
 	<button
 		{onclick}
 		class="
-			rounded-xl text-left w-full
+			rounded-xl text-left w-full transition-all duration-200
 			{variantStyles[variant]}
 			{paddingStyles[padding]}
-			{hover ? 'hover:border-slate-300 transition-colors duration-150 cursor-pointer' : ''}
+			{hover ? 'hover:shadow-[var(--shadow-2)] hover:-translate-y-0.5 cursor-pointer' : ''}
 			{className}
 		"
 	>
@@ -52,10 +52,10 @@
 {:else}
 	<div
 		class="
-			rounded-xl
+			rounded-xl transition-all duration-200
 			{variantStyles[variant]}
 			{paddingStyles[padding]}
-			{hover ? 'hover:border-slate-300 transition-colors duration-150 cursor-pointer' : ''}
+			{hover ? 'hover:shadow-[var(--shadow-2)] hover:-translate-y-0.5 cursor-pointer' : ''}
 			{className}
 		"
 	>

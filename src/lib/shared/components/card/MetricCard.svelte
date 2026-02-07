@@ -27,7 +27,7 @@
 		{label}
 	</div>
 	<div class="flex items-baseline gap-2">
-		<span class="text-xl font-semibold text-slate-900 tabular-nums font-mono">{value}</span>
+		<span class="text-2xl data-hero text-slate-900">{value}</span>
 		{#if change}
 			<span class="text-xs font-medium {changeColors[changeType]}">
 				{change}
