@@ -23,7 +23,7 @@
     class: className = '',
   }: Props = $props();
 
-  let inputRef: HTMLInputElement;
+  let inputRef = $state<HTMLInputElement | undefined>();
 
   const avatarSizes: Record<AvatarSize, string> = {
     sm: 'w-16 h-16',
@@ -60,13 +60,12 @@
 
 <div class="inline-flex flex-col items-center {className}">
   {#if label}
-    <label class="block text-sm font-medium text-ink mb-2">
+    <span class="block text-sm font-medium text-ink mb-2">
       {label}
-    </label>
+    </span>
   {/if}
 
   <div class="relative group">
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       onclick={handleClick}
       role="button"
@@ -107,6 +106,7 @@
         <button
           type="button"
           onclick={handleClick}
+          aria-label="Change avatar"
           class="p-1.5 bg-surface-elevated rounded-full text-ink hover:bg-canvas-subtle transition-colors"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -116,6 +116,7 @@
         <button
           type="button"
           onclick={handleRemove}
+          aria-label="Remove avatar"
           class="p-1.5 bg-surface-elevated rounded-full text-red-600 hover:bg-red-50 transition-colors"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
