@@ -30,7 +30,7 @@
 				class="
 					rounded-full transition-all
 					{isCurrent ? 'w-6 h-2 bg-viking-500' : 'w-2 h-2'}
-					{isCompleted ? 'bg-viking-500' : !isCurrent ? 'bg-gray-300' : ''}
+					{isCompleted ? 'bg-viking-500' : !isCurrent ? 'bg-border-strong' : ''}
 					{isClickable ? 'cursor-pointer hover:bg-viking-400' : 'cursor-default'}
 				"
 				aria-label="Step {index + 1}: {step.title}"
@@ -42,17 +42,17 @@
 	{@const currentStepData = steps[currentStep]}
 	<div class="flex items-center justify-between {className}">
 		<div>
-			<span class="text-xs text-gray-500">
+			<span class="text-xs text-ink-muted">
 				Step {currentStep + 1} of {steps.length}
 			</span>
-			<h4 class="text-sm font-medium text-gray-900">{currentStepData?.title}</h4>
+			<h4 class="text-sm font-medium text-ink">{currentStepData?.title}</h4>
 		</div>
 		<div class="flex gap-1">
 			{#each steps as _, index}
 				<div
 					class="
 						h-1 w-6 rounded-full transition-colors
-						{index <= currentStep ? 'bg-viking-500' : 'bg-gray-200'}
+						{index <= currentStep ? 'bg-viking-500' : 'bg-border'}
 					"
 				></div>
 			{/each}
@@ -85,7 +85,7 @@
 								? 'bg-viking-500 text-white'
 								: isCurrent
 									? 'bg-viking-500 text-white ring-4 ring-viking-100'
-									: 'bg-gray-100 text-gray-500'}
+									: 'bg-canvas-subtle text-ink-muted'}
 								{isClickable ? 'group-hover:bg-viking-600' : ''}
 							"
 						>
@@ -115,13 +115,13 @@
 							<span
 								class="
 									block text-sm font-medium
-									{isCurrent ? 'text-viking-600' : isCompleted ? 'text-gray-900' : 'text-gray-500'}
+									{isCurrent ? 'text-viking-600' : isCompleted ? 'text-ink' : 'text-ink-muted'}
 								"
 							>
 								{step.title}
 							</span>
 							{#if step.description}
-								<span class="block text-xs text-gray-500 mt-0.5">
+								<span class="block text-xs text-ink-muted mt-0.5">
 									{step.description}
 								</span>
 							{/if}
@@ -133,7 +133,7 @@
 						<div
 							class="
 								flex-1 h-0.5 mx-4
-								{isCompleted ? 'bg-viking-500' : 'bg-gray-200'}
+								{isCompleted ? 'bg-viking-500' : 'bg-border'}
 							"
 						></div>
 					{/if}

@@ -49,7 +49,7 @@
 						type="button"
 						onclick={ctx.prevStep}
 						disabled={isSubmitting}
-						class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+						class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-ink hover:text-ink hover:bg-canvas-subtle rounded-lg transition-colors disabled:opacity-50"
 					>
 						<svg
 							class="w-4 h-4"

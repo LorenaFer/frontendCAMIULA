@@ -55,7 +55,7 @@
 		<button
 			type="button"
 			onclick={onClear}
-			class="absolute top-1/2 -translate-y-1/2 right-2.5 p-0.5 text-slate-400 hover:text-slate-600 rounded transition-colors"
+			class="absolute top-1/2 -translate-y-1/2 right-2.5 p-0.5 text-ink-subtle hover:text-ink-muted rounded transition-colors"
 		>
 			<svg
 				class="w-4 h-4"

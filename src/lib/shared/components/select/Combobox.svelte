@@ -13,19 +13,19 @@
 	};
 
 	const baseSelectClasses = `
-		w-full rounded-lg border bg-white text-slate-900
+		w-full rounded-lg border bg-surface-elevated text-ink
 		transition-all duration-150
 		focus:outline-none
 		cursor-pointer
 	`;
 
 	const disabledClasses =
-		'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed disabled:hover:border-slate-200';
+		'disabled:bg-canvas-subtle disabled:text-ink-subtle disabled:cursor-not-allowed disabled:hover:border-border';
 
 	function getStateClasses(error?: string, isOpen?: boolean): string {
 		if (error) return 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100';
-		if (isOpen) return 'border-slate-400 ring-2 ring-slate-100';
-		return 'border-slate-200 hover:border-slate-300';
+		if (isOpen) return 'border-border-strong ring-2 ring-border-subtle';
+		return 'border-border hover:border-border-strong';
 	}
 
 	let {
@@ -191,7 +191,7 @@
 
 <div class="w-full" bind:this={containerEl}>
 	{#if label}
-		<label for={inputId} class="block text-sm font-medium text-slate-700 mb-1.5">
+		<label for={inputId} class="block text-sm font-medium text-ink mb-1.5">
 			{label}
 		</label>
 	{/if}
@@ -225,7 +225,7 @@
 				<button
 					type="button"
 					onclick={handleClear}
-					class="p-0.5 text-slate-400 hover:text-slate-600 transition-colors"
+					class="p-0.5 text-ink-subtle hover:text-ink-muted transition-colors"
 				>
 					<svg
 						class="w-4 h-4"
@@ -239,7 +239,7 @@
 				</button>
 			{/if}
 			<svg
-				class="w-4 h-4 text-slate-400 transition-transform {isOpen ? 'rotate-180' : ''}"
+				class="w-4 h-4 text-ink-subtle transition-transform {isOpen ? 'rotate-180' : ''}"
 				fill="none"
 				viewBox="0 0 24 24"
 				stroke="currentColor"
@@ -250,7 +250,7 @@
 		</div>
 	</div>
 	{#if error || hint}
-		<p class="mt-1.5 text-xs {error ? 'text-red-600' : 'text-slate-500'}">
+		<p class="mt-1.5 text-xs {error ? 'text-red-600' : 'text-ink-muted'}">
 			{error || hint}
 		</p>
 	{/if}
@@ -260,11 +260,11 @@
 			<ul
 				bind:this={listEl}
 				style={dropdownStyle}
-				class="bg-white rounded-lg border border-slate-200 shadow-lg overflow-auto max-h-60"
+				class="bg-surface-elevated rounded-lg border border-border shadow-lg overflow-auto max-h-60"
 				role="listbox"
 			>
 				{#if loading}
-					<li class="px-3 py-2 text-sm text-slate-500 flex items-center gap-2">
+					<li class="px-3 py-2 text-sm text-ink-muted flex items-center gap-2">
 						<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
 							<circle
 								class="opacity-25"
@@ -283,7 +283,7 @@
 						Loading...
 					</li>
 				{:else if filteredOptions.length === 0}
-					<li class="px-3 py-2 text-sm text-slate-500">{emptyMessage}</li>
+					<li class="px-3 py-2 text-sm text-ink-muted">{emptyMessage}</li>
 				{:else}
 					{#each filteredOptions as option, index (option.value)}
 						<li
@@ -294,27 +294,27 @@
 							class="
 								px-3 py-2 cursor-pointer transition-colors
 								{option.disabled ? 'opacity-50 cursor-not-allowed' : ''}
-								{index === highlightedIndex ? 'bg-slate-100' : ''}
-								{option.value === value ? 'bg-slate-50' : ''}
+								{index === highlightedIndex ? 'bg-canvas-subtle' : ''}
+								{option.value === value ? 'bg-canvas-subtle' : ''}
 							"
 						>
 							<div class="flex items-center gap-2">
 								{#if option.icon}
-									<span class="w-4 h-4 text-slate-400">{@render option.icon()}</span>
+									<span class="w-4 h-4 text-ink-subtle">{@render option.icon()}</span>
 								{/if}
 								<div class="flex-1 min-w-0">
-									<div class="text-sm font-medium text-slate-900 truncate">
+									<div class="text-sm font-medium text-ink truncate">
 										{option.label}
 									</div>
 									{#if option.description}
-										<div class="text-xs text-slate-500 truncate">
+										<div class="text-xs text-ink-muted truncate">
 											{option.description}
 										</div>
 									{/if}
 								</div>
 								{#if option.value === value}
 									<svg
-										class="w-4 h-4 text-slate-600"
+										class="w-4 h-4 text-ink-muted"
 										fill="none"
 										viewBox="0 0 24 24"
 										stroke="currentColor"

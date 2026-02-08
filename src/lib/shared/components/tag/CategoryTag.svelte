@@ -14,13 +14,13 @@
 	} = $props();
 
 	const categoryColors: Record<CategoryColor, string> = {
-		gray: 'bg-slate-100 text-slate-600',
-		blue: 'bg-slate-100 text-slate-600',
-		green: 'bg-slate-100 text-slate-600',
-		red: 'bg-slate-100 text-slate-600',
-		amber: 'bg-slate-100 text-slate-600',
-		purple: 'bg-slate-100 text-slate-600',
-		pink: 'bg-slate-100 text-slate-600'
+		gray: 'bg-canvas-subtle text-ink-muted',
+		blue: 'bg-canvas-subtle text-ink-muted',
+		green: 'bg-canvas-subtle text-ink-muted',
+		red: 'bg-canvas-subtle text-ink-muted',
+		amber: 'bg-canvas-subtle text-ink-muted',
+		purple: 'bg-canvas-subtle text-ink-muted',
+		pink: 'bg-canvas-subtle text-ink-muted'
 	};
 </script>
 

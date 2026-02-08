@@ -10,6 +10,6 @@
   } = $props();
 </script>
 
-<thead class="bg-slate-50 border-b border-slate-200 {className}">
+<thead class="bg-canvas-subtle border-b border-border {className}">
   {@render children()}
 </thead>

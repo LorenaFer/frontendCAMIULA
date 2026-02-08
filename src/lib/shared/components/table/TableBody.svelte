@@ -10,6 +10,6 @@
   } = $props();
 </script>
 
-<tbody class="divide-y divide-slate-100 bg-white {className}">
+<tbody class="divide-y divide-border-subtle bg-surface-elevated {className}">
   {@render children()}
 </tbody>

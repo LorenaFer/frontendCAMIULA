@@ -12,7 +12,7 @@
 	const directionColors: Record<string, string> = {
 		up: 'text-emerald-500',
 		down: 'text-red-400',
-		neutral: 'text-gray-400'
+		neutral: 'text-ink-subtle'
 	};
 </script>
 

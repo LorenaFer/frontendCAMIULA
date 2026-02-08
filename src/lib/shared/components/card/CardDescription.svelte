@@ -10,6 +10,6 @@
 	} = $props();
 </script>
 
-<p class="text-sm text-slate-500 mt-0.5 {className}">
+<p class="text-sm text-ink-muted mt-0.5 {className}">
 	{@render children()}
 </p>

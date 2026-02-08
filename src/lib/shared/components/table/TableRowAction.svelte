@@ -8,7 +8,7 @@
 
 <td class="px-2 py-2 w-6 text-right {className}">
   <svg
-    class="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-400 transition-colors ml-auto"
+    class="w-3.5 h-3.5 text-ink-subtle group-hover:text-ink-subtle transition-colors ml-auto"
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"

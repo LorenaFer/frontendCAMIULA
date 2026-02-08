@@ -32,7 +32,7 @@
 	{#if onRetry}
 		<button
 			onclick={onRetry}
-			class="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+			class="inline-flex items-center gap-2 px-4 py-2 bg-surface-elevated text-ink text-sm font-medium rounded-lg border border-border-strong hover:bg-canvas-subtle transition-colors"
 		>
 			<svg
 				class="w-4 h-4"

@@ -18,6 +18,6 @@
   };
 </script>
 
-<td class="px-3 py-2 text-sm text-slate-700 {alignClasses[align]} {className}">
+<td class="px-3 py-2 text-sm text-ink {alignClasses[align]} {className}">
   {@render children()}
 </td>

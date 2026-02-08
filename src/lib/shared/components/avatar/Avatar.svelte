@@ -39,18 +39,18 @@
 
 	const statusColors: Record<AvatarStatus, string> = {
 		online: 'bg-emerald-500',
-		offline: 'bg-slate-300',
+		offline: 'bg-border-strong',
 		busy: 'bg-red-400',
 		away: 'bg-amber-400'
 	};
 
 	const avatarColors: Record<AvatarColor, string> = {
-		gray: 'bg-slate-100 text-slate-600',
-		blue: 'bg-slate-100 text-slate-600',
-		green: 'bg-slate-100 text-slate-600',
-		amber: 'bg-slate-100 text-slate-600',
-		red: 'bg-slate-100 text-slate-600',
-		violet: 'bg-slate-100 text-slate-600'
+		gray: 'bg-canvas-subtle text-ink-muted',
+		blue: 'bg-canvas-subtle text-ink-muted',
+		green: 'bg-canvas-subtle text-ink-muted',
+		amber: 'bg-canvas-subtle text-ink-muted',
+		red: 'bg-canvas-subtle text-ink-muted',
+		violet: 'bg-canvas-subtle text-ink-muted'
 	};
 
 	function getColorFromName(name: string): AvatarColor {
@@ -77,7 +77,7 @@
 	{/if}
 	{#if status}
 		<span
-			class="absolute bottom-0 right-0 {styles.status} rounded-full ring-white {styles.statusRing} {statusColors[
+			class="absolute bottom-0 right-0 {styles.status} rounded-full ring-surface-elevated {styles.statusRing} {statusColors[
 				status
 			]}"
 		></span>

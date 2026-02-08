@@ -182,7 +182,7 @@
 {#if compact}
   <div class="w-full {className}">
     {#if label}
-      <label class="block text-sm font-medium text-slate-700 mb-1.5">
+      <label class="block text-sm font-medium text-ink mb-1.5">
         {label}
       </label>
     {/if}
@@ -193,8 +193,8 @@
         {disabled}
         class="
           inline-flex items-center gap-2 px-3 py-1.5
-          bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700
-          hover:bg-slate-50 hover:border-slate-300
+          bg-surface-elevated border border-border rounded-lg text-sm font-medium text-ink
+          hover:bg-canvas-subtle hover:border-border-strong
           disabled:opacity-50 disabled:cursor-not-allowed
           transition-colors
         "
@@ -204,7 +204,7 @@
         </svg>
         Choose file{multiple ? 's' : ''}
       </button>
-      <span class="text-sm text-slate-500">
+      <span class="text-sm text-ink-muted">
         {#if value.length === 0}
           No file selected
         {:else if value.length === 1}
@@ -224,7 +224,7 @@
       class="hidden"
     />
     {#if error || fileErrors.length > 0 || hint}
-      <p class="mt-1.5 text-xs {error || fileErrors.length > 0 ? 'text-red-600' : 'text-slate-500'}">
+      <p class="mt-1.5 text-xs {error || fileErrors.length > 0 ? 'text-red-600' : 'text-ink-muted'}">
         {error || fileErrors[0] || hint}
       </p>
     {/if}
@@ -232,7 +232,7 @@
 {:else}
   <div class="w-full {className}">
     {#if label}
-      <label class="block text-sm font-medium text-slate-700 mb-1.5">
+      <label class="block text-sm font-medium text-ink mb-1.5">
         {label}
       </label>
     {/if}
@@ -253,28 +253,28 @@
         flex flex-col items-center justify-center gap-2
         transition-all duration-150 cursor-pointer
         {isDragging
-          ? 'border-slate-400 bg-slate-50'
+          ? 'border-border-strong bg-canvas-subtle'
           : error || fileErrors.length > 0
             ? 'border-red-300 bg-red-50/30'
-            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}
+            : 'border-border hover:border-border-strong hover:bg-canvas-subtle/50'}
         {disabled ? 'opacity-50 cursor-not-allowed' : ''}
       "
     >
-      <div class="rounded-full p-2 {isDragging ? 'bg-slate-200' : 'bg-slate-100'}">
-        <svg class="w-6 h-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+      <div class="rounded-full p-2 {isDragging ? 'bg-canvas-subtle' : 'bg-canvas-subtle'}">
+        <svg class="w-6 h-6 text-ink-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
         </svg>
       </div>
       <div class="text-center">
-        <p class="text-sm font-medium text-slate-700">
+        <p class="text-sm font-medium text-ink">
           {isDragging ? 'Drop files here' : 'Drag & drop files here'}
         </p>
-        <p class="text-xs text-slate-500 mt-0.5">
-          or <span class="text-slate-700 underline underline-offset-2">browse</span>
+        <p class="text-xs text-ink-muted mt-0.5">
+          or <span class="text-ink underline underline-offset-2">browse</span>
         </p>
       </div>
       {#if accept || maxSize}
-        <p class="text-xs text-slate-400 mt-1">
+        <p class="text-xs text-ink-subtle mt-1">
           {#if accept}Accepted: {accept}{/if}
           {#if accept && maxSize} &bull; {/if}
           {#if maxSize}Max size: {formatFileSize(maxSize)}{/if}
@@ -306,14 +306,14 @@
 
     <!-- Hint -->
     {#if hint && !error && fileErrors.length === 0}
-      <p class="mt-1.5 text-xs text-slate-500">{hint}</p>
+      <p class="mt-1.5 text-xs text-ink-muted">{hint}</p>
     {/if}
 
     <!-- File list -->
     {#if showPreviews && value.length > 0}
       <ul class="mt-3 space-y-2">
         {#each value as file, index (file.name + '-' + index)}
-          <li class="flex items-center gap-3 p-2 bg-slate-50 rounded-lg">
+          <li class="flex items-center gap-3 p-2 bg-canvas-subtle rounded-lg">
             <!-- Preview or icon -->
             {#if file.type.startsWith('image/')}
               <img
@@ -322,7 +322,7 @@
                 class="w-10 h-10 rounded object-cover"
               />
             {:else}
-              <div class="w-10 h-10 rounded bg-slate-200 flex items-center justify-center text-slate-500">
+              <div class="w-10 h-10 rounded bg-canvas-subtle flex items-center justify-center text-ink-muted">
                 {#if getFileIconType(file.type) === 'image'}
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
@@ -341,8 +341,8 @@
 
             <!-- File info -->
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-slate-700 truncate">{file.name}</p>
-              <p class="text-xs text-slate-500">{formatFileSize(file.size)}</p>
+              <p class="text-sm font-medium text-ink truncate">{file.name}</p>
+              <p class="text-xs text-ink-muted">{formatFileSize(file.size)}</p>
             </div>
 
             <!-- Remove button -->
@@ -350,7 +350,7 @@
               type="button"
               onclick={() => handleRemove(index)}
               {disabled}
-              class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded transition-colors disabled:opacity-50"
+              class="p-1.5 text-ink-subtle hover:text-ink-muted hover:bg-canvas-subtle rounded transition-colors disabled:opacity-50"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />

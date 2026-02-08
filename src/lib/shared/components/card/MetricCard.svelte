@@ -4,7 +4,7 @@
 	const changeColors: Record<ChangeType, string> = {
 		positive: 'text-emerald-600',
 		negative: 'text-red-600',
-		neutral: 'text-slate-400'
+		neutral: 'text-ink-subtle'
 	};
 
 	let {
@@ -23,11 +23,11 @@
 </script>
 
 <div class={className}>
-	<div class="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">
+	<div class="text-[11px] font-medium text-ink-muted uppercase tracking-wider mb-1">
 		{label}
 	</div>
 	<div class="flex items-baseline gap-2">
-		<span class="text-2xl data-hero text-slate-900">{value}</span>
+		<span class="text-2xl data-hero text-ink">{value}</span>
 		{#if change}
 			<span class="text-xs font-medium {changeColors[changeType]}">
 				{change}

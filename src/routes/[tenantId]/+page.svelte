@@ -19,7 +19,7 @@
 		completed: 'bg-emerald-400',
 		confirmed: 'bg-blue-400',
 		pending: 'bg-amber-400',
-		cancelled: 'bg-gray-300'
+		cancelled: 'bg-border-strong'
 	};
 </script>
 
@@ -32,8 +32,8 @@
 	<!-- Header -->
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<div>
-			<h1 class="text-xl font-semibold text-slate-900 tracking-tight">Dashboard</h1>
-			<p class="text-xs text-slate-500 font-mono mt-0.5">
+			<h1 class="text-xl font-semibold text-ink tracking-tight">Dashboard</h1>
+			<p class="text-xs text-ink-muted font-mono mt-0.5">
 				{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
 			</p>
 		</div>
@@ -47,30 +47,30 @@
 	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
 		<!-- Hero Card: Active Patients (spans 2 cols) -->
 		<Card variant="default" padding="lg" class="lg:col-span-2 animate-fade-in-up stagger-1 border-t-2 border-t-viking-400">
-			<p class="text-[13px] font-medium text-slate-500 uppercase tracking-wider mb-3">Active Patients</p>
+			<p class="text-[13px] font-medium text-ink-muted uppercase tracking-wider mb-3">Active Patients</p>
 			<div class="flex items-baseline gap-3">
-				<span class="text-[40px] data-hero text-slate-900">{statsData.patients.value}</span>
+				<span class="text-[40px] data-hero text-ink">{statsData.patients.value}</span>
 				<span class="text-sm text-emerald-600 font-medium">{statsData.patients.change}</span>
 			</div>
 		</Card>
 
 		<!-- Schedule stat -->
 		<Card variant="default" padding="lg" class="animate-fade-in-up stagger-2 border-t-2 border-t-iris-400">
-			<p class="text-[13px] font-medium text-slate-500 uppercase tracking-wider mb-3">Today's Schedule</p>
+			<p class="text-[13px] font-medium text-ink-muted uppercase tracking-wider mb-3">Today's Schedule</p>
 			<div class="flex items-baseline gap-2">
-				<span class="text-[32px] data-hero text-slate-900">{statsData.appointments.value}</span>
-				<span class="text-[15px] text-slate-400">of {statsData.appointments.value + statsData.appointments.remaining}</span>
+				<span class="text-[32px] data-hero text-ink">{statsData.appointments.value}</span>
+				<span class="text-[15px] text-ink-subtle">of {statsData.appointments.value + statsData.appointments.remaining}</span>
 			</div>
-			<p class="text-[13px] text-slate-400 mt-2">{statsData.appointments.remaining} remaining today</p>
+			<p class="text-[13px] text-ink-subtle mt-2">{statsData.appointments.remaining} remaining today</p>
 		</Card>
 
 		<!-- Low stock stat -->
 		<Card variant="default" padding="lg" class="animate-fade-in-up stagger-3 border-t-2 border-t-honey-400">
 			<div class="flex items-center justify-between mb-3">
-				<p class="text-[13px] font-medium text-slate-500 uppercase tracking-wider">Low Stock Items</p>
+				<p class="text-[13px] font-medium text-ink-muted uppercase tracking-wider">Low Stock Items</p>
 				<span class="w-2 h-2 rounded-full bg-amber-400"></span>
 			</div>
-			<span class="text-[32px] data-hero text-slate-900">{statsData.alerts.value}</span>
+			<span class="text-[32px] data-hero text-ink">{statsData.alerts.value}</span>
 			<a href="inventory" class="block text-[13px] text-viking-600 hover:text-viking-700 mt-2 font-medium">
 				Review inventory →
 			</a>
@@ -79,27 +79,27 @@
 
 	<!-- Today's Schedule -->
 	<Card padding="none" class="lg:col-span-4 animate-fade-in-up stagger-4">
-		<div class="px-6 py-5 flex items-center justify-between border-b border-gray-100/60">
-			<h3 class="text-sm font-semibold text-gray-900">Today's Schedule</h3>
-			<a href="appointments" class="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors">
+		<div class="px-6 py-5 flex items-center justify-between border-b border-border-subtle/60">
+			<h3 class="text-sm font-semibold text-ink">Today's Schedule</h3>
+			<a href="appointments" class="text-xs font-medium text-ink-subtle hover:text-ink-muted transition-colors">
 				View all →
 			</a>
 		</div>
-		<div class="divide-y divide-gray-100/40">
+		<div class="divide-y divide-border-subtle/40">
 			{#each todaySchedule as appointment (appointment.id)}
-				<div class="flex items-center gap-3 px-6 py-3.5 hover:bg-gray-50/50 transition-colors group cursor-pointer">
+				<div class="flex items-center gap-3 px-6 py-3.5 hover:bg-canvas-subtle/50 transition-colors group cursor-pointer">
 					<div class="flex items-center gap-2 w-20 flex-shrink-0">
 						<span class="w-2 h-2 rounded-full flex-shrink-0 {statusColors[appointment.status]}"></span>
-						<span class="text-sm font-medium text-gray-900 tabular-nums">{appointment.time}</span>
+						<span class="text-sm font-medium text-ink tabular-nums">{appointment.time}</span>
 					</div>
 					<div class="flex-1 min-w-0 flex items-center gap-2">
-						<span class="text-sm font-medium text-gray-900 truncate">{appointment.patient}</span>
-						<span class="text-gray-300">·</span>
-						<span class="text-sm text-gray-500 truncate">{appointment.type}</span>
-						<span class="text-xs text-gray-400 bg-gray-100/60 px-1.5 py-0.5 rounded flex-shrink-0">{appointment.room}</span>
+						<span class="text-sm font-medium text-ink truncate">{appointment.patient}</span>
+						<span class="text-ink-subtle">·</span>
+						<span class="text-sm text-ink-muted truncate">{appointment.type}</span>
+						<span class="text-xs text-ink-subtle bg-canvas-subtle/60 px-1.5 py-0.5 rounded flex-shrink-0">{appointment.room}</span>
 					</div>
 					<svg
-						class="w-4 h-4 text-gray-300 group-hover:text-gray-400 transition-colors flex-shrink-0"
+						class="w-4 h-4 text-ink-subtle group-hover:text-ink-subtle transition-colors flex-shrink-0"
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"

@@ -12,7 +12,7 @@
 	} = $props();
 
 	const variants: Record<'default' | 'primary' | 'danger', string> = {
-		default: 'bg-gray-100 text-gray-600',
+		default: 'bg-canvas-subtle text-ink-muted',
 		primary: 'bg-viking-600 text-white',
 		danger: 'bg-red-600 text-white'
 	};

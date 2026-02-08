@@ -10,6 +10,6 @@
 	} = $props();
 </script>
 
-<h2 class="text-lg font-semibold text-gray-900 {className}">
+<h2 class="text-lg font-semibold text-ink {className}">
 	{@render children()}
 </h2>

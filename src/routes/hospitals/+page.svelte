@@ -36,12 +36,12 @@
 	<meta name="description" content="Select a hospital to manage" />
 </svelte:head>
 
-<div class="min-h-screen bg-slate-50">
+<div class="min-h-screen bg-canvas-subtle">
 	<div class="max-w-3xl mx-auto px-4 py-12">
 		<!-- Header -->
 		<div class="mb-8">
-			<h1 class="text-xl font-semibold text-slate-900">Select Hospital</h1>
-			<p class="text-sm text-slate-500 mt-1">Choose a facility to access its dashboard</p>
+			<h1 class="text-xl font-semibold text-ink">Select Hospital</h1>
+			<p class="text-sm text-ink-muted mt-1">Choose a facility to access its dashboard</p>
 		</div>
 
 		<!-- Search -->
@@ -57,7 +57,7 @@
 			{#if filteredHospitals.length === 0}
 				<Card variant="default" padding="lg">
 					<div class="text-center py-4">
-						<p class="text-sm text-slate-500">No hospitals found</p>
+						<p class="text-sm text-ink-muted">No hospitals found</p>
 						<Button variant="ghost" size="sm" class="mt-2" onclick={() => (searchQuery = '')}>
 							Clear search
 						</Button>
@@ -70,7 +70,7 @@
 							<div class="flex items-center justify-between px-4 py-3">
 								<div class="flex-1 min-w-0">
 									<div class="flex items-center gap-3">
-										<h3 class="text-sm font-medium text-slate-900 group-hover:text-viking-600 transition-colors">
+										<h3 class="text-sm font-medium text-ink group-hover:text-viking-600 transition-colors">
 											{hospital.name}
 										</h3>
 										{#if hospital.status === 'maintenance'}
@@ -79,20 +79,20 @@
 											</span>
 										{/if}
 									</div>
-									<p class="text-xs text-slate-500 mt-0.5">{hospital.location}</p>
+									<p class="text-xs text-ink-muted mt-0.5">{hospital.location}</p>
 								</div>
 
-								<div class="flex items-center gap-6 text-xs text-slate-500">
+								<div class="flex items-center gap-6 text-xs text-ink-muted">
 									<div class="text-right">
-										<span class="text-slate-900 font-medium tabular-nums">{hospital.patients}</span>
-										<span class="text-slate-400 ml-1">patients</span>
+										<span class="text-ink font-medium tabular-nums">{hospital.patients}</span>
+										<span class="text-ink-subtle ml-1">patients</span>
 									</div>
 									<div class="text-right">
-										<span class="text-slate-900 font-medium tabular-nums">{hospital.beds}</span>
-										<span class="text-slate-400 ml-1">beds</span>
+										<span class="text-ink font-medium tabular-nums">{hospital.beds}</span>
+										<span class="text-ink-subtle ml-1">beds</span>
 									</div>
 									<svg
-										class="w-4 h-4 text-slate-300 group-hover:text-viking-500 transition-colors"
+										class="w-4 h-4 text-ink-subtle group-hover:text-viking-500 transition-colors"
 										fill="none"
 										viewBox="0 0 24 24"
 										stroke="currentColor"
@@ -109,7 +109,7 @@
 		</div>
 
 		<!-- Footer -->
-		<p class="text-xs text-slate-400 text-center mt-8">
+		<p class="text-xs text-ink-subtle text-center mt-8">
 			Need access to another hospital? Contact your administrator.
 		</p>
 	</div>

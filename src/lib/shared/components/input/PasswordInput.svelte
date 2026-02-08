@@ -33,15 +33,15 @@
 	};
 
 	const baseInputClasses =
-		'w-full rounded-lg border bg-white text-slate-900 placeholder:text-slate-400 transition-all duration-150 focus:outline-none';
+		'w-full rounded-lg border bg-surface-elevated text-ink placeholder:text-ink-subtle transition-all duration-150 focus:outline-none';
 
 	const getStateClasses = (err?: string) =>
 		err
 			? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100'
-			: 'border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-100';
+			: 'border-border hover:border-border-strong focus:border-border-strong focus:ring-2 focus:ring-border-subtle';
 
 	const disabledClasses =
-		'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed disabled:hover:border-slate-200';
+		'disabled:bg-canvas-subtle disabled:text-ink-subtle disabled:cursor-not-allowed disabled:hover:border-border';
 
 	function getPasswordStrength(password: string): { level: number; label: string } {
 		let score = 0;
@@ -73,7 +73,7 @@
 
 <div class="w-full">
 	{#if label}
-		<label class="block text-sm font-medium text-slate-700 mb-1.5">
+		<label class="block text-sm font-medium text-ink mb-1.5">
 			{label}
 		</label>
 	{/if}
@@ -90,7 +90,7 @@
 		<button
 			type="button"
 			onclick={() => (showPassword = !showPassword)}
-			class="absolute top-1/2 -translate-y-1/2 right-3 text-slate-400 hover:text-slate-600 transition-colors"
+			class="absolute top-1/2 -translate-y-1/2 right-3 text-ink-subtle hover:text-ink-muted transition-colors"
 		>
 			{#if showPassword}
 				<svg
@@ -135,15 +135,15 @@
 					<div
 						class="h-1 flex-1 rounded-full transition-colors {level <= strength.level
 							? strengthColors[strength.level]
-							: 'bg-slate-200'}"
+							: 'bg-border'}"
 					></div>
 				{/each}
 			</div>
-			<p class="text-xs text-slate-500">{strength.label}</p>
+			<p class="text-xs text-ink-muted">{strength.label}</p>
 		</div>
 	{/if}
 	{#if (error || hint) && !showStrength}
-		<p class="mt-1.5 text-xs {error ? 'text-red-600' : 'text-slate-500'}">
+		<p class="mt-1.5 text-xs {error ? 'text-red-600' : 'text-ink-muted'}">
 			{error || hint}
 		</p>
 	{/if}

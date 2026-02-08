@@ -42,7 +42,7 @@
 
 <fieldset class="w-full">
 	{#if label}
-		<legend class="text-sm font-medium text-slate-700 mb-2">{label}</legend>
+		<legend class="text-sm font-medium text-ink mb-2">{label}</legend>
 	{/if}
 	<div
 		class="flex {orientation === 'vertical' ? 'flex-col gap-2' : 'flex-wrap gap-4'}"
@@ -60,12 +60,12 @@
 					checked={value === option.value}
 					onchange={() => handleChange(option.value)}
 					disabled={option.disabled}
-					class="{radioSizeStyles[radioSize]} border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-200 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="{radioSizeStyles[radioSize]} border-border-strong text-ink focus:ring-2 focus:ring-border focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
 				/>
 				<div class="flex-1">
-					<span class="text-sm font-medium text-slate-700">{option.label}</span>
+					<span class="text-sm font-medium text-ink">{option.label}</span>
 					{#if option.description}
-						<p class="text-sm text-slate-500 mt-0.5">{option.description}</p>
+						<p class="text-sm text-ink-muted mt-0.5">{option.description}</p>
 					{/if}
 				</div>
 			</label>

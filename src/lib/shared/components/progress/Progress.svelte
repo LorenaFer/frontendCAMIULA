@@ -23,19 +23,19 @@
 	} = $props();
 
 	const barStyles: Record<ProgressVariant, string> = {
-		default: 'bg-slate-600',
+		default: 'bg-ink-muted',
 		success: 'bg-emerald-600',
 		warning: 'bg-amber-500',
 		danger: 'bg-red-500',
-		info: 'bg-slate-500'
+		info: 'bg-ink-subtle'
 	};
 
 	const trackStyles: Record<ProgressVariant, string> = {
-		default: 'bg-slate-200/60',
-		success: 'bg-slate-200/60',
-		warning: 'bg-slate-200/60',
-		danger: 'bg-slate-200/60',
-		info: 'bg-slate-200/60'
+		default: 'bg-border/60',
+		success: 'bg-border/60',
+		warning: 'bg-border/60',
+		danger: 'bg-border/60',
+		info: 'bg-border/60'
 	};
 
 	const sizeStyles: Record<ProgressSize, string> = {
@@ -51,14 +51,14 @@
 	{#if showLabel || label || showPercentage}
 		<div class="flex items-center justify-between mb-1.5">
 			{#if label}
-				<span class="text-xs font-medium text-slate-600">{label}</span>
+				<span class="text-xs font-medium text-ink-muted">{label}</span>
 			{/if}
 			{#if showPercentage}
-				<span class="text-xs font-medium text-slate-500 tabular-nums">
+				<span class="text-xs font-medium text-ink-muted tabular-nums">
 					{Math.round(percentage)}%
 				</span>
 			{:else if showLabel}
-				<span class="text-xs font-medium text-slate-500 tabular-nums">
+				<span class="text-xs font-medium text-ink-muted tabular-nums">
 					{value}/{max}
 				</span>
 			{/if}

@@ -15,12 +15,12 @@
 			focus-visible:ring-2 focus-visible:ring-viking-500/40 focus-visible:ring-offset-1
 		`,
 		secondary: `
-			bg-white text-slate-700
-			border border-slate-200
+			bg-surface-elevated text-ink
+			border border-border
 			shadow-[0_1px_2px_rgba(0,0,0,0.04)]
-			hover:bg-slate-50 hover:border-slate-300 hover:shadow-[0_2px_4px_rgba(0,0,0,0.06)]
-			active:bg-slate-100 active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]
-			focus-visible:ring-2 focus-visible:ring-slate-400/20 focus-visible:ring-offset-1
+			hover:bg-canvas-subtle hover:border-border-strong hover:shadow-[0_2px_4px_rgba(0,0,0,0.06)]
+			active:bg-canvas-subtle active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]
+			focus-visible:ring-2 focus-visible:ring-border-strong/20 focus-visible:ring-offset-1
 		`,
 		soft: `
 			bg-viking-50/80 text-viking-700
@@ -30,10 +30,10 @@
 			focus-visible:ring-2 focus-visible:ring-viking-500/20 focus-visible:ring-offset-1
 		`,
 		ghost: `
-			bg-transparent text-slate-600
-			hover:bg-slate-100/70 hover:text-slate-800
-			active:bg-slate-200/50
-			focus-visible:ring-2 focus-visible:ring-slate-400/20 focus-visible:ring-offset-1
+			bg-transparent text-ink-muted
+			hover:bg-canvas-subtle/70 hover:text-ink
+			active:bg-canvas-subtle/50
+			focus-visible:ring-2 focus-visible:ring-border-strong/20 focus-visible:ring-offset-1
 		`,
 		danger: `
 			bg-red-600 text-white btn-shine

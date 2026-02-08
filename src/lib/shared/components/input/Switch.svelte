@@ -65,8 +65,8 @@
 		/>
 		<div
 			class="{sizes.track} rounded-full transition-colors {checked
-				? 'bg-slate-900'
-				: 'bg-slate-200'} {className}"
+				? 'bg-ink dark:bg-viking-500'
+				: 'bg-border dark:bg-border-strong'} {className}"
 		></div>
 		<div
 			class="absolute top-0.5 left-0.5 {sizes.thumb} rounded-full bg-white shadow-sm transition-transform duration-200 {checked
@@ -77,10 +77,10 @@
 	{#if label || description}
 		<div class="flex-1 pt-0.5">
 			{#if label}
-				<span class="text-sm font-medium text-slate-700">{label}</span>
+				<span class="text-sm font-medium text-ink">{label}</span>
 			{/if}
 			{#if description}
-				<p class="text-sm text-slate-500 mt-0.5">{description}</p>
+				<p class="text-sm text-ink-muted mt-0.5">{description}</p>
 			{/if}
 		</div>
 	{/if}

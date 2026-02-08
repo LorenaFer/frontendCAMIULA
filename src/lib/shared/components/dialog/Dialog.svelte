@@ -123,7 +123,7 @@
 			<div
 				bind:this={dialogEl}
 				class="
-					w-full bg-white shadow-[var(--shadow-4)] flex flex-col
+					w-full bg-surface-elevated shadow-[var(--shadow-4)] flex flex-col
 					max-h-[85vh] sm:max-h-[90vh]
 					rounded-t-2xl sm:rounded-xl
 					animate-in fade-in dialog-panel duration-200
@@ -134,7 +134,7 @@
 			>
 				<!-- Drag handle - visible only on mobile -->
 				<div class="flex justify-center pt-3 pb-1 sm:hidden">
-					<div class="w-10 h-1 bg-gray-300 rounded-full"></div>
+					<div class="w-10 h-1 bg-border-strong rounded-full"></div>
 				</div>
 				{@render children()}
 			</div>

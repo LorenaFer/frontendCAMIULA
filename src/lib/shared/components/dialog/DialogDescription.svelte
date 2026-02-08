@@ -10,6 +10,6 @@
 	} = $props();
 </script>
 
-<p class="mt-1 text-sm text-gray-500 {className}">
+<p class="mt-1 text-sm text-ink-muted {className}">
 	{@render children()}
 </p>

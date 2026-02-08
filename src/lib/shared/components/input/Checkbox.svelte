@@ -37,7 +37,7 @@
 		type="checkbox"
 		id={checkboxId}
 		bind:checked
-		class="{checkboxSizeStyles[checkboxSize]} rounded border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-200 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed {error
+		class="{checkboxSizeStyles[checkboxSize]} rounded border-border-strong text-ink focus:ring-2 focus:ring-border focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed {error
 			? 'border-red-300'
 			: ''} {className}"
 		{...restProps}
@@ -45,12 +45,12 @@
 	{#if label || description}
 		<div class="flex-1">
 			{#if label}
-				<label for={checkboxId} class="text-sm font-medium text-slate-700 cursor-pointer">
+				<label for={checkboxId} class="text-sm font-medium text-ink cursor-pointer">
 					{label}
 				</label>
 			{/if}
 			{#if description}
-				<p class="text-sm text-slate-500 mt-0.5">{description}</p>
+				<p class="text-sm text-ink-muted mt-0.5">{description}</p>
 			{/if}
 			{#if error}
 				<p class="text-xs text-red-600 mt-1">{error}</p>

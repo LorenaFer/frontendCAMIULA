@@ -24,7 +24,7 @@
 	{#if showClose}
 		<button
 			onclick={onClose}
-			class="p-1.5 -m-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+			class="p-1.5 -m-1.5 text-ink-subtle hover:text-ink hover:bg-canvas-subtle rounded-lg transition-colors flex-shrink-0"
 			aria-label="Close dialog"
 		>
 			<svg

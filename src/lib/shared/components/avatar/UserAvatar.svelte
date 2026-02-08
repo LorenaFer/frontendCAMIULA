@@ -47,9 +47,9 @@
 <div class="flex items-center {gapStyles[size]} {className}">
 	<Avatar {src} alt={name} initials={computedInitials} {size} {status} {color} />
 	<div class="min-w-0 flex-1">
-		<p class="text-sm font-medium text-slate-900 truncate">{name}</p>
+		<p class="text-sm font-medium text-ink truncate">{name}</p>
 		{#if subtitle}
-			<p class="text-xs text-slate-500 truncate mt-0.5">{subtitle}</p>
+			<p class="text-xs text-ink-muted truncate mt-0.5">{subtitle}</p>
 		{/if}
 	</div>
 </div>

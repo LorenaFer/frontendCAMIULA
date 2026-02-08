@@ -56,7 +56,7 @@
 		<!-- Logo & Header -->
 		<div class="text-center mb-8">
 			<h1 class="text-2xl font-bold text-midnight">Welcome back</h1>
-			<p class="text-slate-500 mt-1">Sign in to your hospital account</p>
+			<p class="text-ink-muted mt-1">Sign in to your hospital account</p>
 		</div>
 
 		<!-- Login Card -->
@@ -97,10 +97,10 @@
 				<!-- Divider -->
 				<div class="relative my-6">
 					<div class="absolute inset-0 flex items-center">
-						<div class="w-full border-t border-slate-200"></div>
+						<div class="w-full border-t border-border"></div>
 					</div>
 					<div class="relative flex justify-center text-sm">
-						<span class="px-2 bg-white text-slate-500">Or continue with</span>
+						<span class="px-2 bg-surface-elevated text-ink-muted">Or continue with</span>
 					</div>
 				</div>
 
@@ -126,7 +126,7 @@
 		</Card>
 
 		<!-- Footer -->
-		<p class="text-center text-sm text-slate-500 mt-6">
+		<p class="text-center text-sm text-ink-muted mt-6">
 			Don't have an account?
 			<a href="#contact" class="font-medium text-viking-600 hover:text-viking-700 transition-colors">
 				Contact your administrator
@@ -134,10 +134,10 @@
 		</p>
 
 		<!-- Legal Links -->
-		<div class="flex items-center justify-center gap-4 mt-4 text-xs text-slate-400">
-			<a href="#privacy" class="hover:text-slate-600 transition-colors">Privacy Policy</a>
+		<div class="flex items-center justify-center gap-4 mt-4 text-xs text-ink-subtle">
+			<a href="#privacy" class="hover:text-ink-muted transition-colors">Privacy Policy</a>
 			<span>•</span>
-			<a href="#terms" class="hover:text-slate-600 transition-colors">Terms of Service</a>
+			<a href="#terms" class="hover:text-ink-muted transition-colors">Terms of Service</a>
 		</div>
 	</div>
 </div>

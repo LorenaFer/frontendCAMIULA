@@ -82,7 +82,7 @@
 </script>
 
 {#snippet currencyIcon()}
-	<span class="text-slate-500 text-sm font-medium">{currencySymbol}</span>
+	<span class="text-ink-muted text-sm font-medium">{currencySymbol}</span>
 {/snippet}
 
 <Input

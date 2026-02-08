@@ -14,7 +14,7 @@
 	};
 
 	const iconColorStyles: Record<IconColor, string> = {
-		default: 'bg-slate-100/70 text-slate-500',
+		default: 'bg-canvas-subtle/70 text-ink-muted',
 		red: 'bg-red-50/70 text-red-600',
 		amber: 'bg-amber-50/70 text-amber-600',
 		green: 'bg-emerald-50/70 text-emerald-600',
@@ -25,7 +25,7 @@
 	const trendStyles: Record<TrendDirection, string> = {
 		up: 'text-emerald-600',
 		down: 'text-red-600',
-		neutral: 'text-slate-400'
+		neutral: 'text-ink-subtle'
 	};
 
 	let {
@@ -70,13 +70,13 @@
 						</span>
 					</div>
 				{/if}
-				<span class="text-[13px] font-medium text-slate-500">{title}</span>
+				<span class="text-[13px] font-medium text-ink-muted">{title}</span>
 			</div>
 
 			<!-- Value - THE HERO -->
 			<div class="flex items-baseline gap-2">
 				<span
-					class="text-[36px] data-hero text-slate-900"
+					class="text-[36px] data-hero text-ink"
 				>
 					{value}
 				</span>
@@ -91,7 +91,7 @@
 
 			<!-- Subtitle -->
 			{#if subtitle}
-				<span class="block text-xs text-slate-400">{subtitle}</span>
+				<span class="block text-xs text-ink-subtle">{subtitle}</span>
 			{/if}
 		</div>
 

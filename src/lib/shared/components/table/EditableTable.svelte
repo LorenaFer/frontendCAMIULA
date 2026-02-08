@@ -60,19 +60,19 @@
 </script>
 
 <div class="w-full {className}">
-  <div class="overflow-x-auto border border-slate-200 rounded-lg">
+  <div class="overflow-x-auto border border-border rounded-lg">
     <table class="w-full border-collapse">
-      <thead class="bg-slate-50 border-b border-slate-200">
+      <thead class="bg-canvas-subtle border-b border-border">
         <tr>
           {#if showRowNumbers}
-            <th class="px-3 py-2 text-[11px] font-medium text-slate-500 uppercase tracking-wider text-center w-12">
+            <th class="px-3 py-2 text-[11px] font-medium text-ink-muted uppercase tracking-wider text-center w-12">
               #
             </th>
           {/if}
           {#each columns as col (String(col.key))}
             <th
               style:width={col.width}
-              class="px-3 py-2 text-[11px] font-medium text-slate-500 uppercase tracking-wider {alignClasses[col.align || 'left']}"
+              class="px-3 py-2 text-[11px] font-medium text-ink-muted uppercase tracking-wider {alignClasses[col.align || 'left']}"
             >
               {col.header}
             </th>
@@ -80,21 +80,21 @@
           <th class="px-3 py-2 w-10"></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100 bg-white">
+      <tbody class="divide-y divide-border-subtle bg-surface-elevated">
         {#if data.length === 0}
           <tr>
             <td
               colspan={columns.length + (showRowNumbers ? 2 : 1)}
-              class="px-4 py-8 text-center text-sm text-slate-500"
+              class="px-4 py-8 text-center text-sm text-ink-muted"
             >
               No items yet. Click "{addLabel}" to add one.
             </td>
           </tr>
         {:else}
           {#each data as row, index (index)}
-            <tr class="group hover:bg-slate-50">
+            <tr class="group hover:bg-canvas-subtle">
               {#if showRowNumbers}
-                <td class="px-3 py-2 text-xs text-slate-400 text-center tabular-nums">
+                <td class="px-3 py-2 text-xs text-ink-subtle text-center tabular-nums">
                   {index + 1}
                 </td>
               {/if}
@@ -113,7 +113,7 @@
                   type="button"
                   onclick={() => handleRemoveRow(index)}
                   disabled={disabled || !canRemoveRow}
-                  class="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-all disabled:opacity-0"
+                  class="p-1 text-ink-subtle hover:text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-all disabled:opacity-0"
                   aria-label="Remove row"
                 >
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -131,7 +131,7 @@
     type="button"
     onclick={handleAddRow}
     disabled={disabled || !canAddRow}
-    class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-ink-muted hover:text-ink hover:bg-canvas-subtle rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
   >
     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

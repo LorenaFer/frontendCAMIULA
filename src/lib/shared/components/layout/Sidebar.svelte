@@ -142,12 +142,12 @@
 
 <!-- Sidebar -->
 <aside
-	class="fixed left-0 top-0 z-50 h-screen w-60 bg-canvas border-r border-slate-200 flex flex-col transition-transform duration-200 ease-out lg:z-30 {isOpen
+	class="fixed left-0 top-0 z-50 h-screen w-60 bg-canvas border-r border-border flex flex-col transition-transform duration-200 ease-out lg:z-30 {isOpen
 		? 'sidebar-transform-visible'
 		: 'sidebar-transform-hidden'}"
 >
 	<!-- TenantSwitcher header -->
-	<div class="flex items-center gap-1 px-3 py-3 border-b border-slate-200/60">
+	<div class="flex items-center gap-1 px-3 py-3 border-b border-border/60">
 		<div class="flex-1 min-w-0">
 			<div class="relative">
 				<button
@@ -157,7 +157,7 @@
 					style:cursor="pointer"
 					style:-webkit-tap-highlight-color="transparent"
 					style:pointer-events="auto"
-					class="flex items-center gap-2 w-full px-2 py-1.5 hover:bg-slate-50 rounded-md transition-colors"
+					class="flex items-center gap-2 w-full px-2 py-1.5 hover:bg-canvas-subtle rounded-md transition-colors"
 				>
 					<div
 						class="w-7 h-7 rounded-md bg-viking-600 flex items-center justify-center flex-shrink-0"
@@ -179,12 +179,12 @@
 						</svg>
 					</div>
 					<div class="flex-1 min-w-0 text-left" style:pointer-events="none">
-						<p class="text-[13px] font-semibold text-slate-900 truncate">
+						<p class="text-[13px] font-semibold text-ink truncate">
 							{tenantName ?? tenantId}
 						</p>
 					</div>
 					<svg
-						class="w-3.5 h-3.5 text-slate-400 transition-transform {switcherOpen
+						class="w-3.5 h-3.5 text-ink-subtle transition-transform {switcherOpen
 							? 'rotate-180'
 							: ''}"
 						style:pointer-events="none"
@@ -211,24 +211,24 @@
 							style:left="{popoverStyle.left}px"
 							style:width="{popoverStyle.width}px"
 							style:z-index="99999"
-							class="bg-white rounded-lg border border-slate-200 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_8px_24px_rgba(15,23,42,0.06)] overflow-hidden"
+							class="bg-surface-elevated rounded-lg border border-border shadow-[0_4px_12px_rgba(15,23,42,0.08),0_8px_24px_rgba(15,23,42,0.06)] overflow-hidden"
 						>
 							<div class="py-1">
 								{#each hospitals as hospital (hospital.id)}
 									<button
 										onclick={() => handleHospitalSwitch(hospital.id)}
-										class="flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-slate-50 transition-colors"
+										class="flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-canvas-subtle transition-colors"
 									>
 										<div
 											class="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 {hospital.id ===
 											tenantId
 												? 'bg-viking-600'
-												: 'bg-slate-200'}"
+												: 'bg-border'}"
 										>
 											<svg
 												class="w-3 h-3 {hospital.id === tenantId
 													? 'text-white'
-													: 'text-slate-500'}"
+													: 'text-ink-muted'}"
 												fill="none"
 												viewBox="0 0 24 24"
 												stroke="currentColor"
@@ -244,7 +244,7 @@
 										<span
 											class="text-[13px] truncate {hospital.id === tenantId
 												? 'font-medium text-viking-700'
-												: 'text-slate-700'}"
+												: 'text-ink'}"
 										>
 											{hospital.name}
 										</span>
@@ -266,10 +266,10 @@
 									</button>
 								{/each}
 							</div>
-							<div class="border-t border-slate-100 p-1.5">
+							<div class="border-t border-border-subtle p-1.5">
 								<button
 									onclick={handleViewAllHospitals}
-									class="flex items-center gap-2 w-full px-2.5 py-1.5 text-[13px] text-slate-600 hover:text-viking-600 hover:bg-slate-50 rounded-md transition-colors"
+									class="flex items-center gap-2 w-full px-2.5 py-1.5 text-[13px] text-ink-muted hover:text-viking-600 hover:bg-canvas-subtle rounded-md transition-colors"
 								>
 									<svg
 										class="w-3.5 h-3.5"
@@ -296,7 +296,7 @@
 		<!-- Mobile close button -->
 		<button
 			onclick={onClose}
-			class="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md lg:hidden flex-shrink-0"
+			class="p-1.5 text-ink-subtle hover:text-ink hover:bg-canvas-subtle rounded-md lg:hidden flex-shrink-0"
 			aria-label="Close menu"
 		>
 			<svg
@@ -317,7 +317,7 @@
 			{#each groupedItems as group}
 				{#if group.label}
 					<li class="pt-4 pb-1.5 px-2.5 first:pt-0">
-						<span class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+						<span class="text-[10px] font-semibold text-ink-subtle uppercase tracking-widest">
 							{group.label}
 						</span>
 					</li>
@@ -330,13 +330,13 @@
 							{href}
 							onclick={handleNavClick}
 							class="relative flex items-center gap-2.5 py-2 text-[13px] font-medium rounded-md transition-all duration-150 border-l-[3px] pl-[7px] pr-2.5 {active
-								? 'text-slate-900 bg-viking-50/50 border-l-viking-500'
-								: 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/70 border-l-transparent'}"
+								? 'text-ink bg-viking-50/50 border-l-viking-500'
+								: 'text-ink-muted hover:text-ink hover:bg-canvas-subtle/70 border-l-transparent'}"
 						>
 							<span
 								class="w-4 h-4 flex-shrink-0 transition-colors [&>svg]:stroke-[1.75] {active
 									? 'text-viking-600'
-									: 'text-slate-400'}"
+									: 'text-ink-subtle'}"
 							>
 								{@render item.icon()}
 							</span>
@@ -356,10 +356,10 @@
 	</nav>
 
 	<!-- UserSection -->
-	<div class="border-t border-slate-200/60 px-3 py-3">
+	<div class="border-t border-border/60 px-3 py-3">
 		<button
 			onclick={onProfileClick}
-			class="flex items-center gap-2.5 px-2.5 py-2 w-full rounded-md hover:bg-slate-50 transition-colors"
+			class="flex items-center gap-2.5 px-2.5 py-2 w-full rounded-md hover:bg-canvas-subtle transition-colors"
 		>
 			{#if user.avatar}
 				<img src={user.avatar} alt={user.name} class="w-8 h-8 rounded-md object-cover" />
@@ -371,10 +371,10 @@
 				</div>
 			{/if}
 			<div class="flex-1 min-w-0 text-left">
-				<p class="text-[13px] font-medium text-slate-900 truncate">
+				<p class="text-[13px] font-medium text-ink truncate">
 					{user.name}
 				</p>
-				<p class="text-[11px] text-slate-500 truncate">{user.role}</p>
+				<p class="text-[11px] text-ink-muted truncate">{user.role}</p>
 			</div>
 		</button>
 	</div>

@@ -19,19 +19,19 @@
 	};
 
 	const baseSelectClasses = `
-		w-full rounded-lg border bg-white text-slate-900
+		w-full rounded-lg border bg-surface-elevated text-ink
 		transition-all duration-150
 		focus:outline-none
 		cursor-pointer
 	`;
 
 	const disabledClasses =
-		'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed disabled:hover:border-slate-200';
+		'disabled:bg-canvas-subtle disabled:text-ink-subtle disabled:cursor-not-allowed disabled:hover:border-border';
 
 	function getStateClasses(error?: string, isOpen?: boolean): string {
 		if (error) return 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100';
-		if (isOpen) return 'border-slate-400 ring-2 ring-slate-100';
-		return 'border-slate-200 hover:border-slate-300';
+		if (isOpen) return 'border-border-strong ring-2 ring-border-subtle';
+		return 'border-border hover:border-border-strong';
 	}
 
 	let {
@@ -73,7 +73,7 @@
 
 <div class="w-full">
 	{#if label}
-		<label for={selectId} class="block text-sm font-medium text-slate-700 mb-1.5">
+		<label for={selectId} class="block text-sm font-medium text-ink mb-1.5">
 			{label}
 		</label>
 	{/if}
@@ -105,7 +105,7 @@
 			{/each}
 		</select>
 		<div
-			class="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-slate-400"
+			class="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-ink-subtle"
 		>
 			<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -113,7 +113,7 @@
 		</div>
 	</div>
 	{#if error || hint}
-		<p class="mt-1.5 text-xs {error ? 'text-red-600' : 'text-slate-500'}">
+		<p class="mt-1.5 text-xs {error ? 'text-red-600' : 'text-ink-muted'}">
 			{error || hint}
 		</p>
 	{/if}

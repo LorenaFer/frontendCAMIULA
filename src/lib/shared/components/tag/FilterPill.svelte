@@ -21,8 +21,8 @@
 <button
 	{onclick}
 	class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap {active
-		? 'bg-slate-900 text-white'
-		: 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'} {className}"
+		? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-ink'
+		: 'bg-surface-elevated text-ink-muted border border-border hover:bg-canvas-subtle hover:border-border-strong'} {className}"
 >
 	{#if icon}
 		<span class="w-4 h-4">{@render icon()}</span>
@@ -32,7 +32,7 @@
 		<span
 			class="ml-1 px-1.5 py-0.5 text-xs font-medium rounded {active
 				? 'bg-white/15 text-white'
-				: 'bg-slate-100 text-slate-500'}"
+				: 'bg-canvas-subtle text-ink-muted'}"
 		>
 			{count}
 		</span>

@@ -60,7 +60,7 @@
 		/>
 	</svg>
 	{#if showLabel}
-		<span class="absolute text-xs font-semibold text-slate-700 tabular-nums">
+		<span class="absolute text-xs font-semibold text-ink tabular-nums">
 			{Math.round(percentage)}%
 		</span>
 	{/if}

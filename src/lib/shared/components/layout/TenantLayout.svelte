@@ -60,7 +60,7 @@
 	});
 </script>
 
-<div class="min-h-screen bg-snow">
+<div class="min-h-screen bg-surface">
 	<Sidebar
 		{user}
 		navItems={filteredNavItems}

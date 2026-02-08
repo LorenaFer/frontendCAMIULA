@@ -46,15 +46,15 @@
 </script>
 
 {#if simple}
-  <div class="flex items-center justify-between px-3 py-2 border-t border-slate-100/50 {className}">
-    <span class="text-xs text-slate-500 font-mono">
+  <div class="flex items-center justify-between px-3 py-2 border-t border-border-subtle/50 {className}">
+    <span class="text-xs text-ink-muted font-mono">
       {totalItems} {totalItems === 1 ? 'item' : 'items'}
     </span>
     <div class="flex items-center gap-0.5">
       <button
         onclick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        class="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100/70 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        class="p-1 text-ink-subtle hover:text-ink-muted hover:bg-canvas-subtle/70 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         aria-label="Previous page"
       >
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -64,7 +64,7 @@
       <button
         onclick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        class="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100/70 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        class="p-1 text-ink-subtle hover:text-ink-muted hover:bg-canvas-subtle/70 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         aria-label="Next page"
       >
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -74,24 +74,24 @@
     </div>
   </div>
 {:else}
-  <div class="flex items-center justify-between px-3 py-2 border-t border-slate-100/50 {className}">
+  <div class="flex items-center justify-between px-3 py-2 border-t border-border-subtle/50 {className}">
     <div class="flex items-center gap-4">
       {#if showItemCount}
-        <span class="text-xs text-slate-500">
-          <span class="text-slate-700 font-medium font-mono">{startItem}&ndash;{endItem}</span> of {totalItems}
+        <span class="text-xs text-ink-muted">
+          <span class="text-ink font-medium font-mono">{startItem}&ndash;{endItem}</span> of {totalItems}
         </span>
       {:else}
-        <span class="text-xs text-slate-500 font-mono">
+        <span class="text-xs text-ink-muted font-mono">
           {currentPage}/{totalPages}
         </span>
       {/if}
       {#if onItemsPerPageChange}
         <div class="flex items-center gap-2">
-          <span class="text-xs text-slate-500">Show</span>
+          <span class="text-xs text-ink-muted">Show</span>
           <select
             value={itemsPerPage}
             onchange={(e) => onItemsPerPageChange(Number(e.currentTarget.value))}
-            class="text-xs border border-slate-200 rounded px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-viking-500/30 focus:border-viking-500 cursor-pointer"
+            class="text-xs border border-border rounded px-2 py-1 bg-surface-elevated text-ink focus:outline-none focus:ring-1 focus:ring-viking-500/30 focus:border-viking-500 cursor-pointer"
           >
             {#each pageSizeOptions as size}
               <option value={size}>{size}</option>
@@ -104,7 +104,7 @@
       <button
         onclick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        class="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100/70 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        class="p-1 text-ink-subtle hover:text-ink-muted hover:bg-canvas-subtle/70 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
@@ -112,7 +112,7 @@
       </button>
       {#each pages as page, index (typeof page === 'number' ? page : `ellipsis-${index}`)}
         {#if page === '...'}
-          <span class="px-1 text-slate-400 text-xs">&middot;&middot;&middot;</span>
+          <span class="px-1 text-ink-subtle text-xs">&middot;&middot;&middot;</span>
         {:else}
           <button
             onclick={() => onPageChange(page as number)}
@@ -120,7 +120,7 @@
               min-w-[24px] h-6 px-1.5 text-xs font-medium rounded transition-colors font-mono
               {currentPage === page
                 ? 'bg-slate-800 text-white'
-                : 'text-slate-600 hover:bg-slate-100/70'}
+                : 'text-ink-muted hover:bg-canvas-subtle/70'}
             "
           >
             {page}
@@ -130,7 +130,7 @@
       <button
         onclick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        class="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100/70 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        class="p-1 text-ink-subtle hover:text-ink-muted hover:bg-canvas-subtle/70 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />

@@ -95,7 +95,7 @@
   });
 
   const bulkActionStyles: Record<string, string> = {
-    default: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
+    default: 'text-ink-muted hover:text-ink hover:bg-canvas-subtle',
     danger: 'text-red-600 hover:text-red-700 hover:bg-red-50',
     primary: 'text-viking-600 hover:text-viking-700 hover:bg-viking-50'
   };
@@ -107,7 +107,7 @@
   };
 </script>
 
-<div class="{bordered ? 'border border-slate-200 rounded-lg' : ''} {className}">
+<div class="{bordered ? 'border border-border rounded-lg' : ''} {className}">
   <!-- Bulk Actions Toolbar -->
   {#if hasSelection && bulkActions && bulkActions.length > 0}
     <div class="flex items-center justify-between px-3 py-2 bg-viking-50/50 border-b border-viking-100">
@@ -143,7 +143,7 @@
 
   <div class="overflow-x-auto">
     <table class="w-full border-collapse">
-      <thead class="border-b border-slate-200/60 sticky top-0 z-10 glass-subtle">
+      <thead class="border-b border-border/60 sticky top-0 z-10 glass-subtle">
         <tr>
           {#if selectable}
             <th class="px-3 py-2 w-8">
@@ -152,7 +152,7 @@
                 checked={isAllSelected}
                 bind:this={selectAllCheckboxEl}
                 onchange={handleSelectAll}
-                class="w-3.5 h-3.5 rounded border-slate-300 text-slate-900 focus:ring-slate-200 focus:ring-offset-0 cursor-pointer"
+                class="w-3.5 h-3.5 rounded border-border-strong text-ink focus:ring-border focus:ring-offset-0 cursor-pointer"
               />
             </th>
           {/if}
@@ -161,9 +161,9 @@
               style:width={col.width}
               onclick={col.sortable ? () => handleSort(String(col.key)) : undefined}
               class="
-                px-3 py-2 text-[11px] font-medium text-slate-500 uppercase tracking-wider
+                px-3 py-2 text-[11px] font-medium text-ink-muted uppercase tracking-wider
                 {alignClasses[col.align || 'left']}
-                {col.sortable ? 'cursor-pointer hover:text-slate-700 select-none' : ''}
+                {col.sortable ? 'cursor-pointer hover:text-ink select-none' : ''}
               "
             >
               <div class="inline-flex items-center gap-1.5 {col.align === 'right' ? 'flex-row-reverse' : ''}">
@@ -181,7 +181,7 @@
                         </svg>
                       {/if}
                     {:else}
-                      <svg class="w-3 h-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <svg class="w-3 h-3 text-ink-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
                       </svg>
                     {/if}
@@ -191,22 +191,22 @@
             </th>
           {/each}
           {#if actions && actions.length > 0}
-            <th class="px-3 py-2 text-[11px] font-medium text-slate-500 uppercase tracking-wider text-right w-auto">
+            <th class="px-3 py-2 text-[11px] font-medium text-ink-muted uppercase tracking-wider text-right w-auto">
               Actions
             </th>
           {/if}
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100/50 bg-white">
+      <tbody class="divide-y divide-border-subtle/50 bg-surface-elevated">
         {#if loading}
           <tr>
             <td colspan={totalColSpan} class="px-4 py-12">
               <div class="flex flex-col items-center justify-center">
-                <svg class="w-6 h-6 text-slate-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 text-ink-subtle animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                <p class="text-sm text-slate-500 mt-2">Loading...</p>
+                <p class="text-sm text-ink-muted mt-2">Loading...</p>
               </div>
             </td>
           </tr>
@@ -214,10 +214,10 @@
           <tr>
             <td colspan={totalColSpan} class="px-4 py-12">
               <div class="flex flex-col items-center justify-center text-center">
-                <svg class="w-10 h-10 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                <svg class="w-10 h-10 text-ink-subtle mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
-                <p class="text-sm font-medium text-gray-900">{emptyMessage}</p>
+                <p class="text-sm font-medium text-ink">{emptyMessage}</p>
               </div>
             </td>
           </tr>
@@ -229,7 +229,7 @@
               onclick={onRowClick ? () => onRowClick(row, index) : undefined}
               class="
                 group transition-colors duration-100
-                {onRowClick ? 'cursor-pointer hover:bg-slate-50/80 hover:shadow-[inset_3px_0_0_var(--color-viking-400)]' : ''}
+                {onRowClick ? 'cursor-pointer hover:bg-canvas-subtle/80 hover:shadow-[inset_3px_0_0_var(--color-viking-400)]' : ''}
                 {isSelected ? 'bg-viking-50' : ''}
               "
             >
@@ -240,7 +240,7 @@
                     type="checkbox"
                     checked={isSelected}
                     onchange={() => handleSelectRow(key)}
-                    class="w-3.5 h-3.5 rounded border-slate-300 text-slate-900 focus:ring-slate-200 focus:ring-offset-0 cursor-pointer"
+                    class="w-3.5 h-3.5 rounded border-border-strong text-ink focus:ring-border focus:ring-offset-0 cursor-pointer"
                   />
                 </td>
               {/if}
@@ -248,7 +248,7 @@
                 {@const value = typeof col.key === 'string' && col.key.includes('.')
                   ? getNestedValue(row, col.key)
                   : row[col.key as keyof T]}
-                <td class="px-3 py-2 text-sm text-slate-700 {alignClasses[col.align || 'left']}">
+                <td class="px-3 py-2 text-sm text-ink {alignClasses[col.align || 'left']}">
                   {#if col.render}
                     {@render col.render(value, row, index)}
                   {:else}
@@ -269,8 +269,8 @@
                           p-1.5 rounded transition-all
                           {action.hoverOnly ? 'opacity-0 group-hover:opacity-100 transition-opacity duration-150' : ''}
                           {action.variant === 'danger'
-                            ? 'text-slate-400 hover:text-red-600 hover:bg-red-50'
-                            : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}
+                            ? 'text-ink-subtle hover:text-red-600 hover:bg-red-50'
+                            : 'text-ink-subtle hover:text-ink hover:bg-canvas-subtle'}
                         "
                       >
                         {@render action.icon()}

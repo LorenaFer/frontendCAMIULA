@@ -13,10 +13,10 @@
 	};
 
 	const variantStyles: Record<CardVariant, string> = {
-		default: 'bg-white border border-slate-200/60 shadow-[var(--shadow-1)]',
-		elevated: 'bg-white border border-slate-200/50 shadow-[var(--shadow-2)]',
-		ghost: 'bg-slate-50/80 border border-slate-200/40',
-		flat: 'bg-white'
+		default: 'bg-surface-elevated border border-border/60 shadow-[var(--shadow-1)]',
+		elevated: 'bg-surface-elevated border border-border/50 shadow-[var(--shadow-2)]',
+		ghost: 'bg-canvas-subtle/80 border border-border/40',
+		flat: 'bg-surface-elevated'
 	};
 
 	let {

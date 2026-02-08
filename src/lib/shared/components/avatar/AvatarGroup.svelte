@@ -40,7 +40,7 @@
 
 <div class="flex -space-x-2 {className}">
 	{#each visibleAvatars as avatar, index (index)}
-		<div class="ring-2 ring-white rounded-full">
+		<div class="ring-2 ring-surface-elevated rounded-full">
 			<Avatar
 				src={avatar.src}
 				alt={avatar.alt}
@@ -53,7 +53,7 @@
 	{/each}
 	{#if remainingCount > 0}
 		<div
-			class="{styles.container} rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-medium {styles.text} ring-2 ring-white"
+			class="{styles.container} rounded-full bg-canvas-subtle text-ink-muted flex items-center justify-center font-medium {styles.text} ring-2 ring-surface-elevated"
 		>
 			+{remainingCount}
 		</div>

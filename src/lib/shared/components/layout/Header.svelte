@@ -1,4 +1,6 @@
 <script lang="ts">
+	import ThemeToggle from './ThemeToggle.svelte';
+
 	let {
 		notificationCount,
 		onSearchClick,
@@ -20,13 +22,13 @@
 	}
 </script>
 
-<header class="glass border-b border-slate-200/40 px-4 py-2.5 lg:px-6 sticky top-0 z-20">
+<header class="glass border-b border-border/40 px-4 py-2.5 lg:px-6 sticky top-0 z-20">
 	<div class="flex items-center justify-between gap-3">
 		<div class="flex items-center gap-3 flex-1">
 			<!-- MenuButton (mobile only) -->
 			<button
 				onclick={onMenuClick}
-				class="p-1.5 -ml-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100/70 rounded-md lg:hidden transition-colors"
+				class="p-1.5 -ml-1.5 text-ink-subtle hover:text-ink hover:bg-canvas-subtle/70 rounded-md lg:hidden transition-colors"
 				aria-label="Open menu"
 			>
 				<svg
@@ -51,10 +53,10 @@
 				style:cursor="pointer"
 				style:-webkit-tap-highlight-color="transparent"
 				style:pointer-events="auto"
-				class="flex items-center gap-2.5 flex-1 max-w-md px-3 py-1.5 text-[13px] text-slate-400 bg-white border border-slate-200/60 rounded-lg hover:border-slate-300/80 hover:bg-slate-100/50 transition-all text-left shadow-[inset_0_1px_2px_rgba(15,23,42,0.02)]"
+				class="flex items-center gap-2.5 flex-1 max-w-md px-3 py-1.5 text-[13px] text-ink-subtle bg-surface-elevated border border-border/60 rounded-lg hover:border-border-strong/80 hover:bg-canvas-subtle/50 transition-all text-left shadow-[inset_0_1px_2px_rgba(15,23,42,0.02)] dark:shadow-none"
 			>
 				<svg
-					class="h-4 w-4 flex-shrink-0 text-slate-400"
+					class="h-4 w-4 flex-shrink-0 text-ink-subtle"
 					style:pointer-events="none"
 					fill="none"
 					viewBox="0 0 24 24"
@@ -69,7 +71,7 @@
 				</svg>
 				<span class="flex-1 truncate" style:pointer-events="none">{searchPlaceholder}</span>
 				<kbd
-					class="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 bg-white border border-slate-200/80 rounded shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+					class="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-ink-subtle bg-surface-elevated border border-border/80 rounded shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none"
 					style:pointer-events="none"
 				>
 					<span class="text-[9px]">&#8984;</span>K
@@ -78,10 +80,13 @@
 		</div>
 
 		<div class="flex items-center gap-1">
+			<!-- ThemeToggle (mobile) -->
+			<ThemeToggle />
+
 			<!-- NotificationBell -->
 			<button
 				onclick={onNotificationsClick}
-				class="relative p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100/70 rounded-md transition-colors"
+				class="relative p-1.5 text-ink-subtle hover:text-ink hover:bg-canvas-subtle/70 rounded-md transition-colors"
 				aria-label="Notifications"
 			>
 				<svg
@@ -99,7 +104,7 @@
 				</svg>
 				{#if notificationCount !== undefined && notificationCount > 0}
 					<span
-						class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[10px] font-semibold rounded-full flex items-center justify-center ring-2 ring-white"
+						class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[10px] font-semibold rounded-full flex items-center justify-center ring-2 ring-surface-elevated"
 					>
 						{notificationCount > 9 ? '9+' : notificationCount}
 					</span>
@@ -107,9 +112,9 @@
 			</button>
 
 			<!-- QuickActions (hidden on mobile) -->
-			<div class="hidden md:flex items-center gap-1 border-l border-slate-200/60 pl-3 ml-2">
+			<div class="hidden md:flex items-center gap-1 border-l border-border/60 pl-3 ml-2">
 				<button
-					class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100/70 rounded-md transition-colors"
+					class="p-1.5 text-ink-subtle hover:text-ink hover:bg-canvas-subtle/70 rounded-md transition-colors"
 					title="Help"
 				>
 					<svg
@@ -127,7 +132,7 @@
 					</svg>
 				</button>
 				<button
-					class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100/70 rounded-md transition-colors"
+					class="p-1.5 text-ink-subtle hover:text-ink hover:bg-canvas-subtle/70 rounded-md transition-colors"
 					title="Settings"
 				>
 					<svg

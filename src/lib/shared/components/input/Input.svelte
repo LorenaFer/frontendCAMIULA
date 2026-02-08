@@ -57,15 +57,15 @@
 	};
 
 	const baseInputClasses =
-		'w-full rounded-lg border bg-white text-slate-900 placeholder:text-slate-400 transition-all duration-150 focus:outline-none';
+		'w-full rounded-lg border bg-surface-elevated text-ink placeholder:text-ink-subtle transition-all duration-150 focus:outline-none';
 
 	const getStateClasses = (err?: string) =>
 		err
-			? 'border-red-300 bg-red-50/30 focus:border-red-400 focus:ring-2 focus:ring-red-100/60 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.08)]'
-			: 'border-slate-200 hover:border-slate-300 focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60 focus:shadow-[0_0_0_3px_rgba(46,163,181,0.08)]';
+			? 'border-red-300 bg-red-50/30 dark:bg-red-950/30 focus:border-red-400 focus:ring-2 focus:ring-red-100/60 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.08)]'
+			: 'border-border hover:border-border-strong focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60 focus:shadow-[0_0_0_3px_rgba(46,163,181,0.08)]';
 
 	const disabledClasses =
-		'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed disabled:hover:border-slate-200';
+		'disabled:bg-canvas-subtle disabled:text-ink-subtle disabled:cursor-not-allowed disabled:hover:border-border';
 
 	let inputId = $derived(id || label?.toLowerCase().replace(/\s+/g, '-'));
 </script>
@@ -73,13 +73,13 @@
 {#if inline && label}
 	<div class="w-full">
 		<div class="flex items-center gap-3">
-			<label for={inputId} class="text-sm font-medium text-slate-700 whitespace-nowrap">
+			<label for={inputId} class="text-sm font-medium text-ink whitespace-nowrap">
 				{label}
 			</label>
 			<div class="relative flex-1">
 				{#if icon}
 					<div
-						class="absolute top-1/2 -translate-y-1/2 {iconPositionStyles[inputSize][position]} text-slate-400 pointer-events-none"
+						class="absolute top-1/2 -translate-y-1/2 {iconPositionStyles[inputSize][position]} text-ink-subtle pointer-events-none"
 					>
 						<span class={iconSizeMap[inputSize]}>
 							{@render icon()}
@@ -98,7 +98,7 @@
 			</div>
 		</div>
 		{#if error || hint}
-			<p class="mt-1.5 text-xs {error ? 'text-red-600 animate-slide-down' : 'text-slate-500'}">
+			<p class="mt-1.5 text-xs {error ? 'text-red-600 animate-slide-down' : 'text-ink-muted'}">
 				{error || hint}
 			</p>
 		{/if}
@@ -106,14 +106,14 @@
 {:else}
 	<div class="w-full">
 		{#if label}
-			<label for={inputId} class="block text-sm font-medium text-slate-700 mb-1.5">
+			<label for={inputId} class="block text-sm font-medium text-ink mb-1.5">
 				{label}
 			</label>
 		{/if}
 		<div class="relative flex-1">
 			{#if icon}
 				<div
-					class="absolute top-1/2 -translate-y-1/2 {iconPositionStyles[inputSize][position]} text-slate-400 pointer-events-none"
+					class="absolute top-1/2 -translate-y-1/2 {iconPositionStyles[inputSize][position]} text-ink-subtle pointer-events-none"
 				>
 					<span class={iconSizeMap[inputSize]}>
 						{@render icon()}
@@ -131,7 +131,7 @@
 			/>
 		</div>
 		{#if error || hint}
-			<p class="mt-1.5 text-xs {error ? 'text-red-600 animate-slide-down' : 'text-slate-500'}">
+			<p class="mt-1.5 text-xs {error ? 'text-red-600 animate-slide-down' : 'text-ink-muted'}">
 				{error || hint}
 			</p>
 		{/if}

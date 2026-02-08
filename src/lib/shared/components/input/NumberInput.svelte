@@ -47,7 +47,7 @@
 	const getStateClasses = (err?: string) =>
 		err
 			? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100'
-			: 'border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-100';
+			: 'border-border hover:border-border-strong focus:border-border-strong focus:ring-2 focus:ring-border-subtle';
 
 	function handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;
@@ -86,7 +86,7 @@
 {#if showControls}
 	<div class="w-full">
 		{#if label}
-			<label class="block text-sm font-medium text-slate-700 mb-1.5">
+			<label class="block text-sm font-medium text-ink mb-1.5">
 				{label}
 			</label>
 		{/if}
@@ -94,7 +94,7 @@
 			<button
 				type="button"
 				onclick={decrement}
-				class="px-3 border border-r-0 border-slate-200 rounded-l-lg bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50"
+				class="px-3 border border-r-0 border-border rounded-l-lg bg-canvas-subtle text-ink-muted hover:bg-canvas-subtle transition-colors disabled:opacity-50"
 				disabled={disabled || (min !== undefined && typeof value === 'number' && value <= min)}
 			>
 				<svg
@@ -113,7 +113,7 @@
 				inputmode={allowDecimals ? 'decimal' : 'numeric'}
 				value={value ?? ''}
 				oninput={handleInput}
-				class="flex-1 border-y border-slate-200 bg-white text-slate-900 text-center {sizeStyles[
+				class="flex-1 border-y border-border bg-surface-elevated text-ink text-center {sizeStyles[
 					inputSize
 				]} {getStateClasses(error)} focus:outline-none focus:z-10 focus:relative {className}"
 				{disabled}
@@ -122,7 +122,7 @@
 			<button
 				type="button"
 				onclick={increment}
-				class="px-3 border border-l-0 border-slate-200 rounded-r-lg bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50"
+				class="px-3 border border-l-0 border-border rounded-r-lg bg-canvas-subtle text-ink-muted hover:bg-canvas-subtle transition-colors disabled:opacity-50"
 				disabled={disabled || (max !== undefined && typeof value === 'number' && value >= max)}
 			>
 				<svg
@@ -137,7 +137,7 @@
 			</button>
 		</div>
 		{#if error || hint}
-			<p class="mt-1.5 text-xs {error ? 'text-red-600' : 'text-slate-500'}">
+			<p class="mt-1.5 text-xs {error ? 'text-red-600' : 'text-ink-muted'}">
 				{error || hint}
 			</p>
 		{/if}

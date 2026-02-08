@@ -26,7 +26,7 @@
 	} = $props();
 
 	const ghostStyles: Record<BadgeVariant, string> = {
-		default: 'bg-gray-50 text-gray-600',
+		default: 'bg-canvas-subtle text-ink-muted',
 		primary: 'bg-viking-50/50 text-viking-600',
 		success: 'bg-emerald-50/50 text-emerald-600',
 		warning: 'bg-amber-50/50 text-amber-600',
@@ -35,16 +35,16 @@
 	};
 
 	const outlineStyles: Record<BadgeVariant, string> = {
-		default: 'border border-gray-200 text-gray-600 bg-white',
-		primary: 'border border-viking-200/60 text-viking-600 bg-white',
-		success: 'border border-emerald-200/60 text-emerald-600 bg-white',
-		warning: 'border border-amber-200/60 text-amber-600 bg-white',
-		danger: 'border border-red-200/60 text-red-600 bg-white',
-		info: 'border border-blue-200/60 text-blue-600 bg-white'
+		default: 'border border-border text-ink-muted bg-surface-elevated',
+		primary: 'border border-viking-200/60 text-viking-600 bg-surface-elevated',
+		success: 'border border-emerald-200/60 text-emerald-600 bg-surface-elevated',
+		warning: 'border border-amber-200/60 text-amber-600 bg-surface-elevated',
+		danger: 'border border-red-200/60 text-red-600 bg-surface-elevated',
+		info: 'border border-blue-200/60 text-blue-600 bg-surface-elevated'
 	};
 
 	const softStyles: Record<BadgeVariant, string> = {
-		default: 'bg-gray-100/80 text-gray-700',
+		default: 'bg-canvas-subtle/80 text-ink',
 		primary: 'bg-viking-100/60 text-viking-700',
 		success: 'bg-emerald-100/60 text-emerald-700',
 		warning: 'bg-amber-100/60 text-amber-700',
@@ -62,7 +62,7 @@
 	};
 
 	const dotStyles: Record<BadgeVariant, string> = {
-		default: 'bg-gray-400',
+		default: 'bg-ink-subtle',
 		primary: 'bg-viking-500',
 		success: 'bg-emerald-500',
 		warning: 'bg-amber-500',

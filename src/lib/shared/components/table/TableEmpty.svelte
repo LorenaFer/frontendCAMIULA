@@ -20,12 +20,12 @@
   <td colspan={colSpan} class="px-4 py-12">
     <div class="flex flex-col items-center justify-center text-center">
       {#if icon}
-        <div class="w-10 h-10 text-gray-300 mb-3">
+        <div class="w-10 h-10 text-ink-subtle mb-3">
           {@render icon()}
         </div>
       {:else}
         <svg
-          class="w-10 h-10 text-gray-300 mb-3"
+          class="w-10 h-10 text-ink-subtle mb-3"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -38,9 +38,9 @@
           />
         </svg>
       {/if}
-      <p class="text-sm font-medium text-gray-900">{title}</p>
+      <p class="text-sm font-medium text-ink">{title}</p>
       {#if description}
-        <p class="text-xs text-gray-500 mt-1 max-w-sm">{description}</p>
+        <p class="text-xs text-ink-muted mt-1 max-w-sm">{description}</p>
       {/if}
       {#if action}
         <div class="mt-4">

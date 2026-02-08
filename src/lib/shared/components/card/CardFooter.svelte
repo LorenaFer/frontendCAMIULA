@@ -11,7 +11,7 @@
 </script>
 
 <div
-	class="flex items-center justify-between gap-4 pt-3 mt-3 border-t border-slate-100/60 {className}"
+	class="flex items-center justify-between gap-4 pt-3 mt-3 border-t border-border-subtle/60 {className}"
 >
 	{@render children()}
 </div>

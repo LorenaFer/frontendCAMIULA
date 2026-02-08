@@ -6,7 +6,7 @@
 	const variants: Record<DialogButtonVariant, string> = {
 		primary: 'bg-viking-500 text-white hover:bg-viking-600 focus:ring-viking-500/20',
 		secondary:
-			'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-gray-500/20',
+			'bg-surface-elevated text-ink border border-border-strong hover:bg-canvas-subtle focus:ring-gray-500/20',
 		danger: 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500/20'
 	};
 

@@ -21,9 +21,9 @@
 	} = $props();
 
 	const variantStyles: Record<TagVariant, string> = {
-		default: 'bg-slate-100 text-slate-700 hover:bg-slate-200/80',
-		primary: 'bg-slate-700 text-white hover:bg-slate-800',
-		outline: 'bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50'
+		default: 'bg-canvas-subtle text-ink hover:bg-border/80',
+		primary: 'bg-slate-700 text-white hover:bg-slate-800 dark:bg-slate-200 dark:text-slate-900',
+		outline: 'bg-transparent border border-border text-ink-muted hover:bg-canvas-subtle'
 	};
 
 	const sizeStyles: Record<TagSize, string> = {

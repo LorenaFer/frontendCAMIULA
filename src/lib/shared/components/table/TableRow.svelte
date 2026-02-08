@@ -18,7 +18,7 @@
   onclick={onclick}
   class="
     transition-colors duration-100
-    {onclick ? 'cursor-pointer hover:bg-slate-50/70 group' : ''}
+    {onclick ? 'cursor-pointer hover:bg-canvas-subtle/70 group' : ''}
     {selected ? 'bg-viking-50/40' : ''}
     {className}
   "
