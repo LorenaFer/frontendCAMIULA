@@ -96,8 +96,8 @@
 
   const bulkActionStyles: Record<string, string> = {
     default: 'text-ink-muted hover:text-ink hover:bg-canvas-subtle',
-    danger: 'text-red-600 hover:text-red-700 hover:bg-red-50',
-    primary: 'text-viking-600 hover:text-viking-700 hover:bg-viking-50'
+    danger: 'text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30',
+    primary: 'text-viking-600 dark:text-viking-400 hover:text-viking-700 dark:hover:text-viking-300 hover:bg-viking-50 dark:hover:bg-viking-950/30'
   };
 
   const alignClasses: Record<string, string> = {
@@ -110,15 +110,15 @@
 <div class="{bordered ? 'border border-border rounded-lg' : ''} {className}">
   <!-- Bulk Actions Toolbar -->
   {#if hasSelection && bulkActions && bulkActions.length > 0}
-    <div class="flex items-center justify-between px-3 py-2 bg-viking-50/50 border-b border-viking-100">
+    <div class="flex items-center justify-between px-3 py-2 bg-viking-50 dark:bg-viking-950/30 border-b border-viking-200 dark:border-viking-800">
       <div class="flex items-center gap-2">
-        <span class="text-sm font-medium text-viking-700">
+        <span class="text-sm font-medium text-viking-700 dark:text-viking-300">
           {selectedKeys.length} selected
         </span>
         <button
           type="button"
           onclick={() => onSelectionChange?.([])}
-          class="text-xs text-viking-600 hover:text-viking-800 hover:underline"
+          class="text-xs text-viking-600 dark:text-viking-400 hover:text-viking-800 dark:hover:text-viking-200 hover:underline"
         >
           Clear selection
         </button>
@@ -230,7 +230,7 @@
               class="
                 group transition-colors duration-100
                 {onRowClick ? 'cursor-pointer hover:bg-canvas-subtle/80 hover:shadow-[inset_3px_0_0_var(--color-viking-400)]' : ''}
-                {isSelected ? 'bg-viking-50' : ''}
+                {isSelected ? 'bg-viking-50 dark:bg-viking-950/30' : ''}
               "
             >
               {#if selectable}
@@ -269,7 +269,7 @@
                           p-1.5 rounded transition-all
                           {action.hoverOnly ? 'opacity-0 group-hover:opacity-100 transition-opacity duration-150' : ''}
                           {action.variant === 'danger'
-                            ? 'text-ink-subtle hover:text-red-600 hover:bg-red-50'
+                            ? 'text-ink-subtle hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30'
                             : 'text-ink-subtle hover:text-ink hover:bg-canvas-subtle'}
                         "
                       >

@@ -15,12 +15,12 @@
 
 	const categoryColors: Record<CategoryColor, string> = {
 		gray: 'bg-canvas-subtle text-ink-muted',
-		blue: 'bg-canvas-subtle text-ink-muted',
-		green: 'bg-canvas-subtle text-ink-muted',
-		red: 'bg-canvas-subtle text-ink-muted',
-		amber: 'bg-canvas-subtle text-ink-muted',
-		purple: 'bg-canvas-subtle text-ink-muted',
-		pink: 'bg-canvas-subtle text-ink-muted'
+		blue: 'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400',
+		green: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400',
+		red: 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-400',
+		amber: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400',
+		purple: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400',
+		pink: 'bg-pink-50 text-pink-600 dark:bg-pink-500/15 dark:text-pink-400'
 	};
 </script>
 

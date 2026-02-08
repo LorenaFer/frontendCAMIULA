@@ -27,38 +27,38 @@
 
 	const ghostStyles: Record<BadgeVariant, string> = {
 		default: 'bg-canvas-subtle text-ink-muted',
-		primary: 'bg-viking-50/50 text-viking-600',
-		success: 'bg-emerald-50/50 text-emerald-600',
-		warning: 'bg-amber-50/50 text-amber-600',
-		danger: 'bg-red-50/50 text-red-600',
-		info: 'bg-blue-50/50 text-blue-600'
+		primary: 'bg-viking-50/50 text-viking-600 dark:bg-viking-500/15 dark:text-viking-400',
+		success: 'bg-emerald-50/50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400',
+		warning: 'bg-amber-50/50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400',
+		danger: 'bg-red-50/50 text-red-600 dark:bg-red-500/15 dark:text-red-400',
+		info: 'bg-blue-50/50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400'
 	};
 
 	const outlineStyles: Record<BadgeVariant, string> = {
 		default: 'border border-border text-ink-muted bg-surface-elevated',
-		primary: 'border border-viking-200/60 text-viking-600 bg-surface-elevated',
-		success: 'border border-emerald-200/60 text-emerald-600 bg-surface-elevated',
-		warning: 'border border-amber-200/60 text-amber-600 bg-surface-elevated',
-		danger: 'border border-red-200/60 text-red-600 bg-surface-elevated',
-		info: 'border border-blue-200/60 text-blue-600 bg-surface-elevated'
+		primary: 'border border-viking-200/60 text-viking-600 bg-surface-elevated dark:border-viking-500/30 dark:text-viking-400',
+		success: 'border border-emerald-200/60 text-emerald-600 bg-surface-elevated dark:border-emerald-500/30 dark:text-emerald-400',
+		warning: 'border border-amber-200/60 text-amber-600 bg-surface-elevated dark:border-amber-500/30 dark:text-amber-400',
+		danger: 'border border-red-200/60 text-red-600 bg-surface-elevated dark:border-red-500/30 dark:text-red-400',
+		info: 'border border-blue-200/60 text-blue-600 bg-surface-elevated dark:border-blue-500/30 dark:text-blue-400'
 	};
 
 	const softStyles: Record<BadgeVariant, string> = {
 		default: 'bg-canvas-subtle/80 text-ink',
-		primary: 'bg-viking-100/60 text-viking-700',
-		success: 'bg-emerald-100/60 text-emerald-700',
-		warning: 'bg-amber-100/60 text-amber-700',
-		danger: 'bg-red-100/60 text-red-700',
-		info: 'bg-blue-100/60 text-blue-700'
+		primary: 'bg-viking-100/60 text-viking-700 dark:bg-viking-500/20 dark:text-viking-300',
+		success: 'bg-emerald-100/60 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
+		warning: 'bg-amber-100/60 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+		danger: 'bg-red-100/60 text-red-700 dark:bg-red-500/20 dark:text-red-300',
+		info: 'bg-blue-100/60 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
 	};
 
 	const solidStyles: Record<BadgeVariant, string> = {
-		default: 'bg-gray-600 text-white',
-		primary: 'bg-viking-600 text-white',
-		success: 'bg-emerald-600 text-white',
-		warning: 'bg-amber-500 text-white',
-		danger: 'bg-red-600 text-white',
-		info: 'bg-blue-600 text-white'
+		default: 'bg-gray-600 text-white dark:bg-gray-500',
+		primary: 'bg-viking-600 text-white dark:bg-viking-500',
+		success: 'bg-emerald-600 text-white dark:bg-emerald-500',
+		warning: 'bg-amber-500 text-white dark:bg-amber-400 dark:text-gray-900',
+		danger: 'bg-red-600 text-white dark:bg-red-500',
+		info: 'bg-blue-600 text-white dark:bg-blue-500'
 	};
 
 	const dotStyles: Record<BadgeVariant, string> = {

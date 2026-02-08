@@ -21,7 +21,7 @@
 <button
 	{onclick}
 	class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap {active
-		? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-ink'
+		? 'bg-ink text-surface-elevated'
 		: 'bg-surface-elevated text-ink-muted border border-border hover:bg-canvas-subtle hover:border-border-strong'} {className}"
 >
 	{#if icon}
@@ -31,7 +31,7 @@
 	{#if count !== undefined}
 		<span
 			class="ml-1 px-1.5 py-0.5 text-xs font-medium rounded {active
-				? 'bg-white/15 text-white'
+				? 'bg-surface-elevated/15 text-surface-elevated'
 				: 'bg-canvas-subtle text-ink-muted'}"
 		>
 			{count}
