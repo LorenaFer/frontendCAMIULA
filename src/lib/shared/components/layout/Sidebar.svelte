@@ -330,8 +330,8 @@
 							{href}
 							onclick={handleNavClick}
 							class="relative flex items-center gap-2.5 py-2 text-[13px] font-medium rounded-md transition-all duration-150 border-l-[3px] pl-[7px] pr-2.5 {active
-								? 'text-ink bg-viking-50/50 border-l-viking-500'
-								: 'text-ink-muted hover:text-ink hover:bg-canvas-subtle/70 border-l-transparent'}"
+								? 'text-ink bg-viking-50/50 dark:bg-viking-900/20 border-l-viking-500'
+								: 'text-ink-muted hover:text-ink hover:bg-viking-50 dark:hover:bg-viking-900/20 border-l-transparent'}"
 						>
 							<span
 								class="w-4 h-4 flex-shrink-0 transition-colors [&>svg]:stroke-[1.75] {active

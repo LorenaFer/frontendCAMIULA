@@ -103,7 +103,10 @@
 		{ id: 'dashboard', label: 'Dashboard', href: '', icon: dashboardIcon },
 		{ id: 'appointments', label: 'Appointments', href: 'appointments', icon: appointmentsIcon, permission: 'appointments:read', group: 'Clinical' },
 		{ id: 'patients', label: 'Patient Data', href: 'patients', icon: patientsIcon, permission: 'patients:read', group: 'Clinical' },
-		{ id: 'inventory', label: 'Inventory', href: 'inventory', icon: inventoryIcon, permission: 'inventory:read', group: 'Operations' }
+		{ id: 'inventory', label: 'Inventory', href: 'inventory', icon: inventoryIcon, permission: 'inventory:read', group: 'Operations' },
+		{ id: 'agendar', label: 'Agendar Cita', href: 'agendar', icon: appointmentsIcon, group: 'Citas' },
+		{ id: 'analista-citas', label: 'Gestión Citas', href: 'analista/citas', icon: appointmentsIcon, group: 'Citas' },
+		{ id: 'doctor-citas', label: 'Mis Citas', href: 'doctor/citas', icon: appointmentsIcon, group: 'Citas' }
 	]}
 
 	<TenantLayout
