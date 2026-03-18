@@ -47,7 +47,9 @@ export interface DisponibilidadDoctor {
 // ─── Pacientes ───────────────────────────────────────────────
 
 export type RelacionUniversidad = 'empleado' | 'estudiante' | 'profesor' | 'tercero';
-export type Parentesco = 'hijo' | 'padre' | 'madre';
+export type Parentesco = 'hijo' | 'padre' | 'madre' | 'conyuge' | 'otro';
+export type Sexo = 'M' | 'F';
+export type EstadoCivil = 'soltero' | 'casado' | 'divorciado' | 'viudo' | 'union_libre';
 
 export interface DatosMedicos {
 	tipo_sangre?: string;
@@ -56,16 +58,38 @@ export interface DatosMedicos {
 	condiciones?: string[];
 }
 
+/** Datos del contacto de emergencia / familiar más cercano */
+export interface ContactoEmergencia {
+	nombre?: string;
+	parentesco?: string;
+	direccion?: string;
+	telefono?: string;
+}
+
 export interface Paciente {
 	id: number;
 	nhm: number;
 	cedula: string;
 	nombre: string;
 	apellido: string;
+	sexo?: Sexo;
+	fecha_nacimiento?: string; // ISO date
+	lugar_nacimiento?: string;
+	edad?: number;
+	estado_civil?: EstadoCivil;
+	religion?: string;
+	procedencia?: string;
+	direccion_habitacion?: string;
+	telefono?: string;
+	profesion?: string;
+	ocupacion_actual?: string;
+	direccion_trabajo?: string;
+	clasificacion_economica?: string;
 	relacion_univ: RelacionUniversidad;
 	parentesco?: Parentesco;
 	titular_nhm?: number;
 	datos_medicos: DatosMedicos;
+	contacto_emergencia?: ContactoEmergencia;
 	es_nuevo: boolean;
 	created_at: string;
 }
@@ -100,6 +124,7 @@ export interface Cita {
 	es_primera_vez: boolean;
 	estado: CitaEstado;
 	motivo_consulta?: string;
+	observaciones?: string;
 	notas_admin?: string;
 	created_at: string;
 	created_by: string;

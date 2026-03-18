@@ -106,7 +106,8 @@
 		{ id: 'inventory', label: 'Inventory', href: 'inventory', icon: inventoryIcon, permission: 'inventory:read', group: 'Operations' },
 		{ id: 'agendar', label: 'Agendar Cita', href: 'agendar', icon: appointmentsIcon, group: 'Citas' },
 		{ id: 'analista-citas', label: 'Gestión Citas', href: 'analista/citas', icon: appointmentsIcon, group: 'Citas' },
-		{ id: 'doctor-citas', label: 'Mis Citas', href: 'doctor/citas', icon: appointmentsIcon, group: 'Citas' }
+		{ id: 'doctor-citas', label: 'Mis Citas', href: 'doctor/citas', icon: appointmentsIcon, group: 'Citas' },
+		{ id: 'doctor-disponibilidad', label: 'Mi Disponibilidad', href: 'doctor/disponibilidad', icon: appointmentsIcon, group: 'Citas' }
 	]}
 
 	<TenantLayout

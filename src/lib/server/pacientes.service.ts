@@ -1,7 +1,7 @@
 import { mockFlags } from './mock-flags.js';
 import { apiFetch } from './api.js';
 import { mockPacientes, getNextNHM } from './mock/data.js';
-import type { Paciente, PacientePublic, DatosMedicos, RelacionUniversidad, Parentesco } from '$shared/types/appointments.js';
+import type { Paciente, PacientePublic, DatosMedicos, RelacionUniversidad, Parentesco, Sexo, EstadoCivil, ContactoEmergencia } from '$shared/types/appointments.js';
 
 function toPublic(p: Paciente): PacientePublic {
 	return { id: p.id, nhm: p.nhm, nombre: p.nombre, apellido: p.apellido, relacion_univ: p.relacion_univ, es_nuevo: p.es_nuevo };
@@ -40,10 +40,24 @@ export interface CreatePacienteInput {
 	cedula: string;
 	nombre: string;
 	apellido: string;
+	sexo?: Sexo;
+	fecha_nacimiento?: string;
+	lugar_nacimiento?: string;
+	edad?: number;
+	estado_civil?: EstadoCivil;
+	religion?: string;
+	procedencia?: string;
+	direccion_habitacion?: string;
+	telefono?: string;
+	profesion?: string;
+	ocupacion_actual?: string;
+	direccion_trabajo?: string;
+	clasificacion_economica?: string;
 	relacion_univ: RelacionUniversidad;
 	parentesco?: Parentesco;
 	titular_nhm?: number;
 	datos_medicos: DatosMedicos;
+	contacto_emergencia?: ContactoEmergencia;
 }
 
 export async function createPaciente(input: CreatePacienteInput): Promise<Paciente> {
@@ -55,10 +69,24 @@ export async function createPaciente(input: CreatePacienteInput): Promise<Pacien
 			cedula: input.cedula,
 			nombre: input.nombre,
 			apellido: input.apellido,
+			sexo: input.sexo,
+			fecha_nacimiento: input.fecha_nacimiento,
+			lugar_nacimiento: input.lugar_nacimiento,
+			edad: input.edad,
+			estado_civil: input.estado_civil,
+			religion: input.religion,
+			procedencia: input.procedencia,
+			direccion_habitacion: input.direccion_habitacion,
+			telefono: input.telefono,
+			profesion: input.profesion,
+			ocupacion_actual: input.ocupacion_actual,
+			direccion_trabajo: input.direccion_trabajo,
+			clasificacion_economica: input.clasificacion_economica,
 			relacion_univ: input.relacion_univ,
 			parentesco: input.parentesco,
 			titular_nhm: input.titular_nhm,
 			datos_medicos: input.datos_medicos,
+			contacto_emergencia: input.contacto_emergencia,
 			es_nuevo: true,
 			created_at: new Date().toISOString()
 		};

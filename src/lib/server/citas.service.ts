@@ -13,6 +13,7 @@ export interface CreateCitaInput {
 	duracion_min: 30 | 60;
 	es_primera_vez: boolean;
 	motivo_consulta?: string;
+	observaciones?: string;
 	created_by: string;
 }
 

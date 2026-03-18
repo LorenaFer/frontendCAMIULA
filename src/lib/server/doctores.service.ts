@@ -59,3 +59,42 @@ export async function hasExcepcion(doctorId: number, fecha: string): Promise<boo
 	const res = await apiFetch<{ excepcion: boolean }>(`/doctores/${doctorId}/excepciones?fecha=${fecha}`);
 	return res.excepcion;
 }
+
+// ─── CRUD de disponibilidad ──────────────────────────────────
+
+export interface CreateDisponibilidadInput {
+	doctor_id: number;
+	day_of_week: 1 | 2 | 3 | 4 | 5;
+	hora_inicio: string;
+	hora_fin: string;
+	duracion_slot?: number;
+}
+
+export async function createDisponibilidad(input: CreateDisponibilidadInput): Promise<DisponibilidadDoctor> {
+	if (mockFlags.doctores) {
+		const maxId = mockDisponibilidad.length > 0 ? Math.max(...mockDisponibilidad.map((d) => d.id)) : 0;
+		const nuevo: DisponibilidadDoctor = {
+			id: maxId + 1,
+			doctor_id: input.doctor_id,
+			day_of_week: input.day_of_week,
+			hora_inicio: input.hora_inicio,
+			hora_fin: input.hora_fin,
+			duracion_slot: input.duracion_slot ?? 30
+		};
+		mockDisponibilidad.push(nuevo);
+		return nuevo;
+	}
+	return apiFetch<DisponibilidadDoctor>(`/doctores/${input.doctor_id}/disponibilidad`, {
+		method: 'POST',
+		body: JSON.stringify(input)
+	});
+}
+
+export async function deleteDisponibilidad(doctorId: number, bloqueId: number): Promise<void> {
+	if (mockFlags.doctores) {
+		const idx = mockDisponibilidad.findIndex((d) => d.id === bloqueId && d.doctor_id === doctorId);
+		if (idx !== -1) mockDisponibilidad.splice(idx, 1);
+		return;
+	}
+	await apiFetch(`/doctores/${doctorId}/disponibilidad/${bloqueId}`, { method: 'DELETE' });
+}

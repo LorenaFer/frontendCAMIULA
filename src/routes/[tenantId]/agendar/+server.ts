@@ -66,13 +66,33 @@ export const POST: RequestHandler = async ({ request, params }) => {
 			const alergias = String(body.alergias ?? '');
 			const numero_contacto = String(body.numero_contacto ?? '').trim() || undefined;
 
+			// Campos planilla ULA
+			const sexo = String(body.sexo ?? '').trim() || undefined;
+			const fecha_nacimiento = String(body.fecha_nacimiento ?? '').trim() || undefined;
+			const lugar_nacimiento = String(body.lugar_nacimiento ?? '').trim() || undefined;
+			const estado_civil = String(body.estado_civil ?? '').trim() || undefined;
+			const religion = String(body.religion ?? '').trim() || undefined;
+			const procedencia = String(body.procedencia ?? '').trim() || undefined;
+			const direccion_habitacion = String(body.direccion_habitacion ?? '').trim() || undefined;
+			const telefono = String(body.telefono ?? '').trim() || undefined;
+			const profesion = String(body.profesion ?? '').trim() || undefined;
+			const ocupacion_actual = String(body.ocupacion_actual ?? '').trim() || undefined;
+			const direccion_trabajo = String(body.direccion_trabajo ?? '').trim() || undefined;
+			const clasificacion_economica = String(body.clasificacion_economica ?? '').trim() || undefined;
+
+			// Contacto de emergencia
+			const emergencia_nombre = String(body.emergencia_nombre ?? '').trim() || undefined;
+			const emergencia_parentesco = String(body.emergencia_parentesco ?? '').trim() || undefined;
+			const emergencia_direccion = String(body.emergencia_direccion ?? '').trim() || undefined;
+			const emergencia_telefono = String(body.emergencia_telefono ?? '').trim() || undefined;
+
 			if (!nombre || !apellido || !cedula)
 				return err('Nombre, apellido y cédula son requeridos');
 			if (!['empleado', 'estudiante', 'profesor', 'tercero'].includes(relacion_univ))
 				return err('Relación con la universidad inválida');
 			if (relacion_univ === 'tercero') {
-				if (!parentesco || !['hijo', 'padre', 'madre'].includes(parentesco))
-					return err('Parentesco requerido para familiares (hijo, padre, madre)');
+				if (!parentesco || !['hijo', 'padre', 'madre', 'conyuge', 'otro'].includes(parentesco))
+					return err('Parentesco requerido para familiares');
 				if (!titular_cedula)
 					return err('Cédula del titular requerida');
 			}
@@ -87,16 +107,39 @@ export const POST: RequestHandler = async ({ request, params }) => {
 				titular_nhm = titular.nhm;
 			}
 
+			// Calcular edad si hay fecha de nacimiento
+			let edad: number | undefined;
+			if (fecha_nacimiento) {
+				const birth = new Date(fecha_nacimiento);
+				const now = new Date();
+				edad = now.getFullYear() - birth.getFullYear();
+				if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) {
+					edad--;
+				}
+			}
+
 			const paciente = await pacientesService.createPaciente({
 				cedula, nombre, apellido,
+				sexo: sexo as 'M' | 'F' | undefined,
+				fecha_nacimiento, lugar_nacimiento, edad,
+				estado_civil: estado_civil as any,
+				religion, procedencia, direccion_habitacion,
+				telefono, profesion, ocupacion_actual,
+				direccion_trabajo, clasificacion_economica,
 				relacion_univ: relacion_univ as 'empleado' | 'estudiante' | 'profesor' | 'tercero',
-				parentesco: parentesco as 'hijo' | 'padre' | 'madre' | undefined,
+				parentesco: parentesco as any,
 				titular_nhm,
 				datos_medicos: {
 					tipo_sangre,
 					alergias: alergias ? alergias.split(',').map((a) => a.trim()).filter(Boolean) : [],
 					numero_contacto
-				}
+				},
+				contacto_emergencia: (emergencia_nombre || emergencia_telefono) ? {
+					nombre: emergencia_nombre,
+					parentesco: emergencia_parentesco,
+					direccion: emergencia_direccion,
+					telefono: emergencia_telefono
+				} : undefined
 			});
 
 			return ok({
@@ -149,6 +192,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 			const duracion_min = Number(body.duracion_min ?? 30) as 30 | 60;
 			const es_primera_vez = body.es_primera_vez === true || body.es_primera_vez === 'true';
 			const motivo_consulta = String(body.motivo_consulta ?? '').trim() || undefined;
+			const observaciones = String(body.observaciones ?? '').trim() || undefined;
 
 			if (!pacienteId || !doctorId || !especialidadId || !fecha || !hora_inicio || !hora_fin)
 				return err('Faltan datos para confirmar la cita');
@@ -162,7 +206,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 			const cita = await citasService.createCita({
 				paciente_id: pacienteId, doctor_id: doctorId, especialidad_id: especialidadId,
 				fecha, hora_inicio, hora_fin, duracion_min, es_primera_vez,
-				motivo_consulta, created_by: 'portal_publico'
+				motivo_consulta, observaciones, created_by: 'portal_publico'
 			});
 
 			const confirmationCode = `CITA-${String(cita.id).padStart(6, '0')}`;
