@@ -98,3 +98,22 @@ export async function deleteDisponibilidad(doctorId: number, bloqueId: number): 
 	}
 	await apiFetch(`/doctores/${doctorId}/disponibilidad/${bloqueId}`, { method: 'DELETE' });
 }
+
+export async function updateDisponibilidad(
+	doctorId: number,
+	bloqueId: number,
+	updates: { hora_inicio?: string; hora_fin?: string }
+): Promise<void> {
+	if (mockFlags.doctores) {
+		const bloque = mockDisponibilidad.find((d) => d.id === bloqueId && d.doctor_id === doctorId);
+		if (bloque) {
+			if (updates.hora_inicio) bloque.hora_inicio = updates.hora_inicio;
+			if (updates.hora_fin) bloque.hora_fin = updates.hora_fin;
+		}
+		return;
+	}
+	await apiFetch(`/doctores/${doctorId}/disponibilidad/${bloqueId}`, {
+		method: 'PATCH',
+		body: JSON.stringify(updates)
+	});
+}

@@ -69,5 +69,22 @@ export const actions: Actions = {
 
 		await doctoresService.deleteDisponibilidad(MOCK_DOCTOR_ID, bloqueId);
 		return { success: true, message: 'Bloque eliminado' };
+	},
+
+	actualizar: async ({ request }) => {
+		const fd = await request.formData();
+		const bloqueId = parseInt(String(fd.get('bloqueId') ?? ''), 10);
+		const hora_inicio = String(fd.get('hora_inicio') ?? '').trim() || undefined;
+		const hora_fin = String(fd.get('hora_fin') ?? '').trim() || undefined;
+
+		if (isNaN(bloqueId)) {
+			return fail(400, { error: 'ID de bloque inválido' });
+		}
+		if (hora_inicio && hora_fin && hora_inicio >= hora_fin) {
+			return fail(400, { error: 'La hora de inicio debe ser menor a la hora de fin' });
+		}
+
+		await doctoresService.updateDisponibilidad(MOCK_DOCTOR_ID, bloqueId, { hora_inicio, hora_fin });
+		return { success: true, message: 'Bloque actualizado' };
 	}
 };
