@@ -1,19 +1,19 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import type { AppointmentFilters as AppointmentFiltersType, CitaConPaciente } from '$shared/types/appointments.js';
+	import type { DataTableColumn, RowAction } from '$shared/components/table/types.js';
+	// DataTable requires T extends Record<string,unknown>; cast CitaConPaciente to satisfy it
+	type CitaRow = CitaConPaciente & Record<string, unknown>;
 	import AppointmentFilters from '$shared/components/appointments/AppointmentFilters.svelte';
 	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
-	import VirtualList from '$shared/components/appointments/VirtualList.svelte';
+	import DataTable from '$shared/components/table/DataTable.svelte';
 	import StatCard from '$shared/components/card/StatCard.svelte';
+	import Card from '$shared/components/card/Card.svelte';
 	import Button from '$shared/components/button/Button.svelte';
-	import EmptyState from '$shared/components/empty-state/EmptyState.svelte';
 
 	let { data }: { data: PageData } = $props();
-
-	const ROW_HEIGHT = 64;
-	const LIST_HEIGHT = 520;
 
 	function applyFilters(filters: AppointmentFiltersType) {
 		const qs = new URLSearchParams();
@@ -32,7 +32,6 @@
 		goto(`?${qs}`, { replaceState: true });
 	}
 
-	// Stats rápidas
 	const statsTotal = $derived(data.citas.total);
 	const statsPendientes = $derived(
 		(data.citas.data as CitaConPaciente[]).filter((c) => c.estado === 'pendiente').length
@@ -45,7 +44,57 @@
 		const qs = new URLSearchParams($page.url.searchParams);
 		window.location.href = `?/exportarExcel&${qs}`;
 	}
+
+	function formatFecha(fecha: string) {
+		const [y, m, d] = fecha.split('-');
+		return `${d}/${m}/${y}`;
+	}
+
+	async function cancelarCita(cita: CitaConPaciente) {
+		if (!confirm('¿Cancelar esta cita?')) return;
+		const fd = new FormData();
+		fd.set('citaId', String(cita.id));
+		await fetch('?/cancelarCita', { method: 'POST', body: fd });
+		await invalidateAll();
+	}
 </script>
+
+<!-- Snippets para columnas del DataTable -->
+{#snippet pacienteCell(_v: unknown, row: CitaRow)}
+	<div class="flex items-center gap-2.5">
+		<div class="w-8 h-8 rounded-full bg-viking-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+			{row.paciente.nombre[0]}{row.paciente.apellido[0]}
+		</div>
+		<div class="min-w-0">
+			<p class="font-medium text-ink truncate">
+				{row.paciente.nombre} {row.paciente.apellido}
+				{#if row.es_primera_vez}<span class="ml-1 text-[10px] text-viking-600 font-semibold">★ 1ra</span>{/if}
+			</p>
+			<p class="text-xs text-ink-muted">NHM {row.paciente.nhm}</p>
+		</div>
+	</div>
+{/snippet}
+
+{#snippet doctorCell(_v: unknown, row: CitaRow)}
+	<div>
+		<p class="font-medium text-ink">Dr. {row.doctor.apellido}</p>
+		<p class="text-xs text-ink-muted">{row.doctor.especialidad?.nombre ?? '—'}</p>
+	</div>
+{/snippet}
+
+{#snippet fechaCell(v: unknown)}
+	<span class="font-mono text-sm">{formatFecha(String(v))}</span>
+{/snippet}
+
+{#snippet estadoCell(_v: unknown, row: CitaRow)}
+	<AppointmentStatusBadge status={row.estado} />
+{/snippet}
+
+{#snippet cancelIcon()}
+	<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+		<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+	</svg>
+{/snippet}
 
 <svelte:head>
 	<title>Gestión de Citas — Analista</title>
@@ -57,12 +106,10 @@
 			<h1 class="text-display text-xl font-bold text-ink">Gestión de Citas</h1>
 			<p class="text-sm text-ink-muted mt-0.5">Vista de Analista</p>
 		</div>
-		<Button variant="ghost" onclick={exportar}>
-			Exportar CSV
-		</Button>
+		<Button variant="ghost" onclick={exportar}>Exportar CSV</Button>
 	</div>
 
-	<!-- Stats rápidas -->
+	<!-- Stats -->
 	<div class="flex flex-wrap gap-4">
 		<StatCard title="Total filtradas" value={String(statsTotal)} />
 		<StatCard title="Pendientes (página)" value={String(statsPendientes)} />
@@ -79,92 +126,33 @@
 		/>
 	</div>
 
-	<!-- Lista de citas -->
-	<div class="bg-surface rounded-xl border border-border overflow-hidden">
-		<!-- Encabezado de tabla -->
-		<div class="hidden sm:flex px-4 py-2 bg-surface-elevated border-b border-border text-xs font-medium text-ink-muted uppercase tracking-wider">
-			<span class="flex-1">Paciente</span>
-			<span class="w-20 text-center">NHM</span>
-			<span class="w-32">Doctor</span>
-			<span class="w-28">Fecha</span>
-			<span class="w-16 text-center">Hora</span>
-			<span class="w-28 text-center">Estado</span>
-			<span class="w-20 text-center">Acción</span>
-		</div>
-
-		{#if data.citas.data.length === 0}
-			<div class="p-8">
-				<EmptyState
-					title="Sin citas"
-					description="No hay citas que coincidan con los filtros aplicados."
-				/>
-			</div>
-		{:else if data.citas.total > 50}
-			<!-- VirtualList para listas grandes (>50 ítems) -->
-			<VirtualList
-				items={data.citas.data}
-				itemHeight={ROW_HEIGHT}
-				containerHeight={LIST_HEIGHT}
-			>
-				{#snippet row(cita: CitaConPaciente)}
-					<div class="flex items-center px-4 h-16 border-b border-border hover:bg-surface-elevated transition-colors">
-						<span class="flex-1 text-sm font-medium text-ink truncate">
-							{cita.paciente.nombre} {cita.paciente.apellido}
-							{#if cita.es_primera_vez}
-								<span class="ml-1 text-xs text-viking-600">★</span>
-							{/if}
-						</span>
-						<span class="w-20 text-center text-sm text-ink-muted">{cita.paciente.nhm}</span>
-						<span class="w-32 text-sm text-ink-muted truncate">{cita.doctor.nombre} {cita.doctor.apellido}</span>
-						<span class="w-28 text-sm text-ink-muted">{cita.fecha}</span>
-						<span class="w-16 text-center text-sm text-ink-muted">{cita.hora_inicio}</span>
-						<span class="w-28 text-center">
-							<AppointmentStatusBadge status={cita.estado} />
-						</span>
-						<div class="w-20 text-center">
-							{#if cita.estado === 'pendiente' || cita.estado === 'confirmada'}
-								<form method="POST" action="?/cancelarCita">
-									<input type="hidden" name="citaId" value={cita.id} />
-									<button
-										type="submit"
-										class="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 underline"
-										onclick={(e) => { if (!confirm('¿Cancelar esta cita?')) e.preventDefault(); }}
-									>
-										Cancelar
-									</button>
-								</form>
-							{/if}
-						</div>
-					</div>
-				{/snippet}
-			</VirtualList>
-		{:else}
-			<!-- Lista normal para ≤50 ítems -->
-			{#each data.citas.data as cita (cita.id)}
-				<div class="flex items-center px-4 h-16 border-b border-border hover:bg-surface-elevated transition-colors last:border-b-0">
-					<span class="flex-1 text-sm font-medium text-ink truncate">
-						{cita.paciente.nombre} {cita.paciente.apellido}
-						{#if cita.es_primera_vez}<span class="ml-1 text-xs text-viking-600">★</span>{/if}
-					</span>
-					<span class="w-20 text-center text-sm text-ink-muted">{cita.paciente.nhm}</span>
-					<span class="w-32 text-sm text-ink-muted truncate">{cita.doctor.nombre} {cita.doctor.apellido}</span>
-					<span class="w-28 text-sm text-ink-muted">{cita.fecha}</span>
-					<span class="w-16 text-center text-sm text-ink-muted">{cita.hora_inicio}</span>
-					<span class="w-28 text-center"><AppointmentStatusBadge status={cita.estado} /></span>
-					<div class="w-20 text-center">
-						{#if cita.estado === 'pendiente' || cita.estado === 'confirmada'}
-							<form method="POST" action="?/cancelarCita">
-								<input type="hidden" name="citaId" value={cita.id} />
-								<button type="submit" class="text-xs text-red-600 hover:text-red-800 underline"
-									onclick={(e) => { if (!confirm('¿Cancelar esta cita?')) e.preventDefault(); }}>
-									Cancelar
-								</button>
-							</form>
-						{/if}
-					</div>
-				</div>
-			{/each}
-		{/if}
+	<!-- Tabla -->
+	<Card padding="none">
+		<DataTable
+			columns={[
+				{ key: 'paciente_id', header: 'Paciente', render: pacienteCell },
+				{ key: 'doctor_id',   header: 'Doctor',   render: doctorCell },
+				{ key: 'fecha',       header: 'Fecha',    width: '110px', render: fechaCell },
+				{ key: 'hora_inicio', header: 'Hora',     width: '80px'  },
+				{ key: 'estado',      header: 'Estado',   width: '130px', align: 'center', render: estadoCell },
+			] satisfies DataTableColumn<CitaRow>[]}
+			data={data.citas.data as CitaRow[]}
+			rowKey="id"
+			emptyMessage="No hay citas que coincidan con los filtros aplicados."
+			actions={[
+				{
+					icon: cancelIcon,
+					label: 'Cancelar cita',
+					variant: 'danger',
+					hoverOnly: false,
+					onclick: (row) => {
+						if (row.estado === 'pendiente' || row.estado === 'confirmada') {
+							cancelarCita(row as CitaConPaciente);
+						}
+					}
+				}
+			] satisfies RowAction<CitaRow>[]}
+		/>
 
 		<!-- Paginación -->
 		{#if data.citas.total > data.citas.pageSize}
@@ -182,5 +170,5 @@
 				</div>
 			</div>
 		{/if}
-	</div>
+	</Card>
 </div>

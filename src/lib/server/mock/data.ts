@@ -150,6 +150,36 @@ function daysFrom(n: number): string {
 
 export const mockCitas: Cita[] = [
 	{
+		id: 5,
+		paciente_id: 2,
+		doctor_id: 1,
+		especialidad_id: 1,
+		fecha: fmt(today),
+		hora_inicio: '08:00',
+		hora_fin: '08:30',
+		duracion_min: 30,
+		es_primera_vez: false,
+		estado: 'pendiente',
+		motivo_consulta: 'Chequeo general',
+		created_at: new Date().toISOString(),
+		created_by: 'portal_publico'
+	},
+	{
+		id: 6,
+		paciente_id: 3,
+		doctor_id: 1,
+		especialidad_id: 1,
+		fecha: fmt(today),
+		hora_inicio: '08:30',
+		hora_fin: '09:30',
+		duracion_min: 60,
+		es_primera_vez: true,
+		estado: 'confirmada',
+		motivo_consulta: 'Primera consulta — dolor crónico de espalda',
+		created_at: new Date().toISOString(),
+		created_by: 'portal_publico'
+	},
+	{
 		id: 1,
 		paciente_id: 1,
 		doctor_id: 1,
