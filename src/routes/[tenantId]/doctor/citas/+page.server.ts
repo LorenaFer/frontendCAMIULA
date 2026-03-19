@@ -6,17 +6,23 @@ import * as doctoresService from '$lib/server/doctores.service.js';
 const MOCK_DOCTOR_ID = 1;
 
 export const load: PageServerLoad = async () => {
-	const [citas, doctor] = await Promise.all([
+	const today = new Date();
+	const dow = today.getDay() === 0 ? 7 : today.getDay();
+
+	const [citas, doctor, disponibilidad] = await Promise.all([
 		citasService.getCitasHoy(MOCK_DOCTOR_ID),
-		doctoresService.getActiveDoctores().then((docs) => docs.find((d) => d.id === MOCK_DOCTOR_ID))
+		doctoresService.getActiveDoctores().then((docs) => docs.find((d) => d.id === MOCK_DOCTOR_ID)),
+		doctoresService.getDisponibilidad(MOCK_DOCTOR_ID, dow)
 	]);
 
 	citas.sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio));
 
 	return {
 		citas,
+		disponibilidad,
 		doctorId: MOCK_DOCTOR_ID,
-		doctorEspecialidadId: doctor?.especialidad_id ?? 1
+		doctorEspecialidadId: doctor?.especialidad_id ?? 1,
+		doctorNombre: doctor ? `${doctor.nombre} ${doctor.apellido}` : 'Doctor'
 	};
 };
 
