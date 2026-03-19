@@ -3,7 +3,9 @@
 declare global {
 	namespace App {
 		// interface Error {}
-		// interface Locals {}
+		interface Locals {
+			user: import('$shared/types/auth').AuthUser | null;
+		}
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}

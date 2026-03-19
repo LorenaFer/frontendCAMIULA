@@ -23,7 +23,8 @@
 		onSearchSelect,
 		onSettingsClick,
 		onNotificationsClick,
-		onProfileClick
+		onProfileClick,
+		onLogout
 	}: {
 		children: Snippet;
 		tenantId: string;
@@ -40,6 +41,7 @@
 		onSettingsClick?: () => void;
 		onNotificationsClick?: () => void;
 		onProfileClick?: () => void;
+		onLogout?: () => void;
 	} = $props();
 
 	let sidebarOpen = $state(false);
@@ -71,6 +73,7 @@
 		onClose={() => (sidebarOpen = false)}
 		{onSettingsClick}
 		{onProfileClick}
+		{onLogout}
 	/>
 
 	<div class="lg:ml-60 flex flex-col min-h-screen">

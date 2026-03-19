@@ -13,7 +13,8 @@
 		isOpen = false,
 		onClose,
 		onSettingsClick,
-		onProfileClick
+		onProfileClick,
+		onLogout
 	}: {
 		user: UserProfile;
 		navItems: NavItem[];
@@ -24,6 +25,7 @@
 		onClose?: () => void;
 		onSettingsClick?: () => void;
 		onProfileClick?: () => void;
+		onLogout?: () => void;
 	} = $props();
 
 	// --- TenantSwitcher state ---
@@ -357,25 +359,29 @@
 
 	<!-- UserSection -->
 	<div class="border-t border-border/60 px-3 py-3">
-		<button
-			onclick={onProfileClick}
-			class="flex items-center gap-2.5 px-2.5 py-2 w-full rounded-md hover:bg-canvas-subtle transition-colors"
-		>
+		<div class="flex items-center gap-2.5 px-2.5 py-2">
 			{#if user.avatar}
 				<img src={user.avatar} alt={user.name} class="w-8 h-8 rounded-md object-cover" />
 			{:else}
-				<div
-					class="w-8 h-8 rounded-md bg-viking-100 text-viking-700 flex items-center justify-center font-medium text-[11px]"
-				>
+				<div class="w-8 h-8 rounded-md bg-viking-100 dark:bg-viking-900/30 text-viking-700 dark:text-viking-300 flex items-center justify-center font-medium text-[11px]">
 					{user.initials}
 				</div>
 			{/if}
-			<div class="flex-1 min-w-0 text-left">
-				<p class="text-[13px] font-medium text-ink truncate">
-					{user.name}
-				</p>
+			<div class="flex-1 min-w-0">
+				<p class="text-[13px] font-medium text-ink truncate">{user.name}</p>
 				<p class="text-[11px] text-ink-muted truncate">{user.role}</p>
 			</div>
-		</button>
+			{#if onLogout}
+				<button
+					onclick={onLogout}
+					class="p-1.5 rounded-md text-ink-subtle hover:text-ink-muted hover:bg-canvas-subtle transition-colors shrink-0"
+					title="Cerrar sesión"
+				>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+					</svg>
+				</button>
+			{/if}
+		</div>
 	</div>
 </aside>

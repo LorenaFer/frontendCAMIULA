@@ -4,24 +4,26 @@
 	import TenantLayout from '$shared/components/layout/TenantLayout.svelte';
 	import type { NavItem, UserProfile, Hospital } from '$shared/types/navigation';
 	import type { SearchResult } from '$shared/components/layout/navUtils';
+	import type { AuthUser } from '$shared/types/auth.js';
+	import { getPermissionsForRole, P } from '$shared/rbac-config.js';
 
-	let { children } = $props();
+	let { children, data } = $props();
 
-	// Mock data
-	const mockUser: UserProfile = {
-		id: '1',
-		name: 'Dr. Smith',
-		role: 'Cardiology',
-		initials: 'DS'
-	};
+	// ─── Auth user from server layout ─────────────────────────
+	const authUser: AuthUser | null = data.user ?? null;
 
+	const userProfile: UserProfile = authUser
+		? { id: authUser.id, name: authUser.name, role: authUser.role, initials: authUser.initials }
+		: { id: '0', name: 'Guest', role: 'guest', initials: '?' };
+
+	const permissions = authUser ? getPermissionsForRole(authUser.role) : [];
+
+	// ─── Tenant/Hospital data ─────────────────────────────────
 	const mockHospitals: Hospital[] = [
 		{ id: 'general-hospital', name: 'General Hospital' },
 		{ id: 'central-medical', name: 'Central Medical Center' },
 		{ id: 'st-mary', name: "St. Mary's Hospital" }
 	];
-
-	const mockPermissions = ['appointments:read', 'patients:read', 'inventory:read'];
 
 	const mockRecentSearches: SearchResult[] = [
 		{ id: '1', title: 'John Smith', subtitle: 'Patient • MRN: 849201' },
@@ -32,15 +34,11 @@
 	const mockSearchData = [
 		{ id: 'p1', title: 'John Smith', subtitle: 'Patient • MRN: 849201', category: 'Patients', href: 'patients' },
 		{ id: 'p2', title: 'Sarah Jenkins', subtitle: 'Patient • MRN: 849312', category: 'Patients', href: 'patients' },
-		{ id: 'p3', title: 'Michael Chen', subtitle: 'Patient • MRN: 849205', category: 'Patients', href: 'patients' },
 		{ id: 'a1', title: 'Dr. Emily Ray', subtitle: 'Cardiology • 3 appointments today', category: 'Staff', href: 'appointments' },
-		{ id: 'a2', title: 'Morning Rounds', subtitle: 'Appointment • 9:00 AM', category: 'Appointments', href: 'appointments' },
-		{ id: 'i1', title: 'Surgical Gloves', subtitle: 'Inventory • 500 units', category: 'Inventory', href: 'inventory' },
-		{ id: 'i2', title: 'Syringes 10ml', subtitle: 'Inventory • 200 units', category: 'Inventory', href: 'inventory' }
+		{ id: 'i1', title: 'Surgical Gloves', subtitle: 'Inventory • 500 units', category: 'Inventory', href: 'inventory' }
 	];
 
 	let searchQuery = $state('');
-
 	let tenantId = $derived($page.params.tenantId);
 	let currentHospital = $derived(mockHospitals.find((h) => h.id === tenantId));
 	let tenantName = $derived(currentHospital?.name ?? tenantId);
@@ -63,14 +61,16 @@
 		return Object.entries(grouped).map(([label, results]) => ({ label, results }));
 	});
 
-	function handleSearch(query: string) {
-		searchQuery = query;
-	}
-
+	function handleSearch(query: string) { searchQuery = query; }
 	function handleSearchSelect(result: { id: string; href?: string }) {
-		if (result.href && tenantId) {
-			goto(`/${tenantId}/${result.href}`);
-		}
+		if (result.href && tenantId) goto(`/${tenantId}/${result.href}`);
+	}
+	function handleLogout() {
+		const form = document.createElement('form');
+		form.method = 'POST';
+		form.action = '/logout';
+		document.body.appendChild(form);
+		form.submit();
 	}
 </script>
 
@@ -82,7 +82,7 @@
 
 {#snippet appointmentsIcon()}
 	<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-		<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+		<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
 	</svg>
 {/snippet}
 
@@ -100,29 +100,73 @@
 
 {#if tenantId}
 	{@const navItems: NavItem[] = [
-		{ id: 'dashboard', label: 'Dashboard', href: '', icon: dashboardIcon },
-		{ id: 'appointments', label: 'Appointments', href: 'appointments', icon: appointmentsIcon, permission: 'appointments:read', group: 'Clinical' },
-		{ id: 'patients', label: 'Patient Data', href: 'patients', icon: patientsIcon, permission: 'patients:read', group: 'Clinical' },
-		{ id: 'inventory', label: 'Inventory', href: 'inventory', icon: inventoryIcon, permission: 'inventory:read', group: 'Operations' },
-		{ id: 'agendar', label: 'Agendar Cita', href: 'agendar', icon: appointmentsIcon, group: 'Citas' },
-		{ id: 'analista-citas', label: 'Gestión Citas', href: 'analista/citas', icon: appointmentsIcon, group: 'Citas' },
-		{ id: 'doctor-citas', label: 'Mis Citas', href: 'doctor/citas', icon: appointmentsIcon, group: 'Citas' },
-		{ id: 'doctor-disponibilidad', label: 'Mi Disponibilidad', href: 'doctor/disponibilidad', icon: appointmentsIcon, group: 'Citas' }
+		{ id: 'dashboard', label: 'Dashboard', href: '', icon: dashboardIcon, permission: P.DASHBOARD_READ },
+		{ id: 'patients', label: 'Pacientes', href: 'patients', icon: patientsIcon, permission: P.PACIENTES_READ, group: 'Clínica' },
+		{ id: 'agendar', label: 'Agendar Cita', href: 'agendar', icon: appointmentsIcon, permission: P.CITAS_CREATE, group: 'Citas' },
+		{ id: 'analista-citas', label: 'Gestión Citas', href: 'analista/citas', icon: appointmentsIcon, permission: P.CITAS_CANCEL, group: 'Citas' },
+		{ id: 'doctor-citas', label: 'Mis Citas', href: 'doctor/citas', icon: appointmentsIcon, permission: P.CITAS_MARK_ATTENDED, group: 'Doctor' },
+		{ id: 'doctor-disponibilidad', label: 'Mi Disponibilidad', href: 'doctor/disponibilidad', icon: appointmentsIcon, permission: P.DISPONIBILIDAD_READ, group: 'Doctor' },
+		{ id: 'inventory', label: 'Inventario', href: 'inventory', icon: inventoryIcon, permission: P.INVENTORY_READ, group: 'Operaciones' }
 	]}
 
-	<TenantLayout
-		{tenantId}
-		{tenantName}
-		user={mockUser}
-		hospitals={mockHospitals}
-		{navItems}
-		permissions={mockPermissions}
-		notificationCount={3}
-		{searchCategories}
-		recentSearches={mockRecentSearches}
-		onSearch={handleSearch}
-		onSearchSelect={handleSearchSelect}
-	>
-		{@render children()}
-	</TenantLayout>
+	{#if authUser?.role === 'paciente'}
+		{@const currentPath = $page.url.pathname}
+		<!-- Layout mínimo para pacientes -->
+		<div class="min-h-screen bg-canvas">
+			<header class="border-b border-border/60 bg-surface">
+				<div class="px-4 py-2.5 flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<div class="w-7 h-7 rounded-lg bg-viking-600 flex items-center justify-center">
+							<svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+							</svg>
+						</div>
+						<span class="text-sm font-semibold text-ink">{tenantName}</span>
+					</div>
+					<div class="flex items-center gap-3">
+						<span class="text-xs text-ink-muted">{authUser.name}</span>
+						<button onclick={handleLogout} class="text-xs text-ink-subtle hover:text-ink-muted transition-colors">
+							Cerrar sesión
+						</button>
+					</div>
+				</div>
+				<!-- Nav tabs para paciente -->
+				<nav class="px-4 flex gap-1">
+					<a
+						href="/{tenantId}/agendar"
+						class="px-3 py-2 text-xs font-medium rounded-t-lg transition-colors {currentPath.includes('/agendar') ? 'bg-canvas text-viking-600 border-b-2 border-viking-600' : 'text-ink-muted hover:text-ink'}"
+					>
+						Agendar Cita
+					</a>
+					<a
+						href="/{tenantId}/mis-citas"
+						class="px-3 py-2 text-xs font-medium rounded-t-lg transition-colors {currentPath.includes('/mis-citas') ? 'bg-canvas text-viking-600 border-b-2 border-viking-600' : 'text-ink-muted hover:text-ink'}"
+					>
+						Mis Citas
+					</a>
+				</nav>
+			</header>
+			<main class="p-4 lg:p-8">
+				{@render children()}
+			</main>
+		</div>
+	{:else}
+		<!-- Layout completo con sidebar para analista/doctor/admin -->
+		<TenantLayout
+			{tenantId}
+			{tenantName}
+			user={userProfile}
+			hospitals={mockHospitals}
+			{navItems}
+			{permissions}
+			notificationCount={3}
+			{searchCategories}
+			recentSearches={mockRecentSearches}
+			onSearch={handleSearch}
+			onSearchSelect={handleSearchSelect}
+			onLogout={handleLogout}
+		>
+			{@render children()}
+		</TenantLayout>
+	{/if}
 {/if}

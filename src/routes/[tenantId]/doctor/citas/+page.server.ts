@@ -2,17 +2,17 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import * as citasService from '$lib/server/citas.service.js';
 import * as doctoresService from '$lib/server/doctores.service.js';
+import { assertActionPermission, requireDoctorId } from '$lib/server/rbac.js';
 
-const MOCK_DOCTOR_ID = 1;
-
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
+	const doctorId = requireDoctorId(locals.user);
 	const today = new Date();
 	const dow = today.getDay() === 0 ? 7 : today.getDay();
 
 	const [citas, doctor, disponibilidad] = await Promise.all([
-		citasService.getCitasHoy(MOCK_DOCTOR_ID),
-		doctoresService.getActiveDoctores().then((docs) => docs.find((d) => d.id === MOCK_DOCTOR_ID)),
-		doctoresService.getDisponibilidad(MOCK_DOCTOR_ID, dow)
+		citasService.getCitasHoy(doctorId),
+		doctoresService.getActiveDoctores().then((docs) => docs.find((d) => d.id === doctorId)),
+		doctoresService.getDisponibilidad(doctorId, dow)
 	]);
 
 	citas.sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio));
@@ -20,14 +20,15 @@ export const load: PageServerLoad = async () => {
 	return {
 		citas,
 		disponibilidad,
-		doctorId: MOCK_DOCTOR_ID,
+		doctorId,
 		doctorEspecialidadId: doctor?.especialidad_id ?? 1,
 		doctorNombre: doctor ? `${doctor.nombre} ${doctor.apellido}` : 'Doctor'
 	};
 };
 
 export const actions: Actions = {
-	marcarAtendida: async ({ request }) => {
+	marcarAtendida: async ({ request, locals }) => {
+		assertActionPermission(locals.user, 'marcarAtendida');
 		const fd = await request.formData();
 		const citaId = parseInt(String(fd.get('citaId') ?? ''), 10);
 		if (isNaN(citaId)) return fail(400, { error: 'ID de cita inválido' });
@@ -36,7 +37,8 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	marcarNoAsistio: async ({ request }) => {
+	marcarNoAsistio: async ({ request, locals }) => {
+		assertActionPermission(locals.user, 'marcarNoAsistio');
 		const fd = await request.formData();
 		const citaId = parseInt(String(fd.get('citaId') ?? ''), 10);
 		if (isNaN(citaId)) return fail(400, { error: 'ID de cita inválido' });
@@ -45,7 +47,9 @@ export const actions: Actions = {
 		return { success: true, noAsistio: true };
 	},
 
-	citaEmergencia: async ({ request }) => {
+	citaEmergencia: async ({ request, locals }) => {
+		assertActionPermission(locals.user, 'citaEmergencia');
+		const doctorId = requireDoctorId(locals.user);
 		const fd = await request.formData();
 		const pacienteId = parseInt(String(fd.get('pacienteId') ?? ''), 10);
 		const motivo = String(fd.get('motivo') ?? '').trim();
@@ -61,7 +65,7 @@ export const actions: Actions = {
 
 		const cita = await citasService.createCita({
 			paciente_id: pacienteId,
-			doctor_id: MOCK_DOCTOR_ID,
+			doctor_id: doctorId,
 			especialidad_id: 1,
 			fecha,
 			hora_inicio: hora,

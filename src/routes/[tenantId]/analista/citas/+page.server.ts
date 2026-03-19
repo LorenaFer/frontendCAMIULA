@@ -4,6 +4,7 @@ import * as citasService from '$lib/server/citas.service.js';
 import * as doctoresService from '$lib/server/doctores.service.js';
 import * as exportService from '$lib/server/export.service.js';
 import type { AppointmentFilters, CitaEstado } from '$shared/types/appointments.js';
+import { assertActionPermission } from '$lib/server/rbac.js';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const filters: AppointmentFilters = {
@@ -26,7 +27,8 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 
 export const actions: Actions = {
-	cancelarCita: async ({ request }) => {
+	cancelarCita: async ({ request, locals }) => {
+		assertActionPermission(locals.user, 'cancelarCita');
 		const fd = await request.formData();
 		const citaId = parseInt(String(fd.get('citaId') ?? ''), 10);
 		if (isNaN(citaId)) return fail(400, { error: 'ID de cita inválido' });
@@ -35,7 +37,8 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	exportarExcel: async ({ url }) => {
+	exportarExcel: async ({ url, locals }) => {
+		assertActionPermission(locals.user, 'exportarExcel');
 		const filters: AppointmentFilters = {
 			fecha: url.searchParams.get('fecha') ?? undefined,
 			doctorId: url.searchParams.get('doctorId') ? Number(url.searchParams.get('doctorId')) : undefined,

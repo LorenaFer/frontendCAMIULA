@@ -3,8 +3,10 @@ import { error, fail } from '@sveltejs/kit';
 import * as citasService from '$lib/server/citas.service.js';
 import * as historiasService from '$lib/server/historias.service.js';
 import type { Evaluacion } from '$shared/types/appointments.js';
+import { assertActionPermission, requireDoctorId } from '$lib/server/rbac.js';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+	requireDoctorId(locals.user);
 	const citaId = parseInt(params.citaId, 10);
 	if (isNaN(citaId)) error(404, 'Cita no encontrada');
 
@@ -19,7 +21,8 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
-	guardarEvaluacion: async ({ request, params }) => {
+	guardarEvaluacion: async ({ request, params, locals }) => {
+		assertActionPermission(locals.user, 'guardarEvaluacion');
 		const citaId = parseInt(params.citaId, 10);
 		if (isNaN(citaId)) return fail(400, { error: 'ID inválido' });
 
