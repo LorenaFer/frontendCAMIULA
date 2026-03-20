@@ -100,24 +100,24 @@
 	<title>Gestión de Citas — Analista</title>
 </svelte:head>
 
-<div class="space-y-6 animate-fade-in-up">
-	<div class="flex items-center justify-between">
+<div class="space-y-4 sm:space-y-6 animate-fade-in-up">
+	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
 		<div>
-			<h1 class="text-display text-xl font-bold text-ink">Gestión de Citas</h1>
-			<p class="text-sm text-ink-muted mt-0.5">Vista de Analista</p>
+			<h1 class="text-lg sm:text-xl font-bold text-ink">Gestión de Citas</h1>
+			<p class="text-xs text-ink-muted mt-0.5">Vista de Analista</p>
 		</div>
-		<Button variant="ghost" onclick={exportar}>Exportar CSV</Button>
+		<Button variant="ghost" size="sm" onclick={exportar}>Exportar CSV</Button>
 	</div>
 
 	<!-- Stats -->
-	<div class="flex flex-wrap gap-4">
-		<StatCard title="Total filtradas" value={String(statsTotal)} />
-		<StatCard title="Pendientes (página)" value={String(statsPendientes)} />
-		<StatCard title="Atendidas (página)" value={String(statsAtendidas)} />
+	<div class="flex flex-wrap gap-2 sm:gap-4">
+		<StatCard title="Total" value={String(statsTotal)} />
+		<StatCard title="Pendientes" value={String(statsPendientes)} />
+		<StatCard title="Atendidas" value={String(statsAtendidas)} />
 	</div>
 
 	<!-- Filtros -->
-	<div class="bg-surface rounded-xl border border-border p-4">
+	<div class="bg-surface rounded-xl border border-border p-3 sm:p-4">
 		<AppointmentFilters
 			doctores={data.doctores}
 			especialidades={data.especialidades}
@@ -156,15 +156,15 @@
 
 		<!-- Paginación -->
 		{#if data.citas.total > data.citas.pageSize}
-			<div class="flex items-center justify-between px-4 py-3 border-t border-border">
-				<span class="text-xs text-ink-muted">
+			<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-t border-border">
+				<span class="text-[11px] sm:text-xs text-ink-muted">
 					{(data.citas.page - 1) * data.citas.pageSize + 1}–{Math.min(data.citas.page * data.citas.pageSize, data.citas.total)} de {data.citas.total}
 				</span>
 				<div class="flex gap-2">
-					<Button variant="ghost" disabled={data.citas.page <= 1} onclick={() => changePage(data.citas.page - 1)}>
+					<Button variant="ghost" size="sm" disabled={data.citas.page <= 1} onclick={() => changePage(data.citas.page - 1)}>
 						Anterior
 					</Button>
-					<Button variant="ghost" disabled={!data.citas.hasNext} onclick={() => changePage(data.citas.page + 1)}>
+					<Button variant="ghost" size="sm" disabled={!data.citas.hasNext} onclick={() => changePage(data.citas.page + 1)}>
 						Siguiente
 					</Button>
 				</div>

@@ -60,24 +60,24 @@
 				</h2>
 				<div class="space-y-2">
 					{#each proximas as cita (cita.id)}
-						<div class="bg-surface-elevated border border-border/60 rounded-xl p-4 hover:shadow-[var(--shadow-1)] transition-shadow">
-							<div class="flex items-start justify-between gap-3">
+						<div class="bg-surface-elevated border border-border/60 rounded-xl p-3 sm:p-4 hover:shadow-[var(--shadow-1)] transition-shadow">
+							<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
 								<div class="flex-1 min-w-0">
-									<div class="flex items-center gap-2 mb-1">
+									<div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
 										<p class="text-sm font-semibold text-ink">
 											{cita.fecha === hoy ? 'Hoy' : formatFecha(cita.fecha)}
 										</p>
-										<span class="text-xs text-ink-muted font-mono">{cita.hora_inicio}–{cita.hora_fin}</span>
+										<span class="text-[11px] sm:text-xs text-ink-muted font-mono">{cita.hora_inicio}–{cita.hora_fin}</span>
 										<AppointmentStatusBadge status={cita.estado} />
 									</div>
-									<p class="text-xs text-ink-muted">
+									<p class="text-[11px] sm:text-xs text-ink-muted truncate">
 										{cita.doctor.especialidad.nombre} — Dr. {cita.doctor.nombre} {cita.doctor.apellido}
 									</p>
 									{#if cita.motivo_consulta}
-										<p class="text-[11px] text-ink-subtle mt-1">{cita.motivo_consulta}</p>
+										<p class="text-[11px] text-ink-subtle mt-1 truncate">{cita.motivo_consulta}</p>
 									{/if}
 								</div>
-								<div class="text-right shrink-0">
+								<div class="hidden sm:block text-right shrink-0">
 									<p class="text-lg font-mono font-bold text-viking-600">{cita.hora_inicio}</p>
 									<p class="text-[10px] text-ink-muted">{cita.duracion_min} min</p>
 								</div>
@@ -100,18 +100,16 @@
 				<h2 class="text-sm font-semibold text-ink-muted mb-3">Historial ({pasadas.length})</h2>
 				<div class="space-y-1.5">
 					{#each pasadas as cita (cita.id)}
-						<div class="flex items-center gap-3 px-4 py-2.5 bg-surface-elevated border border-border/40 rounded-lg {cita.estado === 'cancelada' || cita.estado === 'no_asistio' ? 'opacity-60' : ''}">
-							<div class="w-12 text-center shrink-0">
-								<p class="text-xs font-mono font-medium text-ink">{cita.hora_inicio}</p>
+						<div class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 bg-surface-elevated border border-border/40 rounded-lg {cita.estado === 'cancelada' || cita.estado === 'no_asistio' ? 'opacity-60' : ''}">
+							<div class="w-10 sm:w-12 text-center shrink-0">
+								<p class="text-[11px] sm:text-xs font-mono font-medium text-ink">{cita.hora_inicio}</p>
 							</div>
 							<div class="flex-1 min-w-0">
-								<p class="text-xs text-ink truncate">
+								<p class="text-[11px] sm:text-xs text-ink truncate">
 									<span class="font-medium">{formatFecha(cita.fecha)}</span>
-									— {cita.doctor.especialidad.nombre}, Dr. {cita.doctor.nombre} {cita.doctor.apellido}
+									<span class="hidden sm:inline"> — {cita.doctor.especialidad.nombre}, Dr. {cita.doctor.nombre} {cita.doctor.apellido}</span>
 								</p>
-								{#if cita.motivo_consulta}
-									<p class="text-[10px] text-ink-subtle truncate">{cita.motivo_consulta}</p>
-								{/if}
+								<p class="sm:hidden text-[10px] text-ink-muted truncate">{cita.doctor.especialidad.nombre}</p>
 							</div>
 							<AppointmentStatusBadge status={cita.estado} />
 						</div>

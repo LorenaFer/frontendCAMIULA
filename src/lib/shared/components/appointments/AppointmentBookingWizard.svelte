@@ -280,7 +280,7 @@
 </script>
 
 <!-- Wrapper: centra vertical solo en Step 1, flujo normal en 2-5 -->
-<div class="{currentStep === 0 ? 'min-h-[calc(100vh-7rem)] flex items-center justify-center' : 'flex justify-center py-5'} px-4 {className}">
+<div class="{currentStep === 0 ? 'min-h-[calc(100vh-7rem)] flex items-center justify-center' : 'flex justify-center py-3 sm:py-5'} px-2 sm:px-4 {className}">
 	<div class="w-full {stepMaxWidth} mx-auto">
 
 		<!-- Error (fuera de la card) -->
@@ -296,7 +296,7 @@
 			<!-- Card header -->
 			{#if currentStep === 0}
 				<!-- Step 1: branding sin progreso -->
-				<div class="px-5 sm:px-6 pt-5 pb-4 border-b border-border/40">
+				<div class="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/40">
 					<div class="flex items-center gap-2.5 mb-1">
 						<svg class="w-5 h-5 text-viking-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -307,7 +307,7 @@
 				</div>
 			{:else}
 				<!-- Steps 2-5: branding + barra de progreso -->
-				<div class="px-5 sm:px-6 pt-5 pb-4 border-b border-border/40">
+				<div class="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/40">
 					<div class="flex items-center justify-between mb-3">
 						<div class="flex items-center gap-2">
 							<div class="w-7 h-7 rounded-lg bg-viking-600 flex items-center justify-center">
@@ -331,7 +331,7 @@
 
 			<!-- Card body -->
 			{#key currentStep}
-				<div class="px-5 sm:px-6 py-5 animate-fade-in-up">
+				<div class="px-4 sm:px-6 py-4 sm:py-5 animate-fade-in-up">
 
 					<!-- ── Paso 1: Identificación ── -->
 					{#if currentStep === 0}
@@ -371,13 +371,13 @@
 
 							<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Datos personales</p>
 							<div class="space-y-2.5 mb-5">
-								<div class="flex flex-wrap gap-2.5">
-									<div class="flex-1 min-w-36"><Input label="Nombres *" bind:value={regNombre} inputSize="sm" /></div>
-									<div class="flex-1 min-w-36"><Input label="Apellidos *" bind:value={regApellido} inputSize="sm" /></div>
+								<div class="flex flex-col sm:flex-row gap-2.5">
+									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Nombres *" bind:value={regNombre} inputSize="sm" /></div>
+									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Apellidos *" bind:value={regApellido} inputSize="sm" /></div>
 								</div>
-								<div class="flex flex-wrap gap-2.5 items-end">
-									<div class="flex-1 min-w-36"><Input label="C.I. *" bind:value={regCedula} placeholder="V-12345678" inputSize="sm" /></div>
-									<div class="flex-1 min-w-28">
+								<div class="flex flex-col sm:flex-row gap-2.5 sm:items-end">
+									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="C.I. *" bind:value={regCedula} placeholder="V-12345678" inputSize="sm" /></div>
+									<div class="flex-1 min-w-0 sm:min-w-28">
 										<fieldset>
 											<legend class="block text-xs font-medium text-ink mb-1">Sexo</legend>
 											<div class="flex gap-3">
@@ -391,9 +391,9 @@
 										</fieldset>
 									</div>
 								</div>
-								<div class="flex flex-wrap gap-2.5">
-									<div class="flex-1 min-w-36"><Input label="Fecha de nacimiento" type="date" bind:value={regFechaNacimiento} inputSize="sm" /></div>
-									<div class="flex-1 min-w-36"><Input label="Lugar de nacimiento" bind:value={regLugarNacimiento} placeholder="Ciudad, Estado" inputSize="sm" /></div>
+								<div class="flex flex-col sm:flex-row gap-2.5">
+									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Fecha de nacimiento" type="date" bind:value={regFechaNacimiento} inputSize="sm" /></div>
+									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Lugar de nacimiento" bind:value={regLugarNacimiento} placeholder="Ciudad, Estado" inputSize="sm" /></div>
 								</div>
 								<fieldset>
 									<legend class="block text-xs font-medium text-ink mb-1">Estado civil</legend>
@@ -406,9 +406,9 @@
 										{/each}
 									</div>
 								</fieldset>
-								<div class="flex flex-wrap gap-2.5">
-									<div class="flex-1 min-w-36"><Input label="Religión" bind:value={regReligion} inputSize="sm" /></div>
-									<div class="flex-1 min-w-36"><Input label="Procedencia" bind:value={regProcedencia} placeholder="Ciudad o estado" inputSize="sm" /></div>
+								<div class="flex flex-col sm:flex-row gap-2.5">
+									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Religión" bind:value={regReligion} inputSize="sm" /></div>
+									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Procedencia" bind:value={regProcedencia} placeholder="Ciudad o estado" inputSize="sm" /></div>
 								</div>
 							</div>
 
@@ -416,19 +416,19 @@
 								<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Contacto y ubicación</p>
 								<div class="space-y-2.5">
 									<Input label="Dirección de habitación" bind:value={regDireccionHabitacion} placeholder="Av., calle, urbanización, casa/apto" inputSize="sm" />
-									<div class="flex flex-wrap gap-2.5">
-										<div class="flex-1 min-w-36"><Input label="Teléfono *" bind:value={regTelefono} placeholder="0412-XXXXXXX" inputSize="sm" /></div>
-										<div class="flex-1 min-w-36"><Input label="Dirección del trabajo" bind:value={regDireccionTrabajo} inputSize="sm" /></div>
+									<div class="flex flex-col sm:flex-row gap-2.5">
+										<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Teléfono *" bind:value={regTelefono} placeholder="0412-XXXXXXX" inputSize="sm" /></div>
+										<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Dirección del trabajo" bind:value={regDireccionTrabajo} inputSize="sm" /></div>
 									</div>
 								</div>
 							</div>
 
 							<div class="border-t border-border/40 pt-4 mb-5">
 								<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Datos profesionales</p>
-								<div class="flex flex-wrap gap-2.5">
-									<div class="flex-1 min-w-36"><Input label="Profesión" bind:value={regProfesion} inputSize="sm" /></div>
-									<div class="flex-1 min-w-36"><Input label="Ocupación actual" bind:value={regOcupacionActual} inputSize="sm" /></div>
-									<div class="flex-1 min-w-36"><Input label="Clasificación económica" bind:value={regClasificacionEconomica} inputSize="sm" /></div>
+								<div class="flex flex-col sm:flex-row gap-2.5">
+									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Profesión" bind:value={regProfesion} inputSize="sm" /></div>
+									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Ocupación actual" bind:value={regOcupacionActual} inputSize="sm" /></div>
+									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Clasificación económica" bind:value={regClasificacionEconomica} inputSize="sm" /></div>
 								</div>
 							</div>
 
@@ -465,9 +465,9 @@
 							<div class="border-t border-border/40 pt-4 mb-5">
 								<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Datos médicos</p>
 								<div class="space-y-2.5">
-									<div class="flex flex-wrap gap-2.5">
-										<div class="flex-1 min-w-28"><Input label="Grupo sanguíneo" bind:value={regTipoSangre} placeholder="O+" inputSize="sm" /></div>
-										<div class="flex-1 min-w-36"><Input label="Teléfono contacto médico" bind:value={regContacto} placeholder="0412-XXXXXXX" inputSize="sm" /></div>
+									<div class="flex flex-col sm:flex-row gap-2.5">
+										<div class="flex-1 min-w-0 sm:min-w-28"><Input label="Grupo sanguíneo" bind:value={regTipoSangre} placeholder="O+" inputSize="sm" /></div>
+										<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Teléfono contacto médico" bind:value={regContacto} placeholder="0412-XXXXXXX" inputSize="sm" /></div>
 									</div>
 									<Input label="Alergias (separadas por coma)" bind:value={regAlergias} placeholder="Penicilina, Aspirina" inputSize="sm" />
 								</div>
@@ -476,13 +476,13 @@
 							<div class="border-t border-border/40 pt-4 mb-5">
 								<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Contacto de emergencia</p>
 								<div class="space-y-2.5">
-									<div class="flex flex-wrap gap-2.5">
-										<div class="flex-1 min-w-36"><Input label="Nombre completo" bind:value={regEmergenciaNombre} inputSize="sm" /></div>
-										<div class="flex-1 min-w-28"><Input label="Parentesco" bind:value={regEmergenciaParentesco} placeholder="Esposa, Hijo" inputSize="sm" /></div>
+									<div class="flex flex-col sm:flex-row gap-2.5">
+										<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Nombre completo" bind:value={regEmergenciaNombre} inputSize="sm" /></div>
+										<div class="flex-1 min-w-0 sm:min-w-28"><Input label="Parentesco" bind:value={regEmergenciaParentesco} placeholder="Esposa, Hijo" inputSize="sm" /></div>
 									</div>
-									<div class="flex flex-wrap gap-2.5">
-										<div class="flex-1 min-w-36"><Input label="Dirección" bind:value={regEmergenciaDireccion} inputSize="sm" /></div>
-										<div class="flex-1 min-w-28"><Input label="Teléfono" bind:value={regEmergenciaTelefono} placeholder="0412-XXXXXXX" inputSize="sm" /></div>
+									<div class="flex flex-col sm:flex-row gap-2.5">
+										<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Dirección" bind:value={regEmergenciaDireccion} inputSize="sm" /></div>
+										<div class="flex-1 min-w-0 sm:min-w-28"><Input label="Teléfono" bind:value={regEmergenciaTelefono} placeholder="0412-XXXXXXX" inputSize="sm" /></div>
 									</div>
 								</div>
 							</div>
@@ -532,12 +532,12 @@
 
 					<!-- ── Paso 4: Fecha y hora ── -->
 					{:else if currentStep === 3}
-						<div class="space-y-4">
-							<h2 class="text-lg font-semibold text-ink">Seleccione fecha y hora</h2>
+						<div class="space-y-3 sm:space-y-4">
+							<h2 class="text-base sm:text-lg font-semibold text-ink">Seleccione fecha y hora</h2>
 
 							{#if esNuevo}
-								<div class="px-3 py-2 bg-viking-50 dark:bg-viking-900/20 border border-viking-200 dark:border-viking-800 rounded-lg text-xs text-viking-700 dark:text-viking-300">
-									Primera consulta — bloque de <b>60 minutos</b>.
+								<div class="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-viking-50 dark:bg-viking-900/20 border border-viking-200 dark:border-viking-800 rounded-lg text-[11px] sm:text-xs text-viking-700 dark:text-viking-300">
+									Primera consulta — <b>60 minutos</b>.
 								</div>
 							{/if}
 
@@ -553,14 +553,14 @@
 
 							{#if selectedDate}
 								<div>
-									<h3 class="text-sm font-semibold text-ink mb-2">
+									<h3 class="text-xs sm:text-sm font-semibold text-ink mb-2">
 										Horarios — {selectedDate}
-										{#if esNuevo}<span class="text-xs font-normal text-ink-muted">(60 min)</span>{/if}
+										{#if esNuevo}<span class="text-[10px] sm:text-xs font-normal text-ink-muted">(60 min)</span>{/if}
 									</h3>
 									{#if loadingSlots}
-										<div class="flex gap-2 flex-wrap">
+										<div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2">
 											{#each Array(8) as _}
-												<div class="w-16 h-9 rounded bg-canvas-subtle animate-pulse"></div>
+												<div class="h-8 sm:h-9 rounded-lg bg-canvas-subtle animate-pulse"></div>
 											{/each}
 										</div>
 									{:else}
