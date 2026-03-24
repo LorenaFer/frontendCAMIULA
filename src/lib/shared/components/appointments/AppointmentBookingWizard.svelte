@@ -58,7 +58,9 @@
 	let regOcupacionActual = $state('');
 	let regDireccionTrabajo = $state('');
 	let regClasificacionEconomica = $state('');
-	let regRelacion = $state('empleado');
+	let regTipoBase = $state('');
+	let regFamiliarDe = $state('');
+	const esFamiliar = $derived(regTipoBase === 'familiar');
 	let regParentesco = $state('');
 	let regTitularCedula = $state('');
 	let regTipoSangre = $state('');
@@ -203,7 +205,7 @@
 				profesion: regProfesion, ocupacion_actual: regOcupacionActual,
 				direccion_trabajo: regDireccionTrabajo,
 				clasificacion_economica: regClasificacionEconomica,
-				relacion_univ: regRelacion, parentesco: regParentesco,
+				relacion_univ: esFamiliar ? regFamiliarDe : regTipoBase, parentesco: regParentesco,
 				titular_cedula: regTitularCedula, tipo_sangre: regTipoSangre,
 				alergias: regAlergias, numero_contacto: regContacto,
 				emergencia_nombre: regEmergenciaNombre,
@@ -435,17 +437,28 @@
 							<div class="border-t border-border/40 pt-4 mb-5">
 								<fieldset>
 									<legend class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Relación con la universidad *</legend>
-									<div class="flex flex-wrap gap-x-4 gap-y-1">
-										{#each [['empleado','Empleado'],['estudiante','Estudiante'],['profesor','Profesor'],['tercero','Familiar/Tercero']] as [val, lbl]}
+									<div class="flex flex-wrap gap-x-4 gap-y-1.5">
+										{#each [['P','Profesor'],['E','Empleado'],['O','Obrero'],['B','Estudiante'],['familiar','Familiar'],['X','Caso Especial']] as [val, lbl]}
 											<label class="flex items-center gap-1.5 text-sm text-ink cursor-pointer">
-												<input type="radio" bind:group={regRelacion} value={val} class="accent-viking-600" />
+												<input type="radio" bind:group={regTipoBase} value={val} class="accent-viking-600" />
 												{lbl}
 											</label>
 										{/each}
 									</div>
 								</fieldset>
-								{#if regRelacion === 'tercero'}
+								{#if esFamiliar}
 									<div class="mt-3 pl-4 border-l-2 border-viking-200 dark:border-viking-800 space-y-2">
+										<fieldset>
+											<legend class="block text-xs font-medium text-ink mb-1">Familiar de</legend>
+											<div class="flex flex-wrap gap-x-3 gap-y-1">
+												{#each [['R','Profesor'],['S','Empleado'],['T','Obrero'],['C','Estudiante'],['F','Otro']] as [val, lbl]}
+													<label class="flex items-center gap-1.5 text-xs text-ink cursor-pointer">
+														<input type="radio" bind:group={regFamiliarDe} value={val} class="accent-viking-600" />
+														{lbl}
+													</label>
+												{/each}
+											</div>
+										</fieldset>
 										<fieldset>
 											<legend class="block text-xs font-medium text-ink mb-1">Parentesco</legend>
 											<div class="flex flex-wrap gap-x-3 gap-y-1">
