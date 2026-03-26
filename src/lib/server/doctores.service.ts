@@ -5,65 +5,67 @@ import type { DoctorConEspecialidad, DoctorOption, Especialidad, DisponibilidadD
 
 export async function getActiveDoctores(): Promise<DoctorConEspecialidad[]> {
 	if (mockFlags.doctores) return mockDoctores.filter((d) => d.activo);
-	return apiFetch<DoctorConEspecialidad[]>('/doctores?activo=true');
+	return apiFetch<DoctorConEspecialidad[]>('/doctors?active=true');
 }
 
 export async function getDoctorOptions(): Promise<DoctorOption[]> {
 	if (mockFlags.doctores) {
 		return mockDoctores.filter((d) => d.activo).map((d) => ({
 			id: d.id,
-			nombreCompleto: `${d.nombre} ${d.apellido}`,
+			nombre_completo: `${d.nombre} ${d.apellido}`,
 			especialidad: d.especialidad.nombre,
-			especialidadId: d.especialidad_id,
-			diasTrabajo: [...new Set(
+			especialidad_id: d.especialidad_id,
+			dias_trabajo: [...new Set(
 				mockDisponibilidad
 					.filter((disp) => disp.doctor_id === d.id)
 					.map((disp) => disp.day_of_week)
 			)]
 		}));
 	}
-	return apiFetch<DoctorOption[]>('/doctores/opciones');
+	return apiFetch<DoctorOption[]>('/doctors/options');
 }
 
 export async function getEspecialidades(): Promise<Especialidad[]> {
 	if (mockFlags.doctores) return mockEspecialidades.filter((e) => e.activo);
-	return apiFetch<Especialidad[]>('/especialidades');
+	return apiFetch<Especialidad[]>('/specialties');
+}
+
+/**
+ * Devuelve todos los bloques de disponibilidad del doctor.
+ */
+export async function getAllDisponibilidad(doctorId: string): Promise<DisponibilidadDoctor[]> {
+	if (mockFlags.doctores) {
+		return mockDisponibilidad.filter((d) => d.doctor_id === doctorId);
+	}
+	return apiFetch<DisponibilidadDoctor[]>(`/doctors/${doctorId}/availability`);
 }
 
 /**
  * Devuelve los bloques de disponibilidad del doctor para un día de la semana.
- * @param doctorId
  * @param dayOfWeek  1=Lunes … 5=Viernes
  */
-export async function getAllDisponibilidad(doctorId: number): Promise<DisponibilidadDoctor[]> {
-	if (mockFlags.doctores) {
-		return mockDisponibilidad.filter((d) => d.doctor_id === doctorId);
-	}
-	return apiFetch<DisponibilidadDoctor[]>(`/doctores/${doctorId}/disponibilidad`);
-}
-
-export async function getDisponibilidad(doctorId: number, dayOfWeek: number): Promise<DisponibilidadDoctor[]> {
+export async function getDisponibilidad(doctorId: string, dayOfWeek: number): Promise<DisponibilidadDoctor[]> {
 	if (mockFlags.doctores) {
 		return mockDisponibilidad.filter(
 			(d) => d.doctor_id === doctorId && d.day_of_week === dayOfWeek
 		);
 	}
-	return apiFetch<DisponibilidadDoctor[]>(`/doctores/${doctorId}/disponibilidad?dow=${dayOfWeek}`);
+	return apiFetch<DisponibilidadDoctor[]>(`/doctors/${doctorId}/availability?dow=${dayOfWeek}`);
 }
 
 /**
  * Verifica si hay una excepción (día libre/feriado) para el doctor en esa fecha.
  */
-export async function hasExcepcion(doctorId: number, fecha: string): Promise<boolean> {
+export async function hasExcepcion(doctorId: string, fecha: string): Promise<boolean> {
 	if (mockFlags.doctores) return false; // mock: nunca hay excepciones
-	const res = await apiFetch<{ excepcion: boolean }>(`/doctores/${doctorId}/excepciones?fecha=${fecha}`);
+	const res = await apiFetch<{ excepcion: boolean }>(`/doctors/${doctorId}/exceptions?date=${fecha}`);
 	return res.excepcion;
 }
 
 // ─── CRUD de disponibilidad ──────────────────────────────────
 
 export interface CreateDisponibilidadInput {
-	doctor_id: number;
+	doctor_id: string;
 	day_of_week: 1 | 2 | 3 | 4 | 5;
 	hora_inicio: string;
 	hora_fin: string;
@@ -72,9 +74,8 @@ export interface CreateDisponibilidadInput {
 
 export async function createDisponibilidad(input: CreateDisponibilidadInput): Promise<DisponibilidadDoctor> {
 	if (mockFlags.doctores) {
-		const maxId = mockDisponibilidad.length > 0 ? Math.max(...mockDisponibilidad.map((d) => d.id)) : 0;
 		const nuevo: DisponibilidadDoctor = {
-			id: maxId + 1,
+			id: crypto.randomUUID(),
 			doctor_id: input.doctor_id,
 			day_of_week: input.day_of_week,
 			hora_inicio: input.hora_inicio,
@@ -84,24 +85,24 @@ export async function createDisponibilidad(input: CreateDisponibilidadInput): Pr
 		mockDisponibilidad.push(nuevo);
 		return nuevo;
 	}
-	return apiFetch<DisponibilidadDoctor>(`/doctores/${input.doctor_id}/disponibilidad`, {
+	return apiFetch<DisponibilidadDoctor>(`/doctors/${input.doctor_id}/availability`, {
 		method: 'POST',
 		body: JSON.stringify(input)
 	});
 }
 
-export async function deleteDisponibilidad(doctorId: number, bloqueId: number): Promise<void> {
+export async function deleteDisponibilidad(doctorId: string, bloqueId: string): Promise<void> {
 	if (mockFlags.doctores) {
 		const idx = mockDisponibilidad.findIndex((d) => d.id === bloqueId && d.doctor_id === doctorId);
 		if (idx !== -1) mockDisponibilidad.splice(idx, 1);
 		return;
 	}
-	await apiFetch(`/doctores/${doctorId}/disponibilidad/${bloqueId}`, { method: 'DELETE' });
+	await apiFetch(`/doctors/${doctorId}/availability/${bloqueId}`, { method: 'DELETE' });
 }
 
 export async function updateDisponibilidad(
-	doctorId: number,
-	bloqueId: number,
+	doctorId: string,
+	bloqueId: string,
 	updates: { hora_inicio?: string; hora_fin?: string }
 ): Promise<void> {
 	if (mockFlags.doctores) {
@@ -112,7 +113,7 @@ export async function updateDisponibilidad(
 		}
 		return;
 	}
-	await apiFetch(`/doctores/${doctorId}/disponibilidad/${bloqueId}`, {
+	await apiFetch(`/doctors/${doctorId}/availability/${bloqueId}`, {
 		method: 'PATCH',
 		body: JSON.stringify(updates)
 	});

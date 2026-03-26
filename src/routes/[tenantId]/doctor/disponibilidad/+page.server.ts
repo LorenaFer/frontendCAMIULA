@@ -52,8 +52,8 @@ export const actions: Actions = {
 		assertActionPermission(locals.user, 'eliminar');
 		const doctorId = requireDoctorId(locals.user);
 		const fd = await request.formData();
-		const bloqueId = parseInt(String(fd.get('bloqueId') ?? ''), 10);
-		if (isNaN(bloqueId)) return fail(400, { error: 'ID de bloque inválido' });
+		const bloqueId = String(fd.get('bloqueId') ?? '').trim();
+		if (!bloqueId) return fail(400, { error: 'ID de bloque inválido' });
 
 		await doctoresService.deleteDisponibilidad(doctorId, bloqueId);
 		return { success: true, message: 'Bloque eliminado' };
@@ -63,11 +63,11 @@ export const actions: Actions = {
 		assertActionPermission(locals.user, 'actualizar');
 		const doctorId = requireDoctorId(locals.user);
 		const fd = await request.formData();
-		const bloqueId = parseInt(String(fd.get('bloqueId') ?? ''), 10);
+		const bloqueId = String(fd.get('bloqueId') ?? '').trim();
 		const hora_inicio = String(fd.get('hora_inicio') ?? '').trim() || undefined;
 		const hora_fin = String(fd.get('hora_fin') ?? '').trim() || undefined;
 
-		if (isNaN(bloqueId)) return fail(400, { error: 'ID de bloque inválido' });
+		if (!bloqueId) return fail(400, { error: 'ID de bloque inválido' });
 		if (hora_inicio && hora_fin && hora_inicio >= hora_fin) return fail(400, { error: 'La hora de inicio debe ser menor a la hora de fin' });
 
 		await doctoresService.updateDisponibilidad(doctorId, bloqueId, { hora_inicio, hora_fin });

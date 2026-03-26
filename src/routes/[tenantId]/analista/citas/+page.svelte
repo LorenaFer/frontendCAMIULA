@@ -18,8 +18,8 @@
 	function applyFilters(filters: AppointmentFiltersType) {
 		const qs = new URLSearchParams();
 		if (filters.fecha) qs.set('fecha', filters.fecha);
-		if (filters.doctorId) qs.set('doctorId', String(filters.doctorId));
-		if (filters.especialidadId) qs.set('especialidadId', String(filters.especialidadId));
+		if (filters.doctor_id) qs.set('doctor_id', String(filters.doctor_id));
+		if (filters.especialidad_id) qs.set('especialidad_id', String(filters.especialidad_id));
 		if (filters.estado) qs.set('estado', filters.estado);
 		if (filters.search) qs.set('search', filters.search);
 		qs.set('page', '1');
@@ -32,12 +32,12 @@
 		goto(`?${qs}`, { replaceState: true });
 	}
 
-	const statsTotal = $derived(data.citas.total);
+	const statsTotal = $derived(data.citas.pagination.total);
 	const statsPendientes = $derived(
-		(data.citas.data as CitaConPaciente[]).filter((c) => c.estado === 'pendiente').length
+		(data.citas.items as CitaConPaciente[]).filter((c) => c.estado === 'pendiente').length
 	);
 	const statsAtendidas = $derived(
-		(data.citas.data as CitaConPaciente[]).filter((c) => c.estado === 'atendida').length
+		(data.citas.items as CitaConPaciente[]).filter((c) => c.estado === 'atendida').length
 	);
 
 	function exportar() {
@@ -136,7 +136,7 @@
 				{ key: 'hora_inicio', header: 'Hora',     width: '80px'  },
 				{ key: 'estado',      header: 'Estado',   width: '130px', align: 'center', render: estadoCell },
 			] satisfies DataTableColumn<CitaRow>[]}
-			data={data.citas.data as CitaRow[]}
+			data={data.citas.items as CitaRow[]}
 			rowKey="id"
 			emptyMessage="No hay citas que coincidan con los filtros aplicados."
 			actions={[
@@ -155,16 +155,16 @@
 		/>
 
 		<!-- Paginación -->
-		{#if data.citas.total > data.citas.pageSize}
+		{#if data.citas.pagination.total > data.citas.pagination.page_size}
 			<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-t border-border">
 				<span class="text-[11px] sm:text-xs text-ink-muted">
-					{(data.citas.page - 1) * data.citas.pageSize + 1}–{Math.min(data.citas.page * data.citas.pageSize, data.citas.total)} de {data.citas.total}
+					{(data.citas.pagination.page - 1) * data.citas.pagination.page_size + 1}–{Math.min(data.citas.pagination.page * data.citas.pagination.page_size, data.citas.pagination.total)} de {data.citas.pagination.total}
 				</span>
 				<div class="flex gap-2">
-					<Button variant="ghost" size="sm" disabled={data.citas.page <= 1} onclick={() => changePage(data.citas.page - 1)}>
+					<Button variant="ghost" size="sm" disabled={data.citas.pagination.page <= 1} onclick={() => changePage(data.citas.pagination.page - 1)}>
 						Anterior
 					</Button>
-					<Button variant="ghost" size="sm" disabled={!data.citas.hasNext} onclick={() => changePage(data.citas.page + 1)}>
+					<Button variant="ghost" size="sm" disabled={!data.citas.pagination.has_next} onclick={() => changePage(data.citas.pagination.page + 1)}>
 						Siguiente
 					</Button>
 				</div>

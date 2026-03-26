@@ -105,14 +105,14 @@ export const actions: Actions = {
 
 	obtenerSlots: async ({ request }) => {
 		const fd = await request.formData();
-		const doctorId = parseInt(String(fd.get('doctorId') ?? ''), 10);
+		const doctorId = String(fd.get('doctorId') ?? '').trim();
 		const fecha = String(fd.get('fecha') ?? '');
 		const esNuevo = String(fd.get('esNuevo') ?? '') === 'true';
 
 		if (!fecha || !isDateAllowed(fecha)) {
 			return fail(400, { error: 'Fecha inválida — debe ser al menos 2 días después de hoy' });
 		}
-		if (isNaN(doctorId)) {
+		if (!doctorId) {
 			return fail(400, { error: 'Doctor inválido' });
 		}
 
@@ -138,11 +138,11 @@ export const actions: Actions = {
 
 	obtenerFechasDisponibles: async ({ request }) => {
 		const fd = await request.formData();
-		const doctorId = parseInt(String(fd.get('doctorId') ?? ''), 10);
+		const doctorId = String(fd.get('doctorId') ?? '').trim();
 		const year = parseInt(String(fd.get('year') ?? ''), 10);
 		const month = parseInt(String(fd.get('month') ?? ''), 10);
 
-		if (isNaN(doctorId) || isNaN(year) || isNaN(month)) {
+		if (!doctorId || isNaN(year) || isNaN(month)) {
 			return fail(400, { error: 'Parámetros inválidos' });
 		}
 
@@ -181,9 +181,9 @@ export const actions: Actions = {
 
 	confirmarCita: async ({ request, params }) => {
 		const fd = await request.formData();
-		const pacienteId = parseInt(String(fd.get('pacienteId') ?? ''), 10);
-		const doctorId = parseInt(String(fd.get('doctorId') ?? ''), 10);
-		const especialidadId = parseInt(String(fd.get('especialidadId') ?? ''), 10);
+		const pacienteId = String(fd.get('pacienteId') ?? '').trim();
+		const doctorId = String(fd.get('doctorId') ?? '').trim();
+		const especialidadId = String(fd.get('especialidadId') ?? '').trim();
 		const fecha = String(fd.get('fecha') ?? '');
 		const hora_inicio = String(fd.get('hora_inicio') ?? '');
 		const hora_fin = String(fd.get('hora_fin') ?? '');

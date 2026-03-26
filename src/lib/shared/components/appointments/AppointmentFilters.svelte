@@ -27,12 +27,12 @@
 
 	const doctorOpciones = $derived([
 		{ value: '', label: 'Todos los doctores' },
-		...doctores.map((d) => ({ value: String(d.id), label: d.nombreCompleto }))
+		...doctores.map((d) => ({ value: d.id, label: d.nombre_completo }))
 	]);
 
 	const especialidadOpciones = $derived([
 		{ value: '', label: 'Todas las especialidades' },
-		...especialidades.map((e) => ({ value: String(e.id), label: e.nombre }))
+		...especialidades.map((e) => ({ value: e.id, label: e.nombre }))
 	]);
 
 	function apply() {
@@ -61,8 +61,8 @@
 		<Select
 			label="Especialidad"
 			options={especialidadOpciones}
-			value={local.especialidadId ? String(local.especialidadId) : ''}
-			onchange={(v) => { if (typeof v === 'string') local.especialidadId = v ? Number(v) : undefined; }}
+			value={local.especialidad_id ?? ''}
+			onchange={(v) => { if (typeof v === 'string') local.especialidad_id = v || undefined; }}
 		/>
 	</div>
 
@@ -70,8 +70,8 @@
 		<Select
 			label="Doctor"
 			options={doctorOpciones}
-			value={local.doctorId ? String(local.doctorId) : ''}
-			onchange={(v) => { if (typeof v === 'string') local.doctorId = v ? Number(v) : undefined; }}
+			value={local.doctor_id ?? ''}
+			onchange={(v) => { if (typeof v === 'string') local.doctor_id = v || undefined; }}
 		/>
 	</div>
 

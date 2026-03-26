@@ -153,13 +153,13 @@ export const POST: RequestHandler = async ({ request, params }) => {
 
 		// ── Obtener slots ────────────────────────────────────────
 		case 'obtenerSlots': {
-			const doctorId = Number(body.doctorId);
+			const doctorId = String(body.doctorId ?? '').trim();
 			const fecha = String(body.fecha ?? '');
 			const esNuevo = body.esNuevo === true || body.esNuevo === 'true';
 
 			if (!fecha || !isDateAllowed(fecha))
 				return err('Fecha inválida — debe ser al menos 2 días después de hoy');
-			if (!doctorId || isNaN(doctorId))
+			if (!doctorId)
 				return err('Doctor inválido');
 
 			const dow = new Date(fecha + 'T12:00:00').getDay();
@@ -183,9 +183,9 @@ export const POST: RequestHandler = async ({ request, params }) => {
 
 		// ── Confirmar cita ───────────────────────────────────────
 		case 'confirmarCita': {
-			const pacienteId = Number(body.pacienteId);
-			const doctorId = Number(body.doctorId);
-			const especialidadId = Number(body.especialidadId);
+			const pacienteId = String(body.pacienteId ?? '').trim();
+			const doctorId = String(body.doctorId ?? '').trim();
+			const especialidadId = String(body.especialidadId ?? '').trim();
 			const fecha = String(body.fecha ?? '');
 			const hora_inicio = String(body.hora_inicio ?? '');
 			const hora_fin = String(body.hora_fin ?? '');

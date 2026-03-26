@@ -48,7 +48,7 @@
 
 	// ─── Drag state ──────────────────────────────────────────
 	type DragMode = 'create' | 'resize-top' | 'resize-bottom';
-	let drag = $state<{ mode: DragMode; dia: number; colEl: HTMLElement; startMins: number; endMins: number; bloqueId?: number; originalStart?: string; originalEnd?: string; } | null>(null);
+	let drag = $state<{ mode: DragMode; dia: number; colEl: HTMLElement; startMins: number; endMins: number; bloqueId?: string; originalStart?: string; originalEnd?: string; } | null>(null);
 
 	const previewTop = $derived(drag ? t2p(m2t(Math.min(drag.startMins, drag.endMins))) : 0);
 	const previewHeight = $derived(drag ? t2p(m2t(Math.max(drag.startMins, drag.endMins))) - previewTop : 0);
@@ -64,7 +64,7 @@
 		attachDragListeners();
 	}
 
-	function onResizeMouseDown(e: MouseEvent, bloqueId: number, edge: 'top' | 'bottom', bloque: DisponibilidadDoctor) {
+	function onResizeMouseDown(e: MouseEvent, bloqueId: string, edge: 'top' | 'bottom', bloque: DisponibilidadDoctor) {
 		e.preventDefault(); e.stopPropagation();
 		const colEl = (e.target as HTMLElement).closest('[data-day-col]') as HTMLElement;
 		if (!colEl) return;

@@ -4,9 +4,9 @@ import { mockCitas, mockCitasConPaciente } from './mock/data.js';
 import type { Cita, CitaConPaciente, CitaEstado, AppointmentFilters, PaginatedResponse } from '$shared/types/appointments.js';
 
 export interface CreateCitaInput {
-	paciente_id: number;
-	doctor_id: number;
-	especialidad_id: number;
+	paciente_id: string;
+	doctor_id: string;
+	especialidad_id: string;
 	fecha: string;
 	hora_inicio: string;
 	hora_fin: string;
@@ -30,7 +30,7 @@ export async function createCita(input: CreateCitaInput): Promise<Cita> {
 		if (conflict) throw Object.assign(new Error('Slot ocupado'), { status: 409 });
 
 		const nueva: Cita = {
-			id: mockCitas.length + 1,
+			id: crypto.randomUUID(),
 			...input,
 			estado: 'pendiente',
 			created_at: new Date().toISOString()
@@ -38,7 +38,7 @@ export async function createCita(input: CreateCitaInput): Promise<Cita> {
 		mockCitas.push(nueva);
 		return nueva;
 	}
-	return apiFetch<Cita>('/citas', { method: 'POST', body: JSON.stringify(input) });
+	return apiFetch<Cita>('/appointments', { method: 'POST', body: JSON.stringify(input) });
 }
 
 export async function getCitasByFilters(
@@ -48,8 +48,8 @@ export async function getCitasByFilters(
 		let data = [...mockCitasConPaciente];
 
 		if (filters.fecha) data = data.filter((c) => c.fecha === filters.fecha);
-		if (filters.doctorId) data = data.filter((c) => c.doctor_id === filters.doctorId);
-		if (filters.especialidadId) data = data.filter((c) => c.especialidad_id === filters.especialidadId);
+		if (filters.doctor_id) data = data.filter((c) => c.doctor_id === filters.doctor_id);
+		if (filters.especialidad_id) data = data.filter((c) => c.especialidad_id === filters.especialidad_id);
 		if (filters.estado) data = data.filter((c) => c.estado === filters.estado);
 		if (filters.search) {
 			const q = filters.search.toLowerCase();
@@ -63,30 +63,33 @@ export async function getCitasByFilters(
 
 		const total = data.length;
 		const page = filters.page ?? 1;
-		const pageSize = filters.pageSize ?? 25;
-		const start = (page - 1) * pageSize;
+		const page_size = filters.page_size ?? 25;
+		const start = (page - 1) * page_size;
 		return {
-			data: data.slice(start, start + pageSize),
-			total,
-			page,
-			pageSize,
-			hasNext: start + pageSize < total
+			items: data.slice(start, start + page_size),
+			pagination: {
+				total,
+				page,
+				page_size,
+				pages: Math.ceil(total / page_size),
+				has_next: start + page_size < total
+			}
 		};
 	}
 
 	const qs = new URLSearchParams();
 	if (filters.fecha) qs.set('fecha', filters.fecha);
-	if (filters.doctorId) qs.set('doctor_id', String(filters.doctorId));
-	if (filters.especialidadId) qs.set('especialidad_id', String(filters.especialidadId));
+	if (filters.doctor_id) qs.set('doctor_id', filters.doctor_id);
+	if (filters.especialidad_id) qs.set('especialidad_id', filters.especialidad_id);
 	if (filters.estado) qs.set('estado', filters.estado);
 	if (filters.search) qs.set('q', filters.search);
 	qs.set('page', String(filters.page ?? 1));
-	qs.set('page_size', String(filters.pageSize ?? 25));
+	qs.set('page_size', String(filters.page_size ?? 25));
 
-	return apiFetch<PaginatedResponse<CitaConPaciente>>(`/citas?${qs}`);
+	return apiFetch<PaginatedResponse<CitaConPaciente>>(`/appointments?${qs}`);
 }
 
-export async function getCitasHoy(doctorId?: number): Promise<CitaConPaciente[]> {
+export async function getCitasHoy(doctorId?: string): Promise<CitaConPaciente[]> {
 	const today = new Date().toISOString().slice(0, 10);
 	if (mockFlags.citas) {
 		return mockCitasConPaciente.filter(
@@ -94,46 +97,46 @@ export async function getCitasHoy(doctorId?: number): Promise<CitaConPaciente[]>
 		);
 	}
 	const qs = new URLSearchParams({ fecha: today });
-	if (doctorId) qs.set('doctor_id', String(doctorId));
-	return apiFetch<CitaConPaciente[]>(`/citas?${qs}`);
+	if (doctorId) qs.set('doctor_id', doctorId);
+	return apiFetch<CitaConPaciente[]>(`/appointments?${qs}`);
 }
 
-export async function getCitasByDoctorMes(doctorId: number, year: number, month: number): Promise<Cita[]> {
+export async function getCitasByDoctorMes(doctorId: string, year: number, month: number): Promise<Cita[]> {
 	const prefix = `${year}-${String(month).padStart(2, '0')}`;
 	if (mockFlags.citas) {
 		return mockCitas.filter(
 			(c) => c.doctor_id === doctorId && c.fecha.startsWith(prefix) && c.estado !== 'cancelada'
 		);
 	}
-	return apiFetch<Cita[]>(`/citas?doctor_id=${doctorId}&mes=${prefix}&excluir_canceladas=true`);
+	return apiFetch<Cita[]>(`/appointments?doctor_id=${doctorId}&mes=${prefix}&excluir_canceladas=true`);
 }
 
-export async function getCitasByDoctorFecha(doctorId: number, fecha: string): Promise<Cita[]> {
+export async function getCitasByDoctorFecha(doctorId: string, fecha: string): Promise<Cita[]> {
 	if (mockFlags.citas) {
 		return mockCitas.filter(
 			(c) => c.doctor_id === doctorId && c.fecha === fecha && c.estado !== 'cancelada'
 		);
 	}
-	return apiFetch<Cita[]>(`/citas?doctor_id=${doctorId}&fecha=${fecha}&excluir_canceladas=true`);
+	return apiFetch<Cita[]>(`/appointments?doctor_id=${doctorId}&fecha=${fecha}&excluir_canceladas=true`);
 }
 
-export async function getCitaById(id: number): Promise<CitaConPaciente | null> {
+export async function getCitaById(id: string): Promise<CitaConPaciente | null> {
 	if (mockFlags.citas) {
 		return mockCitasConPaciente.find((c) => c.id === id) ?? null;
 	}
-	return apiFetch<CitaConPaciente>(`/citas/${id}`);
+	return apiFetch<CitaConPaciente>(`/appointments/${id}`);
 }
 
-export async function updateEstadoCita(id: number, estado: CitaEstado): Promise<void> {
+export async function updateEstadoCita(id: string, estado: CitaEstado): Promise<void> {
 	if (mockFlags.citas) {
 		const c = mockCitas.find((x) => x.id === id);
 		if (c) c.estado = estado;
 		return;
 	}
-	await apiFetch(`/citas/${id}/estado`, { method: 'PATCH', body: JSON.stringify({ estado }) });
+	await apiFetch(`/appointments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ estado }) });
 }
 
-export async function isSlotOccupied(doctorId: number, fecha: string, horaInicio: string): Promise<boolean> {
+export async function isSlotOccupied(doctorId: string, fecha: string, horaInicio: string): Promise<boolean> {
 	if (mockFlags.citas) {
 		return mockCitas.some(
 			(c) =>
@@ -144,7 +147,7 @@ export async function isSlotOccupied(doctorId: number, fecha: string, horaInicio
 		);
 	}
 	const res = await apiFetch<{ ocupado: boolean }>(
-		`/citas/check-slot?doctor_id=${doctorId}&fecha=${fecha}&hora_inicio=${horaInicio}`
+		`/appointments/check-slot?doctor_id=${doctorId}&fecha=${fecha}&hora_inicio=${horaInicio}`
 	);
 	return res.ocupado;
 }

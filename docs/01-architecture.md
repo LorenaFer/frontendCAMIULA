@@ -15,8 +15,8 @@ src/
 │   ├── +page.svelte                  # Landing page
 │   ├── login/                        # Login por rol
 │   ├── logout/                       # Cierre de sesion
-│   ├── hospitals/                    # Seleccion de tenant/hospital
-│   └── [tenantId]/                   # RUTAS MULTI-TENANT
+│   ├── hospitals/                    # Seleccion de hospital (legacy)
+│   └── [tenantId]/                   # RUTAS PRINCIPALES (no multi-tenant real)
 │       ├── +layout.svelte            # Shell de la app (sidebar + header)
 │       ├── +layout.server.ts         # Guarda de permisos por rol
 │       ├── +page.svelte              # Dashboard

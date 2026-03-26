@@ -1,12 +1,14 @@
-# Rutas y Multi-Tenancy
+# Rutas y Navegacion
+
+> **Nota**: El proyecto NO usa multi-tenancy. El segmento `[tenantId]` en las rutas existe por estructura de SvelteKit pero no hay logica real de multiples tenants. En la practica se usa un solo hospital/institucion.
 
 ## Flujo de Navegacion
 
 ```
-Login → Seleccion de Hospital → /[tenantId]/... (rutas del hospital)
+Login → /[tenantId]/... (rutas de la app)
 ```
 
-El segmento dinamico `[tenantId]` en la URL captura el ID del hospital seleccionado (ej: `/general-hospital/agendar`). Todas las rutas dentro estan protegidas por autenticacion y permisos RBAC.
+El segmento `[tenantId]` en la URL es un parametro fijo (ej: `/hospital/agendar`). Todas las rutas dentro estan protegidas por autenticacion y permisos RBAC.
 
 ---
 

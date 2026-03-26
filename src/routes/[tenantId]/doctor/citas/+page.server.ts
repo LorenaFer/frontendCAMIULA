@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		citas,
 		disponibilidad,
 		doctorId,
-		doctorEspecialidadId: doctor?.especialidad_id ?? 1,
+		doctorEspecialidadId: doctor?.especialidad_id ?? '',
 		doctorNombre: doctor ? `${doctor.nombre} ${doctor.apellido}` : 'Doctor'
 	};
 };
@@ -30,8 +30,8 @@ export const actions: Actions = {
 	marcarAtendida: async ({ request, locals }) => {
 		assertActionPermission(locals.user, 'marcarAtendida');
 		const fd = await request.formData();
-		const citaId = parseInt(String(fd.get('citaId') ?? ''), 10);
-		if (isNaN(citaId)) return fail(400, { error: 'ID de cita inválido' });
+		const citaId = String(fd.get('citaId') ?? '').trim();
+		if (!citaId) return fail(400, { error: 'ID de cita inválido' });
 
 		await citasService.updateEstadoCita(citaId, 'atendida');
 		return { success: true };
@@ -40,8 +40,8 @@ export const actions: Actions = {
 	marcarNoAsistio: async ({ request, locals }) => {
 		assertActionPermission(locals.user, 'marcarNoAsistio');
 		const fd = await request.formData();
-		const citaId = parseInt(String(fd.get('citaId') ?? ''), 10);
-		if (isNaN(citaId)) return fail(400, { error: 'ID de cita inválido' });
+		const citaId = String(fd.get('citaId') ?? '').trim();
+		if (!citaId) return fail(400, { error: 'ID de cita inválido' });
 
 		await citasService.updateEstadoCita(citaId, 'no_asistio');
 		return { success: true, noAsistio: true };
@@ -51,10 +51,11 @@ export const actions: Actions = {
 		assertActionPermission(locals.user, 'citaEmergencia');
 		const doctorId = requireDoctorId(locals.user);
 		const fd = await request.formData();
-		const pacienteId = parseInt(String(fd.get('pacienteId') ?? ''), 10);
+		const pacienteId = String(fd.get('pacienteId') ?? '').trim();
 		const motivo = String(fd.get('motivo') ?? '').trim();
+		const especialidadId = String(fd.get('especialidadId') ?? '').trim();
 
-		if (isNaN(pacienteId)) return fail(400, { error: 'Paciente inválido' });
+		if (!pacienteId) return fail(400, { error: 'Paciente inválido' });
 
 		const now = new Date();
 		const fecha = now.toISOString().slice(0, 10);
@@ -66,7 +67,7 @@ export const actions: Actions = {
 		const cita = await citasService.createCita({
 			paciente_id: pacienteId,
 			doctor_id: doctorId,
-			especialidad_id: 1,
+			especialidad_id: especialidadId,
 			fecha,
 			hora_inicio: hora,
 			hora_fin: horaFin,

@@ -10,5 +10,5 @@ export interface AuthUser {
 	role: UserRole;
 	initials: string;
 	/** Solo presente cuando role === 'doctor' o admin con contexto de doctor */
-	doctorId?: number;
+	doctor_id?: string;
 }

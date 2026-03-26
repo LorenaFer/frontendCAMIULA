@@ -82,18 +82,18 @@
 
 	const doctoresFiltrados = $derived(
 		selectedEspecialidadId
-			? doctores.filter((d) => String(d.especialidadId) === selectedEspecialidadId)
+			? doctores.filter((d) => d.especialidad_id === selectedEspecialidadId)
 			: doctores
 	);
 
 	const especialidadOpciones = $derived([
 		{ value: '', label: 'Seleccione especialidad' },
-		...especialidades.map((e) => ({ value: String(e.id), label: e.nombre }))
+		...especialidades.map((e) => ({ value: e.id, label: e.nombre }))
 	]);
 
 	const doctorOpciones = $derived([
 		{ value: '', label: 'Seleccione doctor' },
-		...doctoresFiltrados.map((d) => ({ value: String(d.id), label: d.nombreCompleto }))
+		...doctoresFiltrados.map((d) => ({ value: d.id, label: d.nombre_completo }))
 	]);
 
 	// Paso 4 — Fecha y hora
@@ -106,10 +106,10 @@
 	let slotDuracion = $state<30 | 60>(30);
 	let loadingSlots = $state(false);
 
-	// Fechas disponibles: derivadas síncronamente de diasTrabajo del doctor
+	// Fechas disponibles: derivadas síncronamente de dias_trabajo del doctor
 	const availableDates = $derived.by(() => {
-		const doctor = doctores.find((d) => String(d.id) === selectedDoctorId);
-		if (!doctor || !doctor.diasTrabajo.length) return [];
+		const doctor = doctores.find((d) => d.id === selectedDoctorId);
+		if (!doctor || !doctor.dias_trabajo.length) return [];
 
 		const daysInMonth = new Date(calYear, calMonth, 0).getDate();
 		const mo = String(calMonth).padStart(2, '0');
@@ -120,7 +120,7 @@
 			if (fecha < minDate) continue;
 			const dow = new Date(fecha + 'T12:00:00').getDay();
 			const dayOfWeek = dow === 0 ? 7 : dow;
-			if (doctor.diasTrabajo.includes(dayOfWeek)) dates.push(fecha);
+			if (doctor.dias_trabajo.includes(dayOfWeek)) dates.push(fecha);
 		}
 		return dates;
 	});
@@ -234,7 +234,7 @@
 		loadingSlots = true;
 		try {
 			const { data } = await api<{ slots: TimeSlot[]; duracion: 30 | 60 }>('obtenerSlots', {
-				doctorId: Number(selectedDoctorId), fecha: date, esNuevo
+				doctorId: selectedDoctorId, fecha: date, esNuevo
 			});
 			slots = data.slots;
 			slotDuracion = data.duracion;
@@ -259,8 +259,8 @@
 			if (!slotObj) { formError = 'Horario inválido'; return; }
 
 			const { data } = await api<{ redirectUrl: string }>('confirmarCita', {
-				pacienteId: paciente.id, doctorId: Number(selectedDoctorId),
-				especialidadId: Number(selectedEspecialidadId),
+				pacienteId: paciente.id, doctorId: selectedDoctorId,
+				especialidadId: selectedEspecialidadId,
 				fecha: selectedDate, hora_inicio: slotObj.hora_inicio,
 				hora_fin: slotObj.hora_fin, duracion_min: slotDuracion,
 				es_primera_vez: esNuevo,
@@ -276,8 +276,8 @@
 		}
 	}
 
-	const doctorSeleccionado = $derived(doctores.find((d) => String(d.id) === selectedDoctorId));
-	const especialidadSeleccionada = $derived(especialidades.find((e) => String(e.id) === selectedEspecialidadId));
+	const doctorSeleccionado = $derived(doctores.find((d) => d.id === selectedDoctorId));
+	const especialidadSeleccionada = $derived(especialidades.find((e) => e.id === selectedEspecialidadId));
 
 </script>
 
@@ -603,7 +603,7 @@
 								{#each [
 									{ label: 'Paciente', value: paciente ? `${paciente.nombre} ${paciente.apellido}` : '' },
 									{ label: 'Especialidad', value: especialidadSeleccionada?.nombre ?? '' },
-									{ label: 'Doctor', value: doctorSeleccionado?.nombreCompleto ?? '' },
+									{ label: 'Doctor', value: doctorSeleccionado?.nombre_completo ?? '' },
 									{ label: 'Fecha', value: selectedDate },
 									{ label: 'Hora', value: selectedSlot },
 									{ label: 'Duración', value: `${slotDuracion} min${esNuevo ? ' (primera vez)' : ''}` }

@@ -1,12 +1,13 @@
 // ============================================================
 // Tipos del Módulo de Citas
 // Contrato compartido entre servicios server y componentes UI.
+// IDs son UUIDs (string) — coincide con el backend FastAPI.
 // ============================================================
 
 // ─── Catálogos ───────────────────────────────────────────────
 
 export interface Especialidad {
-	id: number;
+	id: string;
 	nombre: string;
 	activo: boolean;
 }
@@ -14,10 +15,10 @@ export interface Especialidad {
 // ─── Doctores ────────────────────────────────────────────────
 
 export interface Doctor {
-	id: number;
+	id: string;
 	nombre: string;
 	apellido: string;
-	especialidad_id: number;
+	especialidad_id: string;
 	activo: boolean;
 }
 
@@ -25,18 +26,18 @@ export interface DoctorConEspecialidad extends Doctor {
 	especialidad: Especialidad;
 }
 
-/** Versión reducida para selects/dropdowns */
+/** Versión reducida para selects/dropdowns — campos snake_case del backend */
 export interface DoctorOption {
-	id: number;
-	nombreCompleto: string;
+	id: string;
+	nombre_completo: string;
 	especialidad: string;
-	especialidadId: number;
-	diasTrabajo: number[]; // 1=Lun … 5=Vie (días en que el doctor atiende)
+	especialidad_id: string;
+	dias_trabajo: number[]; // 1=Lun … 5=Vie (días en que el doctor atiende)
 }
 
 export interface DisponibilidadDoctor {
-	id: number;
-	doctor_id: number;
+	id: string;
+	doctor_id: string;
 	/** 1 = Lunes … 5 = Viernes */
 	day_of_week: 1 | 2 | 3 | 4 | 5;
 	hora_inicio: string; // "08:00"
@@ -67,7 +68,7 @@ export interface ContactoEmergencia {
 }
 
 export interface Paciente {
-	id: number;
+	id: string;
 	nhm: number;
 	cedula: string;
 	nombre: string;
@@ -113,10 +114,10 @@ export interface TimeSlot {
 export type CitaEstado = 'pendiente' | 'confirmada' | 'atendida' | 'cancelada' | 'no_asistio';
 
 export interface Cita {
-	id: number;
-	paciente_id: number;
-	doctor_id: number;
-	especialidad_id: number;
+	id: string;
+	paciente_id: string;
+	doctor_id: string;
+	especialidad_id: string;
 	fecha: string; // ISO date "2025-04-15"
 	hora_inicio: string; // "09:00"
 	hora_fin: string; // "09:30"
@@ -161,10 +162,10 @@ export interface Evaluacion {
 }
 
 export interface HistoriaMedica {
-	id: number;
-	cita_id: number;
-	paciente_id: number;
-	doctor_id: number;
+	id: string;
+	cita_id: string;
+	paciente_id: string;
+	doctor_id: string;
 	evaluacion: Evaluacion;
 	preparado: boolean;
 	preparado_at?: string;
@@ -176,12 +177,12 @@ export interface HistoriaMedica {
 
 export interface AppointmentFilters {
 	fecha?: string;
-	doctorId?: number;
-	especialidadId?: number;
+	doctor_id?: string;
+	especialidad_id?: string;
 	estado?: CitaEstado;
 	search?: string;
 	page?: number;
-	pageSize?: number;
+	page_size?: number;
 }
 
 // ─── Respuestas de acciones ──────────────────────────────────
@@ -200,14 +201,21 @@ export interface ObtenerSlotsResult {
 }
 
 export interface ConfirmarCitaResult {
-	citaId: number;
+	citaId: string;
 	confirmationCode: string;
 }
 
-export interface PaginatedResponse<T> {
-	data: T[];
+// ─── Paginación (formato del backend) ───────────────────────
+
+export interface PaginationMeta {
 	total: number;
 	page: number;
-	pageSize: number;
-	hasNext: boolean;
+	page_size: number;
+	pages: number;
+	has_next: boolean;
+}
+
+export interface PaginatedResponse<T> {
+	items: T[];
+	pagination: PaginationMeta;
 }

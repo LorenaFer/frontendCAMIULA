@@ -28,14 +28,14 @@ export const MOCK_USERS: Record<UserRole, AuthUser> = {
 		name: 'Dr. Carlos Mendoza',
 		role: 'doctor',
 		initials: 'CM',
-		doctorId: 1
+		doctor_id: 'doc-001'
 	},
 	admin: {
 		id: 'adm-1',
 		name: 'Admin Principal',
 		role: 'admin',
 		initials: 'AP',
-		doctorId: 1
+		doctor_id: 'doc-001'
 	}
 };
 
@@ -110,10 +110,10 @@ export function assertActionPermission(user: AuthUser | null, actionName: string
 }
 
 /**
- * Obtiene el doctorId del usuario o lanza 403.
+ * Obtiene el doctor_id del usuario o lanza 403.
  */
-export function requireDoctorId(user: AuthUser | null): number {
+export function requireDoctorId(user: AuthUser | null): string {
 	if (!user) error(401, 'No autenticado');
-	if (!user.doctorId) error(403, 'Se requiere rol de doctor');
-	return user.doctorId;
+	if (!user.doctor_id) error(403, 'Se requiere rol de doctor');
+	return user.doctor_id;
 }

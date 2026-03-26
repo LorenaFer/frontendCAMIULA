@@ -3,17 +3,17 @@ import { apiFetch } from './api.js';
 import { mockHistorias } from './mock/data.js';
 import type { HistoriaMedica, Evaluacion } from '$shared/types/appointments.js';
 
-export async function findByCita(citaId: number): Promise<HistoriaMedica | null> {
+export async function findByCita(citaId: string): Promise<HistoriaMedica | null> {
 	if (mockFlags.historias) {
 		return mockHistorias.find((h) => h.cita_id === citaId) ?? null;
 	}
-	return apiFetch<HistoriaMedica | null>(`/historias?cita_id=${citaId}`);
+	return apiFetch<HistoriaMedica | null>(`/medical-records?appointment_id=${citaId}`);
 }
 
 export async function upsertHistoria(
-	citaId: number,
-	pacienteId: number,
-	doctorId: number,
+	citaId: string,
+	pacienteId: string,
+	doctorId: string,
 	evaluacion: Evaluacion
 ): Promise<HistoriaMedica> {
 	if (mockFlags.historias) {
@@ -24,7 +24,7 @@ export async function upsertHistoria(
 			return existing;
 		}
 		const nueva: HistoriaMedica = {
-			id: mockHistorias.length + 1,
+			id: crypto.randomUUID(),
 			cita_id: citaId,
 			paciente_id: pacienteId,
 			doctor_id: doctorId,
@@ -36,13 +36,13 @@ export async function upsertHistoria(
 		mockHistorias.push(nueva);
 		return nueva;
 	}
-	return apiFetch<HistoriaMedica>('/historias', {
+	return apiFetch<HistoriaMedica>('/medical-records', {
 		method: 'PUT',
 		body: JSON.stringify({ cita_id: citaId, paciente_id: pacienteId, doctor_id: doctorId, evaluacion })
 	});
 }
 
-export async function marcarPreparado(historiaId: number, preparadoPor: string): Promise<void> {
+export async function marcarPreparado(historiaId: string, preparadoPor: string): Promise<void> {
 	if (mockFlags.historias) {
 		const h = mockHistorias.find((x) => x.id === historiaId);
 		if (h) {
@@ -51,7 +51,7 @@ export async function marcarPreparado(historiaId: number, preparadoPor: string):
 		}
 		return;
 	}
-	await apiFetch(`/historias/${historiaId}/preparado`, {
+	await apiFetch(`/medical-records/${historiaId}/prepared`, {
 		method: 'PATCH',
 		body: JSON.stringify({ preparado_por: preparadoPor })
 	});

@@ -1,6 +1,8 @@
 # Sistema de Gestion Hospitalaria - Frontend
 
-Sistema de citas y gestion hospitalaria multi-tenant construido con **SvelteKit 2.50**, **Svelte 5**, **Tailwind CSS 4** y **TypeScript**.
+Sistema de citas y gestion hospitalaria construido con **SvelteKit 2.50**, **Svelte 5**, **Tailwind CSS 4** y **TypeScript**.
+
+> **Nota**: El proyecto NO usa multi-tenancy. Las rutas con `[tenantId]` son un segmento legacy que se mantiene por compatibilidad pero no hay logica multi-tenant real.
 
 ## Stack Tecnologico
 
@@ -81,6 +83,12 @@ Toda la documentacion del proyecto esta en la carpeta [`docs/`](docs/). Lean est
 | [Integracion con Backend](docs/08-backend-integration.md) | Cliente HTTP, service layer, sistema mock/live, flujo de datos |
 | [Sistema de Tipos](docs/09-type-system.md) | Tipos del dominio, contratos server/client, como agregar nuevos tipos |
 | [Guia de Contribucion](docs/10-contributing.md) | Convenciones, reglas, gotchas, flujo para agregar features |
+
+### Backend (para el equipo de API)
+
+| Documento | Descripcion |
+|---|---|
+| [Contratos API](docs/11-api-contracts.md) | **Todos los endpoints** que el frontend necesita del backend FastAPI: auth, pacientes, doctores, citas, historias. Incluye request/response bodies completos y reglas de negocio |
 
 ---
 

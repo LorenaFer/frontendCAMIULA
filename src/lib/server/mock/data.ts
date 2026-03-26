@@ -1,5 +1,6 @@
 // ============================================================
 // Datos mock — replican exactamente el contrato de la API real
+// IDs son UUIDs (string) para coincidir con el backend.
 // ============================================================
 
 import type {
@@ -13,56 +14,63 @@ import type {
 	DoctorOption
 } from '$shared/types/appointments.js';
 
+// ─── IDs estables para mock ─────────────────────────────────
+
+const ESP_IDS = ['esp-001', 'esp-002', 'esp-003', 'esp-004', 'esp-005'];
+const DOC_IDS = ['doc-001', 'doc-002', 'doc-003', 'doc-004', 'doc-005'];
+const PAC_IDS = ['pac-001', 'pac-002', 'pac-003'];
+const CITA_IDS = ['cit-001', 'cit-002', 'cit-003', 'cit-004', 'cit-005', 'cit-006'];
+
 // ─── Especialidades ──────────────────────────────────────────
 
 export const mockEspecialidades: Especialidad[] = [
-	{ id: 1, nombre: 'Medicina General', activo: true },
-	{ id: 2, nombre: 'Odontología', activo: true },
-	{ id: 3, nombre: 'Ginecología', activo: true },
-	{ id: 4, nombre: 'Pediatría', activo: true },
-	{ id: 5, nombre: 'Oftalmología', activo: true }
+	{ id: ESP_IDS[0], nombre: 'Medicina General', activo: true },
+	{ id: ESP_IDS[1], nombre: 'Odontología', activo: true },
+	{ id: ESP_IDS[2], nombre: 'Ginecología', activo: true },
+	{ id: ESP_IDS[3], nombre: 'Pediatría', activo: true },
+	{ id: ESP_IDS[4], nombre: 'Oftalmología', activo: true }
 ];
 
 // ─── Doctores ────────────────────────────────────────────────
 
 export const mockDoctores: DoctorConEspecialidad[] = [
 	{
-		id: 1,
+		id: DOC_IDS[0],
 		nombre: 'Carlos',
 		apellido: 'Mendoza',
-		especialidad_id: 1,
+		especialidad_id: ESP_IDS[0],
 		activo: true,
 		especialidad: mockEspecialidades[0]
 	},
 	{
-		id: 2,
+		id: DOC_IDS[1],
 		nombre: 'María',
 		apellido: 'Rodríguez',
-		especialidad_id: 1,
+		especialidad_id: ESP_IDS[0],
 		activo: true,
 		especialidad: mockEspecialidades[0]
 	},
 	{
-		id: 3,
+		id: DOC_IDS[2],
 		nombre: 'José',
 		apellido: 'Pérez',
-		especialidad_id: 2,
+		especialidad_id: ESP_IDS[1],
 		activo: true,
 		especialidad: mockEspecialidades[1]
 	},
 	{
-		id: 4,
+		id: DOC_IDS[3],
 		nombre: 'Ana',
 		apellido: 'García',
-		especialidad_id: 3,
+		especialidad_id: ESP_IDS[2],
 		activo: true,
 		especialidad: mockEspecialidades[2]
 	},
 	{
-		id: 5,
+		id: DOC_IDS[4],
 		nombre: 'Luis',
 		apellido: 'Torres',
-		especialidad_id: 4,
+		especialidad_id: ESP_IDS[3],
 		activo: true,
 		especialidad: mockEspecialidades[3]
 	}
@@ -70,40 +78,40 @@ export const mockDoctores: DoctorConEspecialidad[] = [
 
 export const mockDoctorOptions: DoctorOption[] = mockDoctores.map((d) => ({
 	id: d.id,
-	nombreCompleto: `${d.nombre} ${d.apellido}`,
+	nombre_completo: `${d.nombre} ${d.apellido}`,
 	especialidad: d.especialidad.nombre,
-	especialidadId: d.especialidad_id,
-	diasTrabajo: [1, 2, 3, 4, 5] // L-V por defecto en mock
+	especialidad_id: d.especialidad_id,
+	dias_trabajo: [1, 2, 3, 4, 5] // L-V por defecto en mock
 }));
 
 // ─── Disponibilidad ──────────────────────────────────────────
 
 // Cada doctor trabaja L-V 8:00-12:00 y 14:00-17:00, slots de 30 min
-function buildDisponibilidad(doctorId: number): DisponibilidadDoctor[] {
+function buildDisponibilidad(doctorId: string): DisponibilidadDoctor[] {
 	const result: DisponibilidadDoctor[] = [];
-	let id = (doctorId - 1) * 10 + 1;
+	let seq = 0;
 	for (const dow of [1, 2, 3, 4, 5] as const) {
 		result.push(
-			{ id: id++, doctor_id: doctorId, day_of_week: dow, hora_inicio: '08:00', hora_fin: '12:00', duracion_slot: 30 },
-			{ id: id++, doctor_id: doctorId, day_of_week: dow, hora_inicio: '14:00', hora_fin: '17:00', duracion_slot: 30 }
+			{ id: `disp-${doctorId}-${seq++}`, doctor_id: doctorId, day_of_week: dow, hora_inicio: '08:00', hora_fin: '12:00', duracion_slot: 30 },
+			{ id: `disp-${doctorId}-${seq++}`, doctor_id: doctorId, day_of_week: dow, hora_inicio: '14:00', hora_fin: '17:00', duracion_slot: 30 }
 		);
 	}
 	return result;
 }
 
 export const mockDisponibilidad: DisponibilidadDoctor[] = [
-	...buildDisponibilidad(1),
-	...buildDisponibilidad(2),
-	...buildDisponibilidad(3),
-	...buildDisponibilidad(4),
-	...buildDisponibilidad(5)
+	...buildDisponibilidad(DOC_IDS[0]),
+	...buildDisponibilidad(DOC_IDS[1]),
+	...buildDisponibilidad(DOC_IDS[2]),
+	...buildDisponibilidad(DOC_IDS[3]),
+	...buildDisponibilidad(DOC_IDS[4])
 ];
 
 // ─── Pacientes ───────────────────────────────────────────────
 
 export const mockPacientes: Paciente[] = [
 	{
-		id: 1,
+		id: PAC_IDS[0],
 		nhm: 1001,
 		cedula: 'V-12345678',
 		nombre: 'Pedro',
@@ -125,7 +133,7 @@ export const mockPacientes: Paciente[] = [
 		created_at: '2024-01-10T10:00:00Z'
 	},
 	{
-		id: 2,
+		id: PAC_IDS[1],
 		nhm: 1002,
 		cedula: 'V-23456789',
 		nombre: 'Laura',
@@ -146,7 +154,7 @@ export const mockPacientes: Paciente[] = [
 		created_at: '2024-02-15T09:00:00Z'
 	},
 	{
-		id: 3,
+		id: PAC_IDS[2],
 		nhm: 1003,
 		cedula: 'V-34567890',
 		nombre: 'Roberto',
@@ -182,10 +190,10 @@ function daysFrom(n: number): string {
 
 export const mockCitas: Cita[] = [
 	{
-		id: 5,
-		paciente_id: 2,
-		doctor_id: 1,
-		especialidad_id: 1,
+		id: CITA_IDS[4],
+		paciente_id: PAC_IDS[1],
+		doctor_id: DOC_IDS[0],
+		especialidad_id: ESP_IDS[0],
 		fecha: fmt(today),
 		hora_inicio: '08:00',
 		hora_fin: '08:30',
@@ -197,10 +205,10 @@ export const mockCitas: Cita[] = [
 		created_by: 'portal_publico'
 	},
 	{
-		id: 6,
-		paciente_id: 3,
-		doctor_id: 1,
-		especialidad_id: 1,
+		id: CITA_IDS[5],
+		paciente_id: PAC_IDS[2],
+		doctor_id: DOC_IDS[0],
+		especialidad_id: ESP_IDS[0],
 		fecha: fmt(today),
 		hora_inicio: '08:30',
 		hora_fin: '09:30',
@@ -212,10 +220,10 @@ export const mockCitas: Cita[] = [
 		created_by: 'portal_publico'
 	},
 	{
-		id: 1,
-		paciente_id: 1,
-		doctor_id: 1,
-		especialidad_id: 1,
+		id: CITA_IDS[0],
+		paciente_id: PAC_IDS[0],
+		doctor_id: DOC_IDS[0],
+		especialidad_id: ESP_IDS[0],
 		fecha: daysFrom(3),
 		hora_inicio: '09:00',
 		hora_fin: '09:30',
@@ -227,10 +235,10 @@ export const mockCitas: Cita[] = [
 		created_by: 'portal_publico'
 	},
 	{
-		id: 2,
-		paciente_id: 2,
-		doctor_id: 1,
-		especialidad_id: 1,
+		id: CITA_IDS[1],
+		paciente_id: PAC_IDS[1],
+		doctor_id: DOC_IDS[0],
+		especialidad_id: ESP_IDS[0],
 		fecha: daysFrom(3),
 		hora_inicio: '09:30',
 		hora_fin: '10:00',
@@ -242,10 +250,10 @@ export const mockCitas: Cita[] = [
 		created_by: 'portal_publico'
 	},
 	{
-		id: 3,
-		paciente_id: 3,
-		doctor_id: 2,
-		especialidad_id: 1,
+		id: CITA_IDS[2],
+		paciente_id: PAC_IDS[2],
+		doctor_id: DOC_IDS[1],
+		especialidad_id: ESP_IDS[0],
 		fecha: fmt(today),
 		hora_inicio: '10:00',
 		hora_fin: '11:00',
@@ -257,10 +265,10 @@ export const mockCitas: Cita[] = [
 		created_by: 'portal_publico'
 	},
 	{
-		id: 4,
-		paciente_id: 1,
-		doctor_id: 3,
-		especialidad_id: 2,
+		id: CITA_IDS[3],
+		paciente_id: PAC_IDS[0],
+		doctor_id: DOC_IDS[2],
+		especialidad_id: ESP_IDS[1],
 		fecha: fmt(today),
 		hora_inicio: '08:00',
 		hora_fin: '08:30',
@@ -283,10 +291,10 @@ export const mockCitasConPaciente: CitaConPaciente[] = mockCitas.map((c) => {
 
 export const mockHistorias: HistoriaMedica[] = [
 	{
-		id: 1,
-		cita_id: 4,
-		paciente_id: 1,
-		doctor_id: 3,
+		id: 'hist-001',
+		cita_id: CITA_IDS[3],
+		paciente_id: PAC_IDS[0],
+		doctor_id: DOC_IDS[2],
 		evaluacion: {
 			motivo_consulta: 'Limpieza dental de rutina',
 			anamnesis: 'Paciente sin antecedentes relevantes',

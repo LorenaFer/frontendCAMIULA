@@ -15,9 +15,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	if (!pacienteMock) return { citas: [], pacienteNombre: user.name };
 
 	// Obtener TODAS las citas del paciente (no solo hoy)
-	const { data: todasLasCitas } = await citasService.getCitasByFilters({
+	const { items: todasLasCitas } = await citasService.getCitasByFilters({
 		search: pacienteMock.cedula,
-		pageSize: 100
+		page_size: 100
 	});
 
 	// Filtrar solo las del paciente y ordenar por fecha desc

@@ -12,7 +12,7 @@ export async function findByNHM(nhm: number): Promise<PacientePublic | null> {
 		const p = mockPacientes.find((x) => x.nhm === nhm);
 		return p ? toPublic(p) : null;
 	}
-	return apiFetch<PacientePublic | null>(`/pacientes?nhm=${nhm}`);
+	return apiFetch<PacientePublic | null>(`/patients?nhm=${nhm}`);
 }
 
 export async function findByCedula(cedula: string): Promise<PacientePublic | null> {
@@ -20,19 +20,19 @@ export async function findByCedula(cedula: string): Promise<PacientePublic | nul
 		const p = mockPacientes.find((x) => x.cedula === cedula);
 		return p ? toPublic(p) : null;
 	}
-	return apiFetch<PacientePublic | null>(`/pacientes?cedula=${encodeURIComponent(cedula)}`);
+	return apiFetch<PacientePublic | null>(`/patients?cedula=${encodeURIComponent(cedula)}`);
 }
 
 export async function findFullByCedula(cedula: string): Promise<Paciente | null> {
 	if (mockFlags.pacientes) {
 		return mockPacientes.find((x) => x.cedula === cedula) ?? null;
 	}
-	return apiFetch<Paciente | null>(`/pacientes/full?cedula=${encodeURIComponent(cedula)}`);
+	return apiFetch<Paciente | null>(`/patients/full?cedula=${encodeURIComponent(cedula)}`);
 }
 
 export async function getMaxNHM(): Promise<number> {
 	if (mockFlags.pacientes) return getNextNHM() - 1;
-	const res = await apiFetch<{ max_nhm: number }>('/pacientes/max-nhm');
+	const res = await apiFetch<{ max_nhm: number }>('/patients/max-nhm');
 	return res.max_nhm;
 }
 
@@ -64,7 +64,7 @@ export async function createPaciente(input: CreatePacienteInput): Promise<Pacien
 	if (mockFlags.pacientes) {
 		const nhm = getNextNHM();
 		const nuevo: Paciente = {
-			id: mockPacientes.length + 1,
+			id: crypto.randomUUID(),
 			nhm,
 			cedula: input.cedula,
 			nombre: input.nombre,
@@ -93,5 +93,5 @@ export async function createPaciente(input: CreatePacienteInput): Promise<Pacien
 		mockPacientes.push(nuevo);
 		return nuevo;
 	}
-	return apiFetch<Paciente>('/pacientes', { method: 'POST', body: JSON.stringify(input) });
+	return apiFetch<Paciente>('/patients', { method: 'POST', body: JSON.stringify(input) });
 }

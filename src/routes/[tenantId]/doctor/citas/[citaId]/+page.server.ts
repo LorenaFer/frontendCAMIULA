@@ -7,8 +7,8 @@ import { assertActionPermission, requireDoctorId } from '$lib/server/rbac.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	requireDoctorId(locals.user);
-	const citaId = parseInt(params.citaId, 10);
-	if (isNaN(citaId)) error(404, 'Cita no encontrada');
+	const citaId = params.citaId;
+	if (!citaId) error(404, 'Cita no encontrada');
 
 	const [cita, historia] = await Promise.all([
 		citasService.getCitaById(citaId),
@@ -23,8 +23,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 export const actions: Actions = {
 	guardarEvaluacion: async ({ request, params, locals }) => {
 		assertActionPermission(locals.user, 'guardarEvaluacion');
-		const citaId = parseInt(params.citaId, 10);
-		if (isNaN(citaId)) return fail(400, { error: 'ID inválido' });
+		const citaId = params.citaId;
+		if (!citaId) return fail(400, { error: 'ID inválido' });
 
 		const fd = await request.formData();
 
