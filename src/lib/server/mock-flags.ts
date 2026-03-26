@@ -22,5 +22,6 @@ export const mockFlags = {
 	pacientes: env.MOCK_PACIENTES !== 'false',
 	doctores: env.MOCK_DOCTORES !== 'false',
 	citas: env.MOCK_CITAS !== 'false',
-	historias: env.MOCK_HISTORIAS !== 'false'
+	historias: env.MOCK_HISTORIAS !== 'false',
+	schemas: env.MOCK_SCHEMAS !== 'false'
 } as const;

@@ -136,6 +136,127 @@ export async function updateEstadoCita(id: string, estado: CitaEstado): Promise<
 	await apiFetch(`/appointments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ estado }) });
 }
 
+// ─── Estadísticas para dashboard del analista ────────────────
+
+export interface CitasStats {
+	total: number;
+	byStatus: Record<string, number>;
+	bySpecialty: { name: string; count: number }[];
+	byDoctor: { name: string; specialty: string; count: number; atendidas: number }[];
+	firstTimeCount: number;
+	returningCount: number;
+	byPatientType: Record<string, number>;
+	/** Citas agrupadas por día (últimos 7 días con data) para sparkline */
+	dailyTrend: number[];
+	/** Hora pico: distribución por franja horaria */
+	peakHours: { hour: string; count: number }[];
+}
+
+export async function getStats(filters: AppointmentFilters): Promise<CitasStats> {
+	if (mockFlags.citas) {
+		let data = [...mockCitasConPaciente];
+
+		// Aplicar mismos filtros que la tabla (excepto paginación)
+		if (filters.fecha) data = data.filter((c) => c.fecha === filters.fecha);
+		if (filters.doctor_id) data = data.filter((c) => c.doctor_id === filters.doctor_id);
+		if (filters.especialidad_id) data = data.filter((c) => c.especialidad_id === filters.especialidad_id);
+		if (filters.estado) data = data.filter((c) => c.estado === filters.estado);
+		if (filters.search) {
+			const q = filters.search.toLowerCase();
+			data = data.filter(
+				(c) =>
+					c.paciente.nombre.toLowerCase().includes(q) ||
+					c.paciente.apellido.toLowerCase().includes(q) ||
+					c.paciente.cedula.toLowerCase().includes(q)
+			);
+		}
+
+		// Por estado
+		const byStatus: Record<string, number> = {};
+		for (const c of data) {
+			byStatus[c.estado] = (byStatus[c.estado] ?? 0) + 1;
+		}
+
+		// Por especialidad
+		const specMap = new Map<string, number>();
+		for (const c of data) {
+			const name = c.doctor?.especialidad?.nombre ?? 'Sin especialidad';
+			specMap.set(name, (specMap.get(name) ?? 0) + 1);
+		}
+		const bySpecialty = [...specMap.entries()]
+			.map(([name, count]) => ({ name, count }))
+			.sort((a, b) => b.count - a.count);
+
+		// Por doctor
+		const docMap = new Map<string, { name: string; specialty: string; count: number; atendidas: number }>();
+		for (const c of data) {
+			const key = c.doctor_id;
+			const existing = docMap.get(key);
+			if (existing) {
+				existing.count++;
+				if (c.estado === 'atendida') existing.atendidas++;
+			} else {
+				docMap.set(key, {
+					name: `Dr. ${c.doctor?.apellido ?? 'N/A'}`,
+					specialty: c.doctor?.especialidad?.nombre ?? '',
+					count: 1,
+					atendidas: c.estado === 'atendida' ? 1 : 0
+				});
+			}
+		}
+		const byDoctor = [...docMap.values()].sort((a, b) => b.count - a.count);
+
+		// Primera vez vs retorno
+		const firstTimeCount = data.filter((c) => c.es_primera_vez).length;
+		const returningCount = data.length - firstTimeCount;
+
+		// Por tipo de paciente (relación universitaria)
+		const byPatientType: Record<string, number> = {};
+		for (const c of data) {
+			const tipo = c.paciente?.relacion_univ ?? 'desconocido';
+			byPatientType[tipo] = (byPatientType[tipo] ?? 0) + 1;
+		}
+
+		// Tendencia diaria (agrupado por fecha)
+		const dateMap = new Map<string, number>();
+		for (const c of data) {
+			dateMap.set(c.fecha, (dateMap.get(c.fecha) ?? 0) + 1);
+		}
+		const sortedDates = [...dateMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+		const dailyTrend = sortedDates.map(([, count]) => count);
+
+		// Distribución por hora
+		const hourMap = new Map<string, number>();
+		for (const c of data) {
+			const hour = c.hora_inicio.split(':')[0] + ':00';
+			hourMap.set(hour, (hourMap.get(hour) ?? 0) + 1);
+		}
+		const peakHours = [...hourMap.entries()]
+			.map(([hour, count]) => ({ hour, count }))
+			.sort((a, b) => a.hour.localeCompare(b.hour));
+
+		return {
+			total: data.length,
+			byStatus,
+			bySpecialty,
+			byDoctor,
+			firstTimeCount,
+			returningCount,
+			byPatientType,
+			dailyTrend,
+			peakHours
+		};
+	}
+
+	// API real — el backend debería tener un endpoint /appointments/stats
+	const qs = new URLSearchParams();
+	if (filters.fecha) qs.set('fecha', filters.fecha);
+	if (filters.doctor_id) qs.set('doctor_id', filters.doctor_id);
+	if (filters.especialidad_id) qs.set('especialidad_id', filters.especialidad_id);
+	if (filters.estado) qs.set('estado', filters.estado);
+	return apiFetch<CitasStats>(`/appointments/stats?${qs}`);
+}
+
 export async function isSlotOccupied(doctorId: string, fecha: string, horaInicio: string): Promise<boolean> {
 	if (mockFlags.citas) {
 		return mockCitas.some(

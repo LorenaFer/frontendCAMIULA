@@ -17,13 +17,14 @@ export const load: PageServerLoad = async ({ url }) => {
 		page_size: 25
 	};
 
-	const [citasRes, doctores, especialidades] = await Promise.all([
+	const [citasRes, doctores, especialidades, stats] = await Promise.all([
 		citasService.getCitasByFilters(filters),
 		doctoresService.getDoctorOptions(),
-		doctoresService.getEspecialidades()
+		doctoresService.getEspecialidades(),
+		citasService.getStats(filters)
 	]);
 
-	return { citas: citasRes, doctores, especialidades, filters };
+	return { citas: citasRes, doctores, especialidades, filters, stats };
 };
 
 export const actions: Actions = {

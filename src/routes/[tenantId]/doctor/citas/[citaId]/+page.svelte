@@ -1,24 +1,60 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
-	import type { Evaluacion } from '$shared/types/appointments.js';
-	import MedicalEvaluationForm from '$shared/components/appointments/MedicalEvaluationForm.svelte';
-	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
-	import Button from '$shared/components/button/Button.svelte';
 	import { page } from '$app/stores';
 	import { enhance } from '$app/forms';
+	import { beforeNavigate } from '$app/navigation';
+	import { browser } from '$app/environment';
+	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
+	import FormEngine from '$shared/components/form-engine/FormEngine.svelte';
+	import PatientInsightsPanel from '$shared/components/form-engine/PatientInsightsPanel.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const tenantId = $derived($page.params.tenantId);
+	const isReadonly = $derived(data.cita.estado === 'cancelada');
 
+	// Estado para el form oculto de guardado
+	let evaluacionJson = $state('{}');
+	let schemaId = $state(data.formSchema.id);
+	let schemaVersion = $state(data.formSchema.version);
 	let saved = $state(false);
-	let evaluacionActual = $state<Evaluacion>(data.historia?.evaluacion ?? {});
+	let formEngineRef: { store: import('$shared/components/form-engine/FormStore.svelte.js').FormStore } | undefined;
 
-	// La ruta guarda via form action — el componente delega aquí
-	async function handleSave(evaluacion: Evaluacion) {
-		evaluacionActual = evaluacion;
-		// Disparar el form hidden programáticamente
-		document.getElementById('eval-form')?.dispatchEvent(new Event('submit', { bubbles: true }));
+	// Guardar evaluación (submit del FormEngine → serializa al hidden form)
+	async function handleSave(formData: Record<string, unknown>) {
+		evaluacionJson = JSON.stringify(formData);
+		// Pequeño tick para que Svelte actualice los bindings del hidden form
+		await new Promise((r) => setTimeout(r, 0));
+		const hiddenForm = document.getElementById('eval-form') as HTMLFormElement;
+		hiddenForm?.requestSubmit();
+	}
+
+	// Autosave silencioso via fetch directo (no necesita enhance lifecycle)
+	async function handleAutosave(formData: Record<string, unknown>) {
+		const body = new FormData();
+		body.set('evaluacion', JSON.stringify(formData));
+		body.set('schema_id', data.formSchema.id);
+		body.set('schema_version', data.formSchema.version);
+
+		await fetch(`?/autosave`, { method: 'POST', body });
+	}
+
+	// Guarda de navegación
+	if (browser) {
+		beforeNavigate((navigation) => {
+			if (formEngineRef?.store?.isDirty && !formEngineRef.store.isSaving) {
+				if (!confirm('Hay cambios sin guardar. ¿Desea salir de la evaluación?')) {
+					navigation.cancel();
+				}
+			}
+		});
+
+		// También proteger cierre del navegador
+		window.addEventListener('beforeunload', (e) => {
+			if (formEngineRef?.store?.isDirty) {
+				e.preventDefault();
+			}
+		});
 	}
 </script>
 
@@ -26,48 +62,64 @@
 	<title>Evaluación — {data.cita.paciente.nombre} {data.cita.paciente.apellido}</title>
 </svelte:head>
 
-<div class="max-w-3xl mx-auto space-y-6 animate-fade-in-up">
-	<!-- Breadcrumb -->
-	<div class="flex items-center gap-2 text-sm text-ink-muted">
-		<a href="/{tenantId}/doctor/citas" class="hover:text-ink transition-colors">Mis citas</a>
-		<span>›</span>
-		<span class="text-ink">Evaluación #{data.cita.id}</span>
-	</div>
-
-	<!-- Header de la cita -->
-	<div class="flex items-start justify-between flex-wrap gap-3">
-		<div>
-			<h1 class="text-display text-xl font-bold text-ink">
-				{data.cita.paciente.nombre} {data.cita.paciente.apellido}
-			</h1>
-			<p class="text-sm text-ink-muted mt-0.5">
-				{data.cita.fecha} · {data.cita.hora_inicio} · {data.cita.duracion_min} min
-			</p>
+<div class="animate-fade-in-up">
+	<!-- Breadcrumb + Header -->
+	<div class="mb-5 space-y-3">
+		<div class="flex items-center gap-2 text-sm text-ink-muted">
+			<a href="/{tenantId}/doctor/citas" class="hover:text-ink transition-colors">Mis citas</a>
+			<span>›</span>
+			<span class="text-ink"
+				>{data.cita.paciente.nombre} {data.cita.paciente.apellido}</span
+			>
 		</div>
-		<AppointmentStatusBadge status={data.cita.estado} />
+
+		<div class="flex items-start justify-between flex-wrap gap-3">
+			<div>
+				<h1 class="text-display text-xl font-bold text-ink">
+					{data.cita.paciente.nombre} {data.cita.paciente.apellido}
+				</h1>
+				<p class="text-sm text-ink-muted mt-0.5">
+					{data.cita.fecha} · {data.cita.hora_inicio} · {data.cita.duracion_min} min
+					· {data.formSchema.specialtyName}
+				</p>
+			</div>
+			<AppointmentStatusBadge status={data.cita.estado} />
+		</div>
 	</div>
 
 	<!-- Mensaje de guardado exitoso -->
 	{#if form?.success || saved}
-		<div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-300">
+		<div
+			class="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-300"
+		>
 			Evaluación guardada correctamente.
 		</div>
 	{/if}
 
-	<!-- Formulario de evaluación -->
-	<div class="bg-surface rounded-xl border border-border p-6">
-		<MedicalEvaluationForm
+	<!-- Dashboard Split-Screen -->
+	<div class="consultation-dashboard">
+		<!-- LEFT: Patient Insights -->
+		<PatientInsightsPanel
+			paciente={data.cita.paciente}
 			cita={data.cita}
-			historia={data.historia ?? undefined}
-			readonly={data.cita.estado === 'cancelada'}
-			onSave={handleSave}
+			previousHistories={data.previousHistories}
+			class="lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:scrollbar-thin"
 		/>
+
+		<!-- RIGHT: Dynamic Form -->
+		<div class="min-w-0">
+			<FormEngine
+				bind:this={formEngineRef}
+				schema={data.formSchema}
+				initialData={(data.historia?.evaluacion ?? {}) as Record<string, unknown>}
+				readonly={isReadonly}
+				onSave={handleSave}
+				onAutosave={isReadonly ? undefined : handleAutosave}
+			/>
+		</div>
 	</div>
 
-	<!--
-		Form oculto que envía los datos de evaluación via SvelteKit action.
-		MedicalEvaluationForm llama a onSave → que popula estos campos → submit.
-	-->
+	<!-- Hidden form for SvelteKit action submission -->
 	<form
 		id="eval-form"
 		method="POST"
@@ -79,17 +131,24 @@
 			};
 		}}
 	>
-		<input type="hidden" name="motivo_consulta" value={evaluacionActual.motivo_consulta ?? ''} />
-		<input type="hidden" name="anamnesis" value={evaluacionActual.anamnesis ?? ''} />
-		<input type="hidden" name="ef_ta" value={evaluacionActual.examen_fisico?.ta ?? ''} />
-		<input type="hidden" name="ef_fc" value={evaluacionActual.examen_fisico?.fc ?? ''} />
-		<input type="hidden" name="ef_fr" value={evaluacionActual.examen_fisico?.fr ?? ''} />
-		<input type="hidden" name="ef_temp" value={evaluacionActual.examen_fisico?.temp ?? ''} />
-		<input type="hidden" name="ef_peso" value={evaluacionActual.examen_fisico?.peso ?? ''} />
-		<input type="hidden" name="ef_talla" value={evaluacionActual.examen_fisico?.talla ?? ''} />
-		<input type="hidden" name="dx_cie10" value={evaluacionActual.diagnostico?.cie10 ?? ''} />
-		<input type="hidden" name="dx_descripcion" value={evaluacionActual.diagnostico?.descripcion ?? ''} />
-		<input type="hidden" name="tratamiento" value={evaluacionActual.tratamiento ?? ''} />
-		<input type="hidden" name="indicaciones" value={evaluacionActual.indicaciones ?? ''} />
+		<input type="hidden" name="evaluacion" value={evaluacionJson} />
+		<input type="hidden" name="schema_id" value={schemaId} />
+		<input type="hidden" name="schema_version" value={schemaVersion} />
 	</form>
 </div>
+
+<style>
+	.consultation-dashboard {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1.25rem;
+	}
+
+	@media (min-width: 1024px) {
+		.consultation-dashboard {
+			grid-template-columns: 340px 1fr;
+			gap: 1.5rem;
+			align-items: start;
+		}
+	}
+</style>

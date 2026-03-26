@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { DoctorOption, Especialidad, AppointmentFilters, CitaEstado } from '$shared/types/appointments.js';
 	import Input from '$shared/components/input/Input.svelte';
+	import DateInput from '$shared/components/input/DateInput.svelte';
 	import Select from '$shared/components/select/Select.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 
@@ -47,12 +48,11 @@
 
 <div class="flex flex-wrap gap-3 items-end {className}">
 	<div class="flex-1 min-w-40">
-		<Input
+		<DateInput
 			label="Fecha"
-			type="date"
 			value={local.fecha ?? ''}
 			oninput={(e) => {
-				local.fecha = (e.target as HTMLInputElement).value || undefined;
+				local.fecha = e.target.value || undefined;
 			}}
 		/>
 	</div>
