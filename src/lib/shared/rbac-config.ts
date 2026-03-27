@@ -33,7 +33,11 @@ export const P = {
 
 	// Sistema
 	DASHBOARD_READ: 'dashboard:read',
-	INVENTORY_READ: 'inventory:read'
+	INVENTORY_READ: 'inventory:read',
+
+	// Configuración (admin)
+	SETTINGS_READ: 'settings:read',
+	SETTINGS_WRITE: 'settings:write'
 } as const;
 
 export type Permission = (typeof P)[keyof typeof P];

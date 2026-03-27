@@ -51,9 +51,10 @@ export const VIA_OPTIONS = [
 
 // ─── Factory ────────────────────────────────────────────────
 
+let _rxCounter = 0;
 export function createPrescriptionItem(): PrescriptionItem {
 	return {
-		id: crypto.randomUUID(),
+		id: 'rx-' + (++_rxCounter).toString(36) + '-' + Math.random().toString(36).slice(2, 8),
 		medicamento: '',
 		presentacion: '',
 		dosis: '',

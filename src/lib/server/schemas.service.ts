@@ -53,3 +53,45 @@ export function invalidateSchemaCache(specialtyId?: string): void {
 		schemaCache.clear();
 	}
 }
+
+// ─── CRUD para el Form Builder ──────────────────────────────
+
+/** Obtiene todos los schemas disponibles */
+export async function getAllSchemas(): Promise<MedicalFormSchema[]> {
+	if (mockFlags.schemas) {
+		return Object.values(mockSchemas);
+	}
+	return apiFetch<MedicalFormSchema[]>('/schemas');
+}
+
+/** Guarda o actualiza un schema (upsert por specialtyId) */
+export async function saveSchema(schema: MedicalFormSchema): Promise<MedicalFormSchema> {
+	const normalizedKey = normalizeSpecialtyName(schema.specialtyName);
+
+	if (mockFlags.schemas) {
+		mockSchemas[normalizedKey] = schema;
+		schemaCache.delete(normalizedKey);
+		return schema;
+	}
+
+	const saved = await apiFetch<MedicalFormSchema>('/schemas', {
+		method: 'PUT',
+		body: JSON.stringify(schema)
+	});
+	schemaCache.delete(normalizedKey);
+	return saved;
+}
+
+/** Elimina un schema por su key normalizado */
+export async function deleteSchema(specialtyKey: string): Promise<void> {
+	const normalizedKey = normalizeSpecialtyName(specialtyKey);
+
+	if (mockFlags.schemas) {
+		delete mockSchemas[normalizedKey];
+		schemaCache.delete(normalizedKey);
+		return;
+	}
+
+	await apiFetch(`/schemas/${normalizedKey}`, { method: 'DELETE' });
+	schemaCache.delete(normalizedKey);
+}

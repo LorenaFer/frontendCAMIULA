@@ -50,7 +50,8 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
 	'doctor/disponibilidad': P.DISPONIBILIDAD_READ,
 	'appointments': P.CITAS_READ,
 	'patients': P.PACIENTES_READ,
-	'inventory': P.INVENTORY_READ
+	'inventory': P.INVENTORY_READ,
+	'admin/configuracion': P.SETTINGS_READ
 };
 
 // ─── Action → Permission (acciones granulares) ───────────────
@@ -73,7 +74,12 @@ export const ACTION_PERMISSIONS: Record<string, string> = {
 	buscarPaciente: P.PACIENTES_READ,
 	registrarPaciente: P.PACIENTES_CREATE,
 	confirmarCita: P.CITAS_CREATE,
-	obtenerSlots: P.CITAS_CREATE
+	obtenerSlots: P.CITAS_CREATE,
+	// /admin/configuracion
+	guardarEspecialidad: P.SETTINGS_WRITE,
+	toggleEspecialidad: P.SETTINGS_WRITE,
+	eliminarEspecialidad: P.SETTINGS_WRITE,
+	guardarSchema: P.SETTINGS_WRITE
 };
 
 // ─── Guard helpers ───────────────────────────────────────────

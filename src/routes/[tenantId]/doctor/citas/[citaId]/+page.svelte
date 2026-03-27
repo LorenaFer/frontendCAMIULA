@@ -18,8 +18,8 @@
 
 	// Estado para el form oculto de guardado
 	let evaluacionJson = $state('{}');
-	let schemaId = $state(data.formSchema.id);
-	let schemaVersion = $state(data.formSchema.version);
+	const schemaId = data.formSchema.id;
+	const schemaVersion = data.formSchema.version;
 	let saved = $state(false);
 	let formEngineRef: { store: import('$shared/components/form-engine/FormStore.svelte.js').FormStore } | undefined;
 
@@ -68,13 +68,18 @@
 		}, 3000);
 	}
 
-	// Detectar cambios en secciones universales
+	// Cleanup del timer al desmontar
+	$effect(() => {
+		return () => {
+			clearTimeout(universalAutosaveTimer);
+		};
+	});
+
+	// Detectar cambios en secciones universales (flag simple, no JSON.stringify en cada tick)
 	const initialObservaciones = (evalData.observaciones as string) ?? '';
-	const initialReceta = JSON.stringify(
-		((evalData.receta as Record<string, unknown>)?.medicamentos as PrescriptionItem[]) ?? []
-	);
+	let recetaTouched = $state(false);
 	let universalDirty = $derived(
-		observaciones !== initialObservaciones || JSON.stringify(recetaItems) !== initialReceta
+		observaciones !== initialObservaciones || recetaTouched
 	);
 
 	// Guarda de navegación
@@ -89,11 +94,15 @@
 			}
 		});
 
-		// También proteger cierre del navegador
-		window.addEventListener('beforeunload', (e) => {
-			if (formEngineRef?.store?.isDirty || universalDirty) {
-				e.preventDefault();
+		// También proteger cierre del navegador (con cleanup)
+		$effect(() => {
+			function onBeforeUnload(e: BeforeUnloadEvent) {
+				if (formEngineRef?.store?.isDirty || universalDirty) {
+					e.preventDefault();
+				}
 			}
+			window.addEventListener('beforeunload', onBeforeUnload);
+			return () => window.removeEventListener('beforeunload', onBeforeUnload);
 		});
 	}
 </script>
@@ -167,7 +176,7 @@
 			<PrescriptionSection
 				items={recetaItems}
 				disabled={isReadonly}
-				onchange={(items) => { recetaItems = items; scheduleUniversalAutosave(); }}
+				onchange={(items) => { recetaItems = items; recetaTouched = true; scheduleUniversalAutosave(); }}
 			/>
 		</div>
 	</div>

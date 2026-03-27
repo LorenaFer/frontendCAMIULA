@@ -128,7 +128,7 @@
 
 <!-- Component markup -->
 
-<div class="bg-surface rounded-xl border border-border overflow-hidden {className}">
+<div class="bg-surface rounded-xl border border-border/60 overflow-hidden {className}">
 	<!-- Header -->
 	<button
 		type="button"
