@@ -106,7 +106,12 @@
 		{ id: 'analista-citas', label: 'Gestión Citas', href: 'analista/citas', icon: appointmentsIcon, permission: P.CITAS_CANCEL, group: 'Citas' },
 		{ id: 'doctor-citas', label: 'Mis Citas', href: 'doctor/citas', icon: appointmentsIcon, permission: P.CITAS_MARK_ATTENDED, group: 'Doctor' },
 		{ id: 'doctor-disponibilidad', label: 'Mi Disponibilidad', href: 'doctor/disponibilidad', icon: appointmentsIcon, permission: P.DISPONIBILIDAD_READ, group: 'Doctor' },
-		{ id: 'inventory', label: 'Inventario', href: 'inventory', icon: inventoryIcon, permission: P.INVENTORY_READ, group: 'Operaciones' }
+		{ id: 'inventory',         label: 'Dashboard',      href: 'inventory',                  icon: inventoryIcon, permission: P.INVENTORY_READ,     group: 'Farmacia' },
+		{ id: 'inv-medications',   label: 'Medicamentos',   href: 'inventory/medications',       icon: inventoryIcon, permission: P.INVENTORY_READ,     group: 'Farmacia' },
+		{ id: 'inv-batches',       label: 'Stock y Lotes',  href: 'inventory/batches',           icon: inventoryIcon, permission: P.INVENTORY_READ,     group: 'Farmacia' },
+		{ id: 'inv-dispatches',    label: 'Despachos',      href: 'inventory/dispatches',        icon: inventoryIcon, permission: P.INVENTORY_DISPATCH, group: 'Farmacia' },
+		{ id: 'inv-suppliers',     label: 'Proveedores',    href: 'inventory/suppliers',         icon: inventoryIcon, permission: P.INVENTORY_WRITE,    group: 'Farmacia' },
+		{ id: 'inv-orders',        label: 'Órdenes Compra', href: 'inventory/purchase-orders',   icon: inventoryIcon, permission: P.INVENTORY_WRITE,    group: 'Farmacia' }
 	]}
 
 	{#if authUser?.role === 'paciente'}
