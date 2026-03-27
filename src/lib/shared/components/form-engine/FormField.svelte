@@ -8,6 +8,8 @@
 	import RadioGroup from '$shared/components/input/RadioGroup.svelte';
 	import Switch from '$shared/components/input/Switch.svelte';
 	import Select from '$shared/components/select/Select.svelte';
+	import DentalChart from '$shared/components/widgets/DentalChart.svelte';
+	import BodyDiagram from '$shared/components/widgets/BodyDiagram.svelte';
 
 	interface Props {
 		field: FormFieldSchema;
@@ -167,8 +169,28 @@
 		onchange={(e) => handleCheckboxChange((e.target as HTMLInputElement).checked)}
 	/>
 
+{:else if field.type === 'widget' && field.widgetConfig?.widgetType === 'dental_chart'}
+	{#if field.label}
+		<label class="block text-sm font-medium text-ink mb-2">{field.label}</label>
+	{/if}
+	<DentalChart
+		value={(value ?? {}) as Record<string, { estado: string; descripcion?: string; soporte?: string }>}
+		{disabled}
+		onchange={(v) => onchange(v)}
+	/>
+
+{:else if field.type === 'widget' && field.widgetConfig?.widgetType === 'body_diagram'}
+	{#if field.label}
+		<label class="block text-sm font-medium text-ink mb-2">{field.label}</label>
+	{/if}
+	<BodyDiagram
+		value={(value ?? []) as { id: string; x: number; y: number; view: 'front' | 'back'; descripcion: string }[]}
+		{disabled}
+		onchange={(v) => onchange(v)}
+	/>
+
 {:else if field.type === 'widget' && field.widgetConfig}
-	<!-- Widget placeholder — lazy loaded en fases posteriores -->
+	<!-- Widget no implementado todavía -->
 	<div class="rounded-lg border border-dashed border-border p-4 text-center text-sm text-ink-muted">
 		<p class="font-medium">{field.label}</p>
 		<p>Widget: {field.widgetConfig.widgetType}</p>
