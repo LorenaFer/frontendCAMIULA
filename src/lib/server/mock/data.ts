@@ -307,3 +307,265 @@ export const mockHistorias: HistoriaMedica[] = [
 export function getNextNHM(): number {
 	return Math.max(...mockPacientes.map((p) => p.nhm)) + 1;
 }
+
+// ============================================================
+// Mock Inventario
+// ============================================================
+
+import type {
+	Supplier,
+	Medication,
+	Batch,
+	StockItem,
+	PurchaseOrder,
+	Prescription,
+	Dispatch,
+	DispatchLimit,
+	DispatchException
+} from '$shared/types/inventory.js';
+
+// ─── Proveedores ─────────────────────────────────────────────
+
+export const mockSuppliers: Supplier[] = [
+	{
+		id: 'sup-1',
+		name: 'Distribuidora Médica Caracas C.A.',
+		rif: 'J-12345678-9',
+		phone: '0212-555-1234',
+		email: 'ventas@dimedica.com',
+		contact_name: 'Juan López',
+		payment_terms: '30 días netos',
+		supplier_status: 'active',
+		created_at: '2026-01-10T08:00:00Z'
+	},
+	{
+		id: 'sup-2',
+		name: 'Laboratorios Roche Venezuela',
+		rif: 'J-98765432-1',
+		phone: '0212-555-5678',
+		email: 'pedidos@roche.com.ve',
+		contact_name: 'Ana García',
+		payment_terms: '60 días netos',
+		supplier_status: 'active',
+		created_at: '2026-01-15T08:00:00Z'
+	}
+];
+
+// ─── Medicamentos ─────────────────────────────────────────────
+
+export const mockMedications: Medication[] = [
+	{
+		id: 'med-1',
+		code: 'MED-001',
+		generic_name: 'Amoxicilina',
+		commercial_name: 'Amoxil',
+		pharmaceutical_form: 'Cápsula',
+		concentration: '500mg',
+		unit_measure: 'cápsulas',
+		therapeutic_class: 'Antibiótico',
+		controlled_substance: false,
+		requires_refrigeration: false,
+		medication_status: 'active',
+		current_stock: 350,
+		created_at: '2026-01-01T08:00:00Z'
+	},
+	{
+		id: 'med-2',
+		code: 'MED-002',
+		generic_name: 'Ibuprofeno',
+		commercial_name: 'Advil',
+		pharmaceutical_form: 'Tableta',
+		concentration: '400mg',
+		unit_measure: 'tabletas',
+		therapeutic_class: 'Antiinflamatorio',
+		controlled_substance: false,
+		requires_refrigeration: false,
+		medication_status: 'active',
+		current_stock: 120,
+		created_at: '2026-01-01T08:00:00Z'
+	},
+	{
+		id: 'med-3',
+		code: 'MED-003',
+		generic_name: 'Metformina',
+		commercial_name: 'Glucophage',
+		pharmaceutical_form: 'Tableta',
+		concentration: '850mg',
+		unit_measure: 'tabletas',
+		therapeutic_class: 'Antidiabético',
+		controlled_substance: false,
+		requires_refrigeration: false,
+		medication_status: 'active',
+		current_stock: 8,
+		created_at: '2026-01-01T08:00:00Z'
+	}
+];
+
+// ─── Lotes ────────────────────────────────────────────────────
+
+export const mockBatches: Batch[] = [
+	{
+		id: 'bat-1',
+		fk_medication_id: 'med-1',
+		medication: {
+			id: 'med-1',
+			code: 'MED-001',
+			generic_name: 'Amoxicilina',
+			pharmaceutical_form: 'Cápsula',
+			unit_measure: 'cápsulas',
+			current_stock: 350
+		},
+		fk_supplier_id: 'sup-1',
+		supplier_name: 'Distribuidora Médica Caracas C.A.',
+		lot_number: 'LOT-2026-001',
+		expiration_date: '2027-06-30',
+		quantity_received: 500,
+		quantity_available: 350,
+		unit_cost: 0.85,
+		batch_status: 'available',
+		received_at: '2026-01-20T10:00:00Z'
+	},
+	{
+		id: 'bat-2',
+		fk_medication_id: 'med-2',
+		medication: {
+			id: 'med-2',
+			code: 'MED-002',
+			generic_name: 'Ibuprofeno',
+			pharmaceutical_form: 'Tableta',
+			unit_measure: 'tabletas',
+			current_stock: 120
+		},
+		fk_supplier_id: 'sup-1',
+		supplier_name: 'Distribuidora Médica Caracas C.A.',
+		lot_number: 'LOT-2026-002',
+		expiration_date: '2026-09-15',
+		quantity_received: 200,
+		quantity_available: 120,
+		unit_cost: 0.45,
+		batch_status: 'available',
+		received_at: '2026-01-22T10:00:00Z'
+	}
+];
+
+// ─── Stock consolidado ────────────────────────────────────────
+
+export const mockStockItems: StockItem[] = [
+	{
+		medication_id: 'med-1',
+		code: 'MED-001',
+		generic_name: 'Amoxicilina',
+		pharmaceutical_form: 'Cápsula',
+		unit_measure: 'cápsulas',
+		total_available: 350,
+		batch_count: 1,
+		nearest_expiration: '2027-06-30',
+		days_to_expiration: 462,
+		stock_alert: 'ok'
+	},
+	{
+		medication_id: 'med-2',
+		code: 'MED-002',
+		generic_name: 'Ibuprofeno',
+		pharmaceutical_form: 'Tableta',
+		unit_measure: 'tabletas',
+		total_available: 120,
+		batch_count: 1,
+		nearest_expiration: '2026-09-15',
+		days_to_expiration: 174,
+		stock_alert: 'low'
+	},
+	{
+		medication_id: 'med-3',
+		code: 'MED-003',
+		generic_name: 'Metformina',
+		pharmaceutical_form: 'Tableta',
+		unit_measure: 'tabletas',
+		total_available: 8,
+		batch_count: 1,
+		nearest_expiration: '2027-03-01',
+		days_to_expiration: 341,
+		stock_alert: 'critical'
+	}
+];
+
+// ─── Órdenes de Compra ────────────────────────────────────────
+
+export const mockPurchaseOrders: PurchaseOrder[] = [
+	{
+		id: 'po-1',
+		order_number: 'OC-2026-001',
+		fk_supplier_id: 'sup-1',
+		supplier: { id: 'sup-1', name: 'Distribuidora Médica Caracas C.A.', rif: 'J-12345678-9' },
+		order_date: '2026-03-01',
+		expected_date: '2026-03-15',
+		notes: 'Pedido urgente de antibióticos',
+		order_status: 'received',
+		items: [],
+		total_amount: 850.0,
+		created_at: '2026-03-01T09:00:00Z'
+	}
+];
+
+// ─── Prescripciones ───────────────────────────────────────────
+
+export const mockPrescriptions: Prescription[] = [
+	{
+		id: 'presc-1',
+		prescription_number: 'RX-2026-001',
+		fk_appointment_id: '1',
+		fk_patient_id: '1',
+		fk_doctor_id: 'doc-1',
+		patient_name: 'Pedro González',
+		doctor_name: 'Dr. Carlos Mendoza',
+		prescription_date: '2026-03-20',
+		prescription_status: 'issued',
+		items: [
+			{
+				id: 'pi-1',
+				fk_medication_id: 'med-1',
+				medication: {
+					id: 'med-1',
+					code: 'MED-001',
+					generic_name: 'Amoxicilina',
+					pharmaceutical_form: 'Cápsula',
+					unit_measure: 'cápsulas',
+					current_stock: 350
+				},
+				quantity_prescribed: 21,
+				dosage_instructions: '1 cápsula cada 8 horas',
+				duration_days: 7
+			}
+		],
+		created_at: '2026-03-20T10:00:00Z'
+	}
+];
+
+// ─── Despachos ────────────────────────────────────────────────
+
+export const mockDispatches: Dispatch[] = [];
+
+// ─── Límites de Despacho ──────────────────────────────────────
+
+export const mockDispatchLimits: DispatchLimit[] = [
+	{
+		id: 'lim-1',
+		fk_medication_id: 'med-1',
+		medication: {
+			id: 'med-1',
+			code: 'MED-001',
+			generic_name: 'Amoxicilina',
+			pharmaceutical_form: 'Cápsula',
+			unit_measure: 'cápsulas',
+			current_stock: 350
+		},
+		monthly_max_quantity: 42,
+		applies_to: 'all',
+		active: true,
+		created_at: '2026-01-01T08:00:00Z'
+	}
+];
+
+// ─── Excepciones de Despacho ──────────────────────────────────
+
+export const mockDispatchExceptions: DispatchException[] = [];
