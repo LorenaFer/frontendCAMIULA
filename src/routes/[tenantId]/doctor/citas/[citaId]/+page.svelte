@@ -6,7 +6,10 @@
 	import { browser } from '$app/environment';
 	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
 	import FormEngine from '$shared/components/form-engine/FormEngine.svelte';
+	import ObservacionesSection from '$shared/components/form-engine/ObservacionesSection.svelte';
+	import PrescriptionSection from '$shared/components/form-engine/PrescriptionSection.svelte';
 	import PatientInsightsPanel from '$shared/components/form-engine/PatientInsightsPanel.svelte';
+	import type { PrescriptionItem } from '$shared/types/prescription.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -20,9 +23,25 @@
 	let saved = $state(false);
 	let formEngineRef: { store: import('$shared/components/form-engine/FormStore.svelte.js').FormStore } | undefined;
 
+	// Estado para secciones universales (independientes del schema)
+	const evalData = (data.historia?.evaluacion ?? {}) as Record<string, unknown>;
+	let observaciones = $state<string>((evalData.observaciones as string) ?? '');
+	let recetaItems = $state<PrescriptionItem[]>(
+		((evalData.receta as Record<string, unknown>)?.medicamentos as PrescriptionItem[]) ?? []
+	);
+
+	// Mergea datos del FormEngine + secciones universales
+	function mergeAllData(formData: Record<string, unknown>): Record<string, unknown> {
+		return {
+			...formData,
+			observaciones,
+			receta: { medicamentos: recetaItems }
+		};
+	}
+
 	// Guardar evaluación (submit del FormEngine → serializa al hidden form)
 	async function handleSave(formData: Record<string, unknown>) {
-		evaluacionJson = JSON.stringify(formData);
+		evaluacionJson = JSON.stringify(mergeAllData(formData));
 		// Pequeño tick para que Svelte actualice los bindings del hidden form
 		await new Promise((r) => setTimeout(r, 0));
 		const hiddenForm = document.getElementById('eval-form') as HTMLFormElement;
@@ -32,17 +51,38 @@
 	// Autosave silencioso via fetch directo (no necesita enhance lifecycle)
 	async function handleAutosave(formData: Record<string, unknown>) {
 		const body = new FormData();
-		body.set('evaluacion', JSON.stringify(formData));
+		body.set('evaluacion', JSON.stringify(mergeAllData(formData)));
 		body.set('schema_id', data.formSchema.id);
 		body.set('schema_version', data.formSchema.version);
 
 		await fetch(`?/autosave`, { method: 'POST', body });
 	}
 
+	// Autosave debounced para cambios en secciones universales
+	let universalAutosaveTimer: ReturnType<typeof setTimeout> | undefined;
+	function scheduleUniversalAutosave() {
+		if (isReadonly || !formEngineRef?.store) return;
+		clearTimeout(universalAutosaveTimer);
+		universalAutosaveTimer = setTimeout(() => {
+			handleAutosave(formEngineRef!.store.getSubmitData());
+		}, 3000);
+	}
+
+	// Detectar cambios en secciones universales
+	const initialObservaciones = (evalData.observaciones as string) ?? '';
+	const initialReceta = JSON.stringify(
+		((evalData.receta as Record<string, unknown>)?.medicamentos as PrescriptionItem[]) ?? []
+	);
+	let universalDirty = $derived(
+		observaciones !== initialObservaciones || JSON.stringify(recetaItems) !== initialReceta
+	);
+
 	// Guarda de navegación
 	if (browser) {
 		beforeNavigate((navigation) => {
-			if (formEngineRef?.store?.isDirty && !formEngineRef.store.isSaving) {
+			const isDirty = formEngineRef?.store?.isDirty || universalDirty;
+			const isSaving = formEngineRef?.store?.isSaving;
+			if (isDirty && !isSaving) {
 				if (!confirm('Hay cambios sin guardar. ¿Desea salir de la evaluación?')) {
 					navigation.cancel();
 				}
@@ -51,7 +91,7 @@
 
 		// También proteger cierre del navegador
 		window.addEventListener('beforeunload', (e) => {
-			if (formEngineRef?.store?.isDirty) {
+			if (formEngineRef?.store?.isDirty || universalDirty) {
 				e.preventDefault();
 			}
 		});
@@ -106,15 +146,28 @@
 			class="lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:scrollbar-thin"
 		/>
 
-		<!-- RIGHT: Dynamic Form -->
-		<div class="min-w-0">
+		<!-- RIGHT: Dynamic Form + Universal Sections -->
+		<div class="min-w-0 space-y-4">
 			<FormEngine
 				bind:this={formEngineRef}
 				schema={data.formSchema}
-				initialData={(data.historia?.evaluacion ?? {}) as Record<string, unknown>}
+				initialData={evalData}
 				readonly={isReadonly}
 				onSave={handleSave}
 				onAutosave={isReadonly ? undefined : handleAutosave}
+			/>
+
+			<!-- Secciones universales (independientes del schema de especialidad) -->
+			<ObservacionesSection
+				value={observaciones}
+				disabled={isReadonly}
+				onchange={(v) => { observaciones = v; scheduleUniversalAutosave(); }}
+			/>
+
+			<PrescriptionSection
+				items={recetaItems}
+				disabled={isReadonly}
+				onchange={(items) => { recetaItems = items; scheduleUniversalAutosave(); }}
 			/>
 		</div>
 	</div>

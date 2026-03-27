@@ -1,0 +1,178 @@
+<script lang="ts">
+	import EditableTable from '$shared/components/table/EditableTable.svelte';
+	import type { EditableColumn } from '$shared/components/table/types';
+	import {
+		type PrescriptionItem,
+		PRESENTACION_OPTIONS,
+		VIA_OPTIONS,
+		createPrescriptionItem
+	} from '$shared/types/prescription.js';
+
+	interface Props {
+		items: PrescriptionItem[];
+		disabled?: boolean;
+		onchange: (items: PrescriptionItem[]) => void;
+		class?: string;
+	}
+
+	let { items, disabled = false, onchange, class: className = '' }: Props = $props();
+
+	let collapsed = $state(false);
+
+	const columns: EditableColumn<PrescriptionItem>[] = [
+		{ key: 'medicamento', header: 'Medicamento', width: '22%', render: medicamentoCell },
+		{ key: 'presentacion', header: 'Presentación', width: '12%', render: presentacionCell },
+		{ key: 'dosis', header: 'Dosis', width: '10%', render: dosisCell },
+		{ key: 'via', header: 'Vía', width: '12%', render: viaCell },
+		{ key: 'frecuencia', header: 'Frecuencia', width: '11%', render: frecuenciaCell },
+		{ key: 'duracion', header: 'Duración', width: '10%', render: duracionCell },
+		{ key: 'cantidad', header: 'Cant.', width: '7%', align: 'center', render: cantidadCell },
+		{ key: 'indicaciones', header: 'Indicaciones', width: '16%', render: indicacionesCell }
+	];
+</script>
+
+<!-- Snippet renderers for each column -->
+
+{#snippet medicamentoCell(value: PrescriptionItem[keyof PrescriptionItem], _row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
+	<input
+		type="text"
+		value={String(value ?? '')}
+		placeholder="Nombre..."
+		{disabled}
+		oninput={(e) => onChange('medicamento', e.currentTarget.value)}
+		class="w-full px-2 py-1 text-sm bg-transparent border border-transparent hover:border-border focus:border-border-strong focus:ring-1 focus:ring-border-subtle rounded text-ink placeholder:text-ink-subtle outline-none transition-colors"
+	/>
+{/snippet}
+
+{#snippet presentacionCell(value: PrescriptionItem[keyof PrescriptionItem], _row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
+	<select
+		value={String(value ?? '')}
+		{disabled}
+		onchange={(e) => onChange('presentacion', e.currentTarget.value)}
+		class="w-full px-1.5 py-1 text-sm bg-transparent border border-transparent hover:border-border focus:border-border-strong focus:ring-1 focus:ring-border-subtle rounded text-ink outline-none transition-colors"
+	>
+		<option value="">—</option>
+		{#each PRESENTACION_OPTIONS as opt}
+			<option value={opt.value}>{opt.label}</option>
+		{/each}
+	</select>
+{/snippet}
+
+{#snippet dosisCell(value: PrescriptionItem[keyof PrescriptionItem], _row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
+	<input
+		type="text"
+		value={String(value ?? '')}
+		placeholder="500mg"
+		{disabled}
+		oninput={(e) => onChange('dosis', e.currentTarget.value)}
+		class="w-full px-2 py-1 text-sm bg-transparent border border-transparent hover:border-border focus:border-border-strong focus:ring-1 focus:ring-border-subtle rounded text-ink placeholder:text-ink-subtle outline-none transition-colors"
+	/>
+{/snippet}
+
+{#snippet viaCell(value: PrescriptionItem[keyof PrescriptionItem], _row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
+	<select
+		value={String(value ?? '')}
+		{disabled}
+		onchange={(e) => onChange('via', e.currentTarget.value)}
+		class="w-full px-1.5 py-1 text-sm bg-transparent border border-transparent hover:border-border focus:border-border-strong focus:ring-1 focus:ring-border-subtle rounded text-ink outline-none transition-colors"
+	>
+		{#each VIA_OPTIONS as opt}
+			<option value={opt.value}>{opt.label}</option>
+		{/each}
+	</select>
+{/snippet}
+
+{#snippet frecuenciaCell(value: PrescriptionItem[keyof PrescriptionItem], _row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
+	<input
+		type="text"
+		value={String(value ?? '')}
+		placeholder="c/8h"
+		{disabled}
+		oninput={(e) => onChange('frecuencia', e.currentTarget.value)}
+		class="w-full px-2 py-1 text-sm bg-transparent border border-transparent hover:border-border focus:border-border-strong focus:ring-1 focus:ring-border-subtle rounded text-ink placeholder:text-ink-subtle outline-none transition-colors"
+	/>
+{/snippet}
+
+{#snippet duracionCell(value: PrescriptionItem[keyof PrescriptionItem], _row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
+	<input
+		type="text"
+		value={String(value ?? '')}
+		placeholder="7 días"
+		{disabled}
+		oninput={(e) => onChange('duracion', e.currentTarget.value)}
+		class="w-full px-2 py-1 text-sm bg-transparent border border-transparent hover:border-border focus:border-border-strong focus:ring-1 focus:ring-border-subtle rounded text-ink placeholder:text-ink-subtle outline-none transition-colors"
+	/>
+{/snippet}
+
+{#snippet cantidadCell(value: PrescriptionItem[keyof PrescriptionItem], _row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
+	<input
+		type="number"
+		value={Number(value ?? 0)}
+		min="0"
+		{disabled}
+		oninput={(e) => onChange('cantidad', Number(e.currentTarget.value))}
+		class="w-full px-2 py-1 text-sm bg-transparent border border-transparent hover:border-border focus:border-border-strong focus:ring-1 focus:ring-border-subtle rounded text-ink text-center tabular-nums outline-none transition-colors"
+	/>
+{/snippet}
+
+{#snippet indicacionesCell(value: PrescriptionItem[keyof PrescriptionItem], _row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
+	<input
+		type="text"
+		value={String(value ?? '')}
+		placeholder="Instrucciones..."
+		{disabled}
+		oninput={(e) => onChange('indicaciones', e.currentTarget.value)}
+		class="w-full px-2 py-1 text-sm bg-transparent border border-transparent hover:border-border focus:border-border-strong focus:ring-1 focus:ring-border-subtle rounded text-ink placeholder:text-ink-subtle outline-none transition-colors"
+	/>
+{/snippet}
+
+<!-- Component markup -->
+
+<div class="bg-surface rounded-xl border border-border overflow-hidden {className}">
+	<!-- Header -->
+	<button
+		type="button"
+		class="w-full flex items-center justify-between px-5 py-3.5
+			cursor-pointer hover:bg-canvas-subtle/50 transition-colors"
+		onclick={() => (collapsed = !collapsed)}
+	>
+		<div class="flex items-center gap-2.5">
+			<svg class="w-4 h-4 text-ink-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+			</svg>
+			<h3 class="text-sm font-semibold text-ink">Receta Médica</h3>
+			{#if items.length > 0}
+				<span class="text-xs text-ink-subtle bg-canvas-subtle px-1.5 py-0.5 rounded-full">
+					{items.length} medicamento{items.length !== 1 ? 's' : ''}
+				</span>
+			{/if}
+		</div>
+
+		<svg
+			class="w-4 h-4 text-ink-muted transition-transform duration-200 {collapsed ? '' : 'rotate-180'}"
+			fill="none"
+			viewBox="0 0 24 24"
+			stroke="currentColor"
+			stroke-width="2"
+		>
+			<path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+		</svg>
+	</button>
+
+	<!-- Content -->
+	{#if !collapsed}
+		<div class="px-5 pb-5 border-t border-border/50">
+			<div class="pt-4">
+				<EditableTable
+					{columns}
+					data={items}
+					{onchange}
+					createRow={createPrescriptionItem}
+					addLabel="Agregar medicamento"
+					showRowNumbers={true}
+					{disabled}
+				/>
+			</div>
+		</div>
+	{/if}
+</div>
