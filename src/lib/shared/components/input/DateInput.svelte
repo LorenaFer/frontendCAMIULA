@@ -4,6 +4,7 @@
 	type InputSize = 'sm' | 'md' | 'lg';
 
 	interface Props {
+		name?: string;
 		label?: string;
 		error?: string;
 		hint?: string;
@@ -16,6 +17,7 @@
 	}
 
 	let {
+		name,
 		inputSize = 'md',
 		label,
 		error,
@@ -234,6 +236,10 @@
 			</button>
 		{/if}
 	</button>
+
+	{#if name}
+		<input type="hidden" {name} {value} />
+	{/if}
 
 	{#if error || hint}
 		<p class="mt-1.5 text-xs {error ? 'text-red-600 animate-slide-down' : 'text-ink-muted'}">

@@ -30,6 +30,13 @@ export async function findFullByCedula(cedula: string): Promise<Paciente | null>
 	return apiFetch<Paciente | null>(`/patients/full?cedula=${encodeURIComponent(cedula)}`);
 }
 
+export async function findFullByNHM(nhm: number): Promise<Paciente | null> {
+	if (mockFlags.pacientes) {
+		return mockPacientes.find((x) => x.nhm === nhm) ?? null;
+	}
+	return apiFetch<Paciente | null>(`/patients/full?nhm=${nhm}`);
+}
+
 export async function getMaxNHM(): Promise<number> {
 	if (mockFlags.pacientes) return getNextNHM() - 1;
 	const res = await apiFetch<{ max_nhm: number }>('/patients/max-nhm');
