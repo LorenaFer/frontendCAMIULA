@@ -37,7 +37,17 @@ export const P = {
 
 	// Configuración (admin)
 	SETTINGS_READ: 'settings:read',
-	SETTINGS_WRITE: 'settings:write'
+	SETTINGS_WRITE: 'settings:write',
+
+	// Inventario (módulo farmacia)
+	INVENTORY_WRITE: 'inventory:write',
+	INVENTORY_DISPATCH: 'inventory:dispatch',
+	INVENTORY_REPORTS: 'inventory:reports',
+	INVENTORY_ADMIN: 'inventory:admin',
+
+	// Recetas médicas
+	RECIPE_WRITE: 'recipe:write',
+	RECIPE_READ: 'recipe:read'
 } as const;
 
 export type Permission = (typeof P)[keyof typeof P];
@@ -59,7 +69,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 		P.CITAS_CANCEL,
 		P.CITAS_EXPORT,
 		P.PACIENTES_READ,
-		P.PACIENTES_CREATE
+		P.PACIENTES_CREATE,
+		P.INVENTORY_READ,
+		P.INVENTORY_REPORTS,
+		P.RECIPE_READ
 	],
 
 	doctor: [
@@ -75,7 +88,19 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 		P.DISPONIBILIDAD_UPDATE,
 		P.DISPONIBILIDAD_DELETE,
 		P.EVALUACIONES_READ,
-		P.EVALUACIONES_WRITE
+		P.EVALUACIONES_WRITE,
+		P.INVENTORY_READ,
+		P.RECIPE_WRITE,
+		P.RECIPE_READ
+	],
+
+	farmaceutico: [
+		P.DASHBOARD_READ,
+		P.INVENTORY_READ,
+		P.INVENTORY_DISPATCH,
+		P.INVENTORY_REPORTS,
+		P.RECIPE_READ,
+		P.PACIENTES_READ
 	],
 
 	admin: Object.values(P)

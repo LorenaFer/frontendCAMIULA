@@ -36,6 +36,13 @@ export const MOCK_USERS: Record<UserRole, AuthUser> = {
 		role: 'admin',
 		initials: 'AP',
 		doctor_id: 'doc-001'
+	},
+	farmaceutico: {
+		id: 'far-1',
+		name: 'María Fernández',
+		role: 'farmaceutico',
+		initials: 'MF',
+		pharmacistId: 'far-uuid-1'
 	}
 };
 
@@ -50,7 +57,16 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
 	'doctor/disponibilidad': P.DISPONIBILIDAD_READ,
 	'appointments': P.CITAS_READ,
 	'patients': P.PACIENTES_READ,
+	// Inventario — 'inventory' cubre todas las sub-rutas por startsWith
 	'inventory': P.INVENTORY_READ,
+	'inventory/suppliers': P.INVENTORY_WRITE,
+	'inventory/purchase-orders': P.INVENTORY_WRITE,
+	'inventory/dispatches': P.INVENTORY_DISPATCH,
+	'inventory/limits': P.INVENTORY_ADMIN,
+	'inventory/reports': P.INVENTORY_REPORTS,
+	// Recipe del doctor
+	'doctor/citas/[citaId]/prescription': P.RECIPE_WRITE,
+	// Admin
 	'admin/configuracion': P.SETTINGS_READ
 };
 
@@ -79,13 +95,37 @@ export const ACTION_PERMISSIONS: Record<string, string> = {
 	guardarEspecialidad: P.SETTINGS_WRITE,
 	toggleEspecialidad: P.SETTINGS_WRITE,
 	eliminarEspecialidad: P.SETTINGS_WRITE,
-	guardarSchema: P.SETTINGS_WRITE
+	guardarSchema: P.SETTINGS_WRITE,
+	// /inventory/medications
+	crearMedicamento: P.INVENTORY_WRITE,
+	editarMedicamento: P.INVENTORY_WRITE,
+	// /inventory/suppliers
+	crearProveedor: P.INVENTORY_WRITE,
+	editarProveedor: P.INVENTORY_WRITE,
+	// /inventory/purchase-orders
+	crearOrden: P.INVENTORY_WRITE,
+	recibirOrden: P.INVENTORY_WRITE,
+	// /inventory/dispatches
+	validarDespacho: P.INVENTORY_DISPATCH,
+	ejecutarDespacho: P.INVENTORY_DISPATCH,
+	cancelarDespacho: P.INVENTORY_DISPATCH,
+	// /inventory/limits
+	crearLimite: P.INVENTORY_ADMIN,
+	editarLimite: P.INVENTORY_ADMIN,
+	crearExcepcion: P.INVENTORY_ADMIN,
+	// /doctor/citas/[citaId]/prescription
+	emitirRecipe: P.RECIPE_WRITE
 };
 
 // ─── Guard helpers ───────────────────────────────────────────
 
 export function getRequiredPermission(routePath: string): string | null {
-	for (const [pattern, permission] of Object.entries(ROUTE_PERMISSIONS)) {
+	// Sort by pattern length descending so more specific routes match first
+	// e.g. 'inventory/suppliers' before 'inventory'
+	const sorted = Object.entries(ROUTE_PERMISSIONS).sort(
+		(a, b) => b[0].length - a[0].length
+	);
+	for (const [pattern, permission] of sorted) {
 		if (routePath === pattern || (pattern && routePath.startsWith(pattern + '/'))) {
 			return permission;
 		}

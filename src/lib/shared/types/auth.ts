@@ -2,7 +2,7 @@
 // Tipos de Autenticación y Autorización
 // ============================================================
 
-export type UserRole = 'paciente' | 'analista' | 'doctor' | 'admin';
+export type UserRole = 'paciente' | 'analista' | 'doctor' | 'admin' | 'farmaceutico';
 
 export interface AuthUser {
 	id: string;
@@ -11,4 +11,6 @@ export interface AuthUser {
 	initials: string;
 	/** Solo presente cuando role === 'doctor' o admin con contexto de doctor */
 	doctor_id?: string;
+	/** Solo presente cuando role === 'farmaceutico' */
+	pharmacistId?: string;
 }

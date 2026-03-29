@@ -59,7 +59,7 @@
 		disabled?: boolean;
 		name?: string;
 		class?: string;
-	} & Omit<HTMLSelectAttributes, 'class' | 'value' | 'disabled' | 'name'> = $props();
+	} & Omit<HTMLSelectAttributes, 'class' | 'value' | 'disabled' | 'name' | 'onchange'> = $props();
 
 	let selectEl: HTMLSelectElement;
 

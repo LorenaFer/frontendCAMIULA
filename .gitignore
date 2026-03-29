@@ -25,4 +25,4 @@ vite.config.ts.timestamp-*
 .claude
 CLAUDE.md
 
-doc_images
+doc_images/
