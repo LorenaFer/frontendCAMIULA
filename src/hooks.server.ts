@@ -26,7 +26,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// 2. Public routes
 	if (PUBLIC_ROUTES.some((r) => pathname === r)) {
-		if (user && pathname === '/login') throw redirect(303, '/hospitals');
 		return resolve(event);
 	}
 

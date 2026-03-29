@@ -11,6 +11,13 @@ export async function findByCita(citaId: string): Promise<HistoriaMedica | null>
 	return apiFetch<HistoriaMedica | null>(`/medical-records?appointment_id=${citaId}`);
 }
 
+export async function findById(historiaId: string): Promise<HistoriaMedica | null> {
+	if (mockFlags.historias) {
+		return mockHistorias.find((h) => h.id === historiaId) ?? null;
+	}
+	return apiFetch<HistoriaMedica | null>(`/medical-records/${historiaId}`);
+}
+
 export async function upsertHistoria(
 	citaId: string,
 	pacienteId: string,
