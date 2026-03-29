@@ -359,6 +359,19 @@ export interface CreateDispatchExceptionInput {
 	reason: string;
 }
 
+// ─── Prescription Item Draft (UI) ─────────────────────────────
+
+/** Draft de ítem de receta antes de serializar al servidor */
+export interface PrescriptionItemDraft {
+	medication_id: string;
+	medication_name: string;
+	pharmaceutical_form: string;
+	unit_measure: string;
+	quantity_prescribed: number;
+	dosage_instructions: string;
+	duration_days: number;
+}
+
 // ─── Re-exports ───────────────────────────────────────────────
 
 export type { PaginatedResponse } from './appointments.js';

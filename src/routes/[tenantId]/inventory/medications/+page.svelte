@@ -45,11 +45,11 @@
 	<title>Catálogo de Medicamentos — Inventario</title>
 </svelte:head>
 
-{#snippet statusCell(_v: unknown, row: MedicationRow)}
+{#snippet statusCell(_v: unknown, row: MedicationRow, _index: number)}
 	<MedicationBadge status={row.medication_status as Medication['medication_status']} />
 {/snippet}
 
-{#snippet stockCell(_v: unknown, row: MedicationRow)}
+{#snippet stockCell(_v: unknown, row: MedicationRow, _index: number)}
 	<StockIndicator stock={row.current_stock as number} />
 {/snippet}
 
@@ -74,9 +74,9 @@
 			<p class="text-[11px] text-ink-muted">Activos</p>
 			<p class="text-lg font-bold text-ink tabular-nums">{statsActive}</p>
 		</div>
-		<div class="bg-surface-elevated border border-{statsCritical > 0 ? 'red-200' : 'border'} rounded-lg px-4 py-2.5 min-w-[100px]">
+		<div class={`bg-surface-elevated border rounded-lg px-4 py-2.5 min-w-[100px] ${statsCritical > 0 ? 'border-red-200 dark:border-red-800' : 'border-border'}`}>
 			<p class="text-[11px] text-ink-muted">Stock crítico</p>
-			<p class="text-lg font-bold {statsCritical > 0 ? 'text-red-600' : 'text-ink'} tabular-nums">{statsCritical}</p>
+			<p class={`text-lg font-bold tabular-nums ${statsCritical > 0 ? 'text-red-600 dark:text-red-400' : 'text-ink'}`}>{statsCritical}</p>
 		</div>
 	</div>
 
@@ -91,7 +91,7 @@
 				</p>
 			{/if}
 			{#if form?.success}
-				<p class="mb-3 text-sm text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
+				<p class="mb-3 text-sm text-sage-700 bg-sage-50 dark:bg-sage-900/20 border border-sage-200 dark:border-sage-800 rounded-lg px-3 py-2">
 					Medicamento creado correctamente.
 				</p>
 			{/if}
@@ -187,7 +187,7 @@
 				{ key: 'therapeutic_class',  header: 'Clase',        width: '140px' },
 				{ key: 'medication_status',  header: 'Estado',       width: '110px', align: 'center', render: statusCell },
 				{ key: 'current_stock',      header: 'Stock',        width: '100px', align: 'right',  render: stockCell }
-			] satisfies DataTableColumn<MedicationRow>[]}
+			] as DataTableColumn<MedicationRow>[]}
 			data={data.medications.data as MedicationRow[]}
 			rowKey="id"
 			emptyMessage="No hay medicamentos que coincidan con los filtros."

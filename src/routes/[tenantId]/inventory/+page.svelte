@@ -22,19 +22,19 @@
 	<title>Inventario — Dashboard</title>
 </svelte:head>
 
-{#snippet stockCell(_v: unknown, row: StockRow)}
+{#snippet stockCell(_v: unknown, row: StockRow, _index: number)}
 	<StockIndicator stock={row.total_available as number} />
 {/snippet}
 
-{#snippet alertCell(_v: unknown, row: StockRow)}
+{#snippet alertCell(_v: unknown, row: StockRow, _index: number)}
 	{#if row.stock_alert === 'critical'}
 		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">Crítico</span>
 	{:else if row.stock_alert === 'expired'}
 		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Vencido</span>
 	{:else if row.stock_alert === 'low'}
-		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Bajo</span>
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-honey-100 text-honey-800 dark:bg-honey-900/30 dark:text-honey-300">Bajo</span>
 	{:else}
-		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">OK</span>
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300">OK</span>
 	{/if}
 {/snippet}
 
@@ -96,7 +96,7 @@
 					{ key: 'pharmaceutical_form', header: 'Forma',  width: '120px' },
 					{ key: 'total_available',     header: 'Stock',  width: '100px', align: 'right',  render: stockCell },
 					{ key: 'stock_alert',         header: 'Estado', width: '100px', align: 'center', render: alertCell }
-				] satisfies DataTableColumn<StockRow>[]}
+				] as DataTableColumn<StockRow>[]}
 				data={criticalItems as StockRow[]}
 				rowKey="medication_id"
 				emptyMessage="Sin alertas activas."

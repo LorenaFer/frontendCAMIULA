@@ -22,14 +22,14 @@
 	);
 
 	const barColorClass = $derived(
-		barLevel === 'danger'  ? 'bg-red-500'    :
-		barLevel === 'warning' ? 'bg-amber-500'  :
+		barLevel === 'danger'  ? 'bg-red-500'     :
+		barLevel === 'warning' ? 'bg-honey-500'   :
 		                         'bg-viking-500'
 	);
 
 	const labelColorClass = $derived(
-		barLevel === 'danger'  ? 'text-red-600 dark:text-red-400'    :
-		barLevel === 'warning' ? 'text-amber-600 dark:text-amber-400' :
+		barLevel === 'danger'  ? 'text-red-600 dark:text-red-400'     :
+		barLevel === 'warning' ? 'text-honey-600 dark:text-honey-400' :
 		                         'text-ink-muted'
 	);
 </script>
@@ -43,7 +43,7 @@
 	</div>
 	<div class="w-full h-1.5 bg-border/40 dark:bg-border/20 rounded-full overflow-hidden">
 		<div
-			class="h-full rounded-full transition-all duration-500 ease-out {barColorClass}"
+			class="h-full rounded-full transition-all duration-[var(--duration-slower)] ease-[var(--ease-gentle)] {barColorClass}"
 			style="width: {percentage}%"
 			role="progressbar"
 			aria-valuenow={used}

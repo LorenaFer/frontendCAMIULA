@@ -23,7 +23,7 @@
 
 	const valueClasses = $derived(
 		level === 'critical' ? 'text-red-600 dark:text-red-400 font-bold' :
-		level === 'low'      ? 'text-amber-600 dark:text-amber-400 font-semibold' :
+		level === 'low'      ? 'text-honey-600 dark:text-honey-400 font-semibold' :
 		                       'text-ink'
 	);
 </script>
@@ -41,7 +41,7 @@
 		</svg>
 	{:else if level === 'low'}
 		<svg
-			class="w-3.5 h-3.5 text-amber-500 flex-shrink-0"
+			class="w-3.5 h-3.5 text-honey-500 flex-shrink-0"
 			viewBox="0 0 16 16"
 			fill="currentColor"
 			aria-label="Stock bajo"

@@ -49,13 +49,13 @@
 	<title>Despachos — Inventario</title>
 </svelte:head>
 
-{#snippet statusCell(_v: unknown, row: DispatchRow)}
+{#snippet statusCell(_v: unknown, row: DispatchRow, _index: number)}
 	{#if row.dispatch_status === 'completed'}
-		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">Completado</span>
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300">Completado</span>
 	{:else if row.dispatch_status === 'cancelled'}
 		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">Cancelado</span>
 	{:else}
-		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Pendiente</span>
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-honey-100 text-honey-800 dark:bg-honey-900/30 dark:text-honey-300">Pendiente</span>
 	{/if}
 {/snippet}
 
@@ -101,7 +101,7 @@
 			{@const isWarning = errMsg.includes('backend')}
 			<p class="mt-3 text-sm rounded-lg px-3 py-2
 				{isWarning
-					? 'text-amber-700 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'
+					? 'text-honey-700 bg-honey-50 dark:bg-honey-900/20 border border-honey-200 dark:border-honey-800'
 					: 'text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}">
 				{errMsg}
 			</p>
@@ -120,7 +120,7 @@
 						{/if}
 					</div>
 					{#if activeValidation.can_dispatch}
-						<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+						<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300">
 							<svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
 								<path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
 							</svg>
@@ -190,7 +190,7 @@
 
 				<!-- Confirmación de despacho -->
 				{#if (form as { dispatched?: boolean })?.dispatched}
-					<p class="text-sm text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
+					<p class="text-sm text-sage-700 bg-sage-50 dark:bg-sage-900/20 border border-sage-200 dark:border-sage-800 rounded-lg px-3 py-2">
 						Despacho ejecutado correctamente.
 					</p>
 				{/if}
@@ -210,7 +210,7 @@
 				{ key: 'dispatch_date',        header: 'Fecha',     width: '110px' },
 				{ key: 'pharmacist_name',      header: 'Farmacéutico', width: '170px' },
 				{ key: 'dispatch_status',      header: 'Estado',    width: '110px', align: 'center', render: statusCell }
-			] satisfies DataTableColumn<DispatchRow>[]}
+			] as DataTableColumn<DispatchRow>[]}
 			data={data.dispatches.data as DispatchRow[]}
 			rowKey="id"
 			emptyMessage="No hay despachos registrados."

@@ -113,7 +113,12 @@ export const ACTION_PERMISSIONS: Record<string, string> = {
 // ─── Guard helpers ───────────────────────────────────────────
 
 export function getRequiredPermission(routePath: string): string | null {
-	for (const [pattern, permission] of Object.entries(ROUTE_PERMISSIONS)) {
+	// Sort by pattern length descending so more specific routes match first
+	// e.g. 'inventory/suppliers' before 'inventory'
+	const sorted = Object.entries(ROUTE_PERMISSIONS).sort(
+		(a, b) => b[0].length - a[0].length
+	);
+	for (const [pattern, permission] of sorted) {
 		if (routePath === pattern || (pattern && routePath.startsWith(pattern + '/'))) {
 			return permission;
 		}

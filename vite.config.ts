@@ -1,14 +1,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
-	test: {
-		include: ['src/**/*.test.ts'],
-		alias: {
-			'$lib': '/src/lib',
-			'$shared': '/src/lib/shared'
-		}
-	}
+	plugins: [tailwindcss(), sveltekit()]
 });

@@ -3,9 +3,8 @@ import { error, fail } from '@sveltejs/kit';
 import * as citasService from '$lib/server/citas.service.js';
 import * as prescriptionsService from '$lib/server/inventory/prescriptions.service.js';
 import * as medicationsService from '$lib/server/inventory/medications.service.js';
-import { assertActionPermission, requireDoctorId } from '$lib/server/rbac.js';
+import { assertActionPermission, requireDoctorId, assertPermission } from '$lib/server/rbac.js';
 import { P } from '$shared/rbac-config.js';
-import { assertPermission } from '$lib/server/rbac.js';
 import type { CreatePrescriptionInput } from '$shared/types/inventory.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {

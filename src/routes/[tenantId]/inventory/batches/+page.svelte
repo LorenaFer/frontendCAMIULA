@@ -32,11 +32,15 @@
 	<title>Stock y Lotes — Inventario</title>
 </svelte:head>
 
-{#snippet stockCell(_v: unknown, row: StockRow)}
+{#snippet stockCell(_v: unknown, row: StockRow, _index: number)}
 	<StockIndicator stock={row.total_available as number} />
 {/snippet}
 
-{#snippet batchTagCell(_v: unknown, row: BatchRow)}
+{#snippet medicationNameCell(_v: unknown, row: BatchRow, _index: number)}
+	<span class="text-sm text-ink">{(row.medication as { generic_name: string })?.generic_name ?? '—'}</span>
+{/snippet}
+
+{#snippet batchTagCell(_v: unknown, row: BatchRow, _index: number)}
 	<BatchTag
 		lot_number={row.lot_number as string}
 		status={row.batch_status as Batch['batch_status']}
@@ -44,15 +48,15 @@
 	/>
 {/snippet}
 
-{#snippet alertCell(_v: unknown, row: StockRow)}
+{#snippet alertCell(_v: unknown, row: StockRow, _index: number)}
 	{#if row.stock_alert === 'critical'}
-		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">Crítico</span>
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">Crítico</span>
 	{:else if row.stock_alert === 'low'}
-		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Bajo</span>
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-honey-100 text-honey-800 dark:bg-honey-900/30 dark:text-honey-300">Bajo</span>
 	{:else if row.stock_alert === 'expired'}
-		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">Vencido</span>
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Vencido</span>
 	{:else}
-		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">OK</span>
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300">OK</span>
 	{/if}
 {/snippet}
 
@@ -68,7 +72,7 @@
 				onclick={() => switchView('stock')}
 				class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors
 				       {data.view === 'stock'
-				         ? 'bg-surface-elevated text-ink shadow-sm border border-border/60'
+				         ? 'bg-surface-elevated text-ink shadow-[var(--shadow-1)] border border-border/60'
 				         : 'text-ink-muted hover:text-ink'}"
 			>
 				Stock consolidado
@@ -77,7 +81,7 @@
 				onclick={() => switchView('batches')}
 				class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors
 				       {data.view === 'batches'
-				         ? 'bg-surface-elevated text-ink shadow-sm border border-border/60'
+				         ? 'bg-surface-elevated text-ink shadow-[var(--shadow-1)] border border-border/60'
 				         : 'text-ink-muted hover:text-ink'}"
 			>
 				Por lote
@@ -97,7 +101,7 @@
 					{ key: 'batch_count',        header: 'Lotes',       width: '70px',  align: 'center' },
 					{ key: 'nearest_expiration', header: 'Próx. vence', width: '130px' },
 					{ key: 'stock_alert',        header: 'Alerta',      width: '100px', align: 'center', render: alertCell }
-				] satisfies DataTableColumn<StockRow>[]}
+				] as DataTableColumn<StockRow>[]}
 				data={data.stockItems as StockRow[]}
 				rowKey="medication_id"
 				emptyMessage="No hay datos de stock disponibles."
@@ -111,29 +115,30 @@
 			<DataTable
 				columns={[
 					{ key: 'lot_number',         header: 'Lote',        width: '180px', render: batchTagCell },
-					{ key: 'fk_medication_id',   header: 'Medicamento', render: (_v, row) => undefined },
+					{ key: 'fk_medication_id',   header: 'Medicamento', render: medicationNameCell },
 					{ key: 'quantity_available', header: 'Disponible',  width: '100px', align: 'right' },
 					{ key: 'quantity_received',  header: 'Recibido',    width: '100px', align: 'right' },
 					{ key: 'supplier_name',      header: 'Proveedor',   width: '180px' },
 					{ key: 'received_at',        header: 'Recibido el', width: '120px' }
-				] satisfies DataTableColumn<BatchRow>[]}
+				] as DataTableColumn<BatchRow>[]}
 				data={data.batches.data as BatchRow[]}
 				rowKey="id"
 				emptyMessage="No hay lotes registrados."
 			/>
 
-			{#if data.batches.total > data.batches.pageSize}
+			{@const batches = data.batches}
+			{#if batches.total > batches.pageSize}
 				<div class="flex items-center justify-between px-4 py-3 border-t border-border">
 					<span class="text-xs text-ink-muted">
-						{(data.batches.page - 1) * data.batches.pageSize + 1}–{Math.min(
-							data.batches.page * data.batches.pageSize, data.batches.total
-						)} de {data.batches.total}
+						{(batches.page - 1) * batches.pageSize + 1}–{Math.min(
+							batches.page * batches.pageSize, batches.total
+						)} de {batches.total}
 					</span>
 					<div class="flex gap-2">
-						<Button variant="ghost" size="sm" disabled={data.batches.page <= 1}
-							onclick={() => changePage(data.batches.page - 1)}>Anterior</Button>
-						<Button variant="ghost" size="sm" disabled={!data.batches.hasNext}
-							onclick={() => changePage(data.batches.page + 1)}>Siguiente</Button>
+						<Button variant="ghost" size="sm" disabled={batches.page <= 1}
+							onclick={() => changePage(batches.page - 1)}>Anterior</Button>
+						<Button variant="ghost" size="sm" disabled={!batches.hasNext}
+							onclick={() => changePage(batches.page + 1)}>Siguiente</Button>
 					</div>
 				</div>
 			{/if}

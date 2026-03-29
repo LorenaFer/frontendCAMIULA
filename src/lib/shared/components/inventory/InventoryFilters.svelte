@@ -32,8 +32,7 @@
 		return () => clearTimeout(timer);
 	});
 
-	function handleStatusChange(v: string | number | undefined) {
-		if (typeof v !== 'string') return;
+	function handleStatusChange(v: string) {
 		status = (v as MedicationStatus | '');
 		onchange({ ...value, status: (v as MedicationStatus) || undefined, page: 1 });
 	}

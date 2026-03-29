@@ -1,18 +1,7 @@
 <script lang="ts">
-	import type { MedicationOption } from '$shared/types/inventory.js';
+	import type { MedicationOption, PrescriptionItemDraft } from '$shared/types/inventory.js';
 	import Button from '$shared/components/button/Button.svelte';
 	import Input from '$shared/components/input/Input.svelte';
-
-	// Tipo local — draft de ítem antes de serializar al servidor
-	interface PrescriptionItemDraft {
-		medication_id: string;
-		medication_name: string;
-		pharmaceutical_form: string;
-		unit_measure: string;
-		quantity_prescribed: number;
-		dosage_instructions: string;
-		duration_days: number;
-	}
 
 	interface SubmitResult {
 		success?: boolean;
@@ -258,12 +247,12 @@
 
 	<!-- Resultado previo -->
 	{#if submitResult?.success}
-		<div class="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200
-		            dark:bg-emerald-900/20 dark:border-emerald-700">
-			<svg class="w-4 h-4 text-emerald-600 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+		<div class="flex items-center gap-2 p-3 rounded-lg bg-sage-50 border border-sage-200
+		            dark:bg-sage-900/20 dark:border-sage-700">
+			<svg class="w-4 h-4 text-sage-600 shrink-0" viewBox="0 0 16 16" fill="currentColor">
 				<path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
 			</svg>
-			<span class="text-sm text-emerald-800 dark:text-emerald-300">
+			<span class="text-sm text-sage-800 dark:text-sage-300">
 				Receta emitida:
 				<span class="font-mono font-semibold">{submitResult.prescriptionNumber}</span>
 			</span>

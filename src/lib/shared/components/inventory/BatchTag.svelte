@@ -11,10 +11,10 @@
 	let { lot_number, status, expiration_date, class: className = '' }: Props = $props();
 
 	const tagStyles: Record<BatchStatus, string> = {
-		available:  'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700',
+		available:  'bg-sage-100 text-sage-800 border-sage-200 dark:bg-sage-900/30 dark:text-sage-300 dark:border-sage-700',
 		depleted:   'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-600',
 		expired:    'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700',
-		quarantine: 'bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700'
+		quarantine: 'bg-iris-100 text-iris-800 border-iris-200 dark:bg-iris-900/30 dark:text-iris-300 dark:border-iris-700'
 	};
 
 	const labelMap: Record<BatchStatus, string> = {
@@ -24,7 +24,7 @@
 		quarantine: 'Cuarentena'
 	};
 
-	const daysLeft = $derived(() => {
+	const daysLeft = $derived.by(() => {
 		const exp = new Date(expiration_date);
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
@@ -32,9 +32,9 @@
 	});
 
 	const expiryTextClass = $derived(
-		daysLeft() <= 30  ? 'text-red-600 dark:text-red-400' :
-		daysLeft() <= 90  ? 'text-amber-600 dark:text-amber-400' :
-		                    'text-ink-muted'
+		daysLeft <= 30  ? 'text-red-600 dark:text-red-400' :
+		daysLeft <= 90  ? 'text-honey-600 dark:text-honey-400' :
+		                  'text-ink-muted'
 	);
 </script>
 
@@ -47,8 +47,8 @@
 	</span>
 	<span class="text-[10px] {expiryTextClass} tabular-nums">
 		Vence: {expiration_date}
-		{#if daysLeft() < 90}
-			<span class="font-medium">({daysLeft()}d)</span>
+		{#if daysLeft < 90}
+			<span class="font-medium">({daysLeft}d)</span>
 		{/if}
 	</span>
 </div>

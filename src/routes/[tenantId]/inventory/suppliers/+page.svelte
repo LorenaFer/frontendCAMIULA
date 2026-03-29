@@ -26,9 +26,9 @@
 	<title>Proveedores — Inventario</title>
 </svelte:head>
 
-{#snippet statusCell(_v: unknown, row: SupplierRow)}
+{#snippet statusCell(_v: unknown, row: SupplierRow, _index: number)}
 	{#if row.supplier_status === 'active'}
-		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">Activo</span>
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300">Activo</span>
 	{:else}
 		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Inactivo</span>
 	{/if}
@@ -56,7 +56,7 @@
 				</p>
 			{/if}
 			{#if form?.success}
-				<p class="mb-3 text-sm text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
+				<p class="mb-3 text-sm text-sage-700 bg-sage-50 dark:bg-sage-900/20 border border-sage-200 dark:border-sage-800 rounded-lg px-3 py-2">
 					Proveedor creado correctamente.
 				</p>
 			{/if}
@@ -138,7 +138,7 @@
 				{ key: 'phone',           header: 'Teléfono',   width: '140px' },
 				{ key: 'payment_terms',   header: 'Pago',       width: '120px' },
 				{ key: 'supplier_status', header: 'Estado',     width: '100px', align: 'center', render: statusCell }
-			] satisfies DataTableColumn<SupplierRow>[]}
+			] as DataTableColumn<SupplierRow>[]}
 			data={data.suppliers.data as SupplierRow[]}
 			rowKey="id"
 			emptyMessage="No hay proveedores registrados."

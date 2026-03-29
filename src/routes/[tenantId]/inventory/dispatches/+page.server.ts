@@ -60,7 +60,10 @@ export const actions: Actions = {
 		const prescription_id = String(fd.get('prescription_id') ?? '');
 		if (!prescription_id) return fail(400, { error: 'ID de receta requerido' });
 
-		const pharmacistId = locals.user?.pharmacistId ?? locals.user?.id ?? '';
+		if (!locals.user?.pharmacistId) {
+			return fail(403, { error: 'Se requiere rol de farmacéutico para ejecutar despachos' });
+		}
+		const pharmacistId = locals.user.pharmacistId;
 
 		try {
 			const dispatch = await dispatchesService.executeDispatch({

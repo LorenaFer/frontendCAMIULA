@@ -2,22 +2,11 @@
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
-	import type { MedicationOption } from '$shared/types/inventory.js';
+	import type { MedicationOption, PrescriptionItemDraft } from '$shared/types/inventory.js';
 	import Card from '$shared/components/card/Card.svelte';
 	import PrescriptionForm from '$shared/components/inventory/PrescriptionForm.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
-
-	// Tipo local — draft de ítem antes de serializar al servidor
-	interface PrescriptionItemDraft {
-		medication_id: string;
-		medication_name: string;
-		pharmaceutical_form: string;
-		unit_measure: string;
-		quantity_prescribed: number;
-		dosage_instructions: string;
-		duration_days: number;
-	}
 
 	let items = $state<PrescriptionItemDraft[]>([]);
 	let notes = $state('');
@@ -94,7 +83,7 @@
 		</div>
 		<h1 class="text-lg sm:text-xl font-bold text-ink">Emitir Receta</h1>
 		<p class="text-xs text-ink-muted mt-0.5">
-			Cita #{data.cita.id} · {data.cita.paciente_nombre ?? 'Paciente'}
+			Cita #{data.cita.id} · {data.cita.paciente?.nombre ?? 'Paciente'} {data.cita.paciente?.apellido ?? ''}
 		</p>
 	</div>
 
@@ -102,7 +91,7 @@
 	{#if alreadyIssued && data.existingPrescription}
 		<Card padding="md">
 			<div class="flex items-start gap-3">
-				<svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+				<svg class="w-5 h-5 text-sage-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
 				</svg>
 				<div>

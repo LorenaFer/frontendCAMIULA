@@ -12,6 +12,17 @@ import type {
 	HistoriaMedica,
 	DoctorOption
 } from '$shared/types/appointments.js';
+import type {
+	Supplier,
+	Medication,
+	Batch,
+	StockItem,
+	PurchaseOrder,
+	Prescription,
+	Dispatch,
+	DispatchLimit,
+	DispatchException
+} from '$shared/types/inventory.js';
 
 // ─── Especialidades ──────────────────────────────────────────
 
@@ -311,18 +322,6 @@ export function getNextNHM(): number {
 // ============================================================
 // Mock Inventario
 // ============================================================
-
-import type {
-	Supplier,
-	Medication,
-	Batch,
-	StockItem,
-	PurchaseOrder,
-	Prescription,
-	Dispatch,
-	DispatchLimit,
-	DispatchException
-} from '$shared/types/inventory.js';
 
 // ─── Proveedores ─────────────────────────────────────────────
 

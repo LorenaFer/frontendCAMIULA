@@ -9,9 +9,9 @@
 	let { status, class: className = '' }: Props = $props();
 
 	const styleMap: Record<MedicationStatus, string> = {
-		active:       'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+		active:       'bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300',
 		discontinued: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-		pending:      'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+		pending:      'bg-honey-100 text-honey-800 dark:bg-honey-900/30 dark:text-honey-300'
 	};
 
 	const labelMap: Record<MedicationStatus, string> = {

@@ -22,9 +22,9 @@
 
 	const statusLabels: Record<string, { label: string; classes: string }> = {
 		draft:     { label: 'Borrador',  classes: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' },
-		sent:      { label: 'Enviada',   classes: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
-		partial:   { label: 'Parcial',   classes: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
-		received:  { label: 'Recibida',  classes: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
+		sent:      { label: 'Enviada',   classes: 'bg-iris-100 text-iris-700 dark:bg-iris-900/30 dark:text-iris-300' },
+		partial:   { label: 'Parcial',   classes: 'bg-honey-100 text-honey-800 dark:bg-honey-900/30 dark:text-honey-300' },
+		received:  { label: 'Recibida',  classes: 'bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300' },
 		cancelled: { label: 'Cancelada', classes: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' }
 	};
 </script>
@@ -33,12 +33,16 @@
 	<title>Órdenes de Compra — Inventario</title>
 </svelte:head>
 
-{#snippet statusCell(_v: unknown, row: OrderRow)}
+{#snippet supplierNameCell(_v: unknown, row: OrderRow, _index: number)}
+	<span class="text-sm text-ink">{(row.supplier as { name: string })?.name ?? '—'}</span>
+{/snippet}
+
+{#snippet statusCell(_v: unknown, row: OrderRow, _index: number)}
 	{@const s = statusLabels[row.order_status as string] ?? { label: String(row.order_status), classes: '' }}
 	<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {s.classes}">{s.label}</span>
 {/snippet}
 
-{#snippet actionsCell(_v: unknown, row: OrderRow)}
+{#snippet actionsCell(_v: unknown, row: OrderRow, _index: number)}
 	{#if row.order_status === 'sent' || row.order_status === 'partial'}
 		<form
 			method="POST"
@@ -79,7 +83,7 @@
 		</p>
 	{/if}
 	{#if form?.success}
-		<p class="text-sm text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
+		<p class="text-sm text-sage-700 bg-sage-50 dark:bg-sage-900/20 border border-sage-200 dark:border-sage-800 rounded-lg px-3 py-2">
 			Recepción registrada correctamente.
 		</p>
 	{/if}
@@ -97,12 +101,12 @@
 		<DataTable
 			columns={[
 				{ key: 'order_number', header: 'N° Orden',   width: '130px' },
-				{ key: 'supplier',     header: 'Proveedor',  render: (_v, row) => (row.supplier as { name: string }).name },
+				{ key: 'supplier',     header: 'Proveedor',  render: supplierNameCell },
 				{ key: 'order_date',   header: 'Fecha',      width: '110px' },
 				{ key: 'expected_date', header: 'Esperada',  width: '110px' },
 				{ key: 'order_status', header: 'Estado',     width: '110px', align: 'center', render: statusCell },
 				{ key: '_actions',     header: '',           width: '160px', align: 'right',  render: actionsCell }
-			] satisfies DataTableColumn<OrderRow>[]}
+			] as DataTableColumn<OrderRow>[]}
 			data={data.orders.data as OrderRow[]}
 			rowKey="id"
 			emptyMessage="No hay órdenes de compra registradas."
