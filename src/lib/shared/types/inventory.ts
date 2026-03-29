@@ -372,6 +372,13 @@ export interface PrescriptionItemDraft {
 	duration_days: number;
 }
 
-// ─── Re-exports ───────────────────────────────────────────────
+// ─── Pagination (módulo inventario) ───────────────────────────
 
-export type { PaginatedResponse } from './appointments.js';
+/** Respuesta paginada del módulo de inventario (mock y API) */
+export interface InventoryPaginatedResponse<T> {
+	data: T[];
+	total: number;
+	page: number;
+	pageSize: number;
+	hasNext: boolean;
+}

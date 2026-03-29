@@ -11,12 +11,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	assertPermission(locals.user, P.RECIPE_WRITE);
 	requireDoctorId(locals.user);
 
-	const citaId = parseInt(params.citaId, 10);
-	if (isNaN(citaId)) error(404, 'Cita no encontrada');
+	const citaId = params.citaId;
+	if (!citaId) error(404, 'Cita no encontrada');
 
 	const [cita, existingPrescription, medicationOptions] = await Promise.all([
 		citasService.getCitaById(citaId),
-		prescriptionsService.getPrescriptionByAppointment(String(citaId)),
+		prescriptionsService.getPrescriptionByAppointment(citaId),
 		medicationsService.getMedicationOptions()
 	]);
 
@@ -29,8 +29,8 @@ export const actions: Actions = {
 	emitirRecipe: async ({ request, params, locals }) => {
 		assertActionPermission(locals.user, 'emitirRecipe');
 
-		const citaId = parseInt(params.citaId, 10);
-		if (isNaN(citaId)) return fail(400, { error: 'ID de cita inválido' });
+		const citaId = params.citaId;
+		if (!citaId) return fail(400, { error: 'ID de cita inválido' });
 
 		const cita = await citasService.getCitaById(citaId);
 		if (!cita) return fail(404, { error: 'Cita no encontrada' });
@@ -38,7 +38,6 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const notes = String(fd.get('notes') ?? '').trim() || undefined;
 
-		// Los ítems vienen serializado como JSON en el campo "items"
 		let items: CreatePrescriptionInput['items'] = [];
 		try {
 			items = JSON.parse(String(fd.get('items') ?? '[]'));
@@ -51,8 +50,8 @@ export const actions: Actions = {
 		}
 
 		const input: CreatePrescriptionInput = {
-			fk_appointment_id: String(citaId),
-			fk_patient_id: String(cita.paciente_id),
+			fk_appointment_id: citaId,
+			fk_patient_id: cita.paciente_id,
 			notes,
 			items
 		};

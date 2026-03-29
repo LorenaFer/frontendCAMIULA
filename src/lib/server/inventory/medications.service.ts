@@ -10,12 +10,12 @@ import type {
 	MedicationOption,
 	MedicationFilters,
 	CreateMedicationInput,
-	PaginatedResponse
+	InventoryPaginatedResponse
 } from '$shared/types/inventory.js';
 
 export async function getMedications(
 	filters: MedicationFilters
-): Promise<PaginatedResponse<Medication>> {
+): Promise<InventoryPaginatedResponse<Medication>> {
 	if (mockFlags.inventoryMedications) {
 		let data = [...mockMedications];
 
@@ -56,7 +56,7 @@ export async function getMedications(
 	qs.set('page', String(filters.page ?? 1));
 	qs.set('page_size', String(filters.pageSize ?? 25));
 
-	return apiFetch<PaginatedResponse<Medication>>(`/inventory/medications?${qs}`);
+	return apiFetch<InventoryPaginatedResponse<Medication>>(`/inventory/medications?${qs}`);
 }
 
 export async function getMedicationById(id: string): Promise<Medication | null> {

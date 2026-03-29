@@ -9,12 +9,12 @@ import type {
 	Batch,
 	BatchFilters,
 	StockItem,
-	PaginatedResponse
+	InventoryPaginatedResponse
 } from '$shared/types/inventory.js';
 
 export async function getBatches(
 	filters: BatchFilters
-): Promise<PaginatedResponse<Batch>> {
+): Promise<InventoryPaginatedResponse<Batch>> {
 	if (mockFlags.inventoryBatches) {
 		let data = [...mockBatches];
 
@@ -50,7 +50,7 @@ export async function getBatches(
 	qs.set('page', String(filters.page ?? 1));
 	qs.set('page_size', String(filters.pageSize ?? 25));
 
-	return apiFetch<PaginatedResponse<Batch>>(`/inventory/batches?${qs}`);
+	return apiFetch<InventoryPaginatedResponse<Batch>>(`/inventory/batches?${qs}`);
 }
 
 export async function getBatchById(id: string): Promise<Batch | null> {

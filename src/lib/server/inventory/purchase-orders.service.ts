@@ -9,13 +9,13 @@ import type {
 	PurchaseOrder,
 	CreatePurchaseOrderInput,
 	ReceivePurchaseOrderInput,
-	PaginatedResponse
+	InventoryPaginatedResponse
 } from '$shared/types/inventory.js';
 
 export async function getPurchaseOrders(
 	page = 1,
 	pageSize = 25
-): Promise<PaginatedResponse<PurchaseOrder>> {
+): Promise<InventoryPaginatedResponse<PurchaseOrder>> {
 	if (mockFlags.inventoryPurchaseOrders) {
 		const start = (page - 1) * pageSize;
 		return {
@@ -27,7 +27,7 @@ export async function getPurchaseOrders(
 		};
 	}
 
-	return apiFetch<PaginatedResponse<PurchaseOrder>>(
+	return apiFetch<InventoryPaginatedResponse<PurchaseOrder>>(
 		`/inventory/purchase-orders?page=${page}&page_size=${pageSize}`
 	);
 }

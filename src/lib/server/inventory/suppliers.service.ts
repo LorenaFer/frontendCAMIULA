@@ -9,13 +9,13 @@ import type {
 	Supplier,
 	SupplierOption,
 	CreateSupplierInput,
-	PaginatedResponse
+	InventoryPaginatedResponse
 } from '$shared/types/inventory.js';
 
 export async function getSuppliers(
 	page = 1,
 	pageSize = 25
-): Promise<PaginatedResponse<Supplier>> {
+): Promise<InventoryPaginatedResponse<Supplier>> {
 	if (mockFlags.inventorySuppliers) {
 		const start = (page - 1) * pageSize;
 		return {
@@ -27,7 +27,7 @@ export async function getSuppliers(
 		};
 	}
 
-	return apiFetch<PaginatedResponse<Supplier>>(
+	return apiFetch<InventoryPaginatedResponse<Supplier>>(
 		`/inventory/suppliers?page=${page}&page_size=${pageSize}`
 	);
 }

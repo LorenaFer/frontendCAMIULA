@@ -16,12 +16,12 @@ import type {
 	DispatchFilters,
 	DispatchValidation,
 	ExecuteDispatchInput,
-	PaginatedResponse
+	InventoryPaginatedResponse
 } from '$shared/types/inventory.js';
 
 export async function getDispatches(
 	filters: DispatchFilters
-): Promise<PaginatedResponse<Dispatch>> {
+): Promise<InventoryPaginatedResponse<Dispatch>> {
 	if (mockFlags.inventoryDispatches) {
 		let data = [...mockDispatches];
 
@@ -65,7 +65,7 @@ export async function getDispatches(
 	qs.set('page', String(filters.page ?? 1));
 	qs.set('page_size', String(filters.pageSize ?? 25));
 
-	return apiFetch<PaginatedResponse<Dispatch>>(`/inventory/dispatches?${qs}`);
+	return apiFetch<InventoryPaginatedResponse<Dispatch>>(`/inventory/dispatches?${qs}`);
 }
 
 /**
