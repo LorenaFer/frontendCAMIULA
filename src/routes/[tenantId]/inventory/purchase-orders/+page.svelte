@@ -1,18 +1,20 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { enhance } from '$app/forms';
 	import type { PurchaseOrder } from '$shared/types/inventory.js';
 	import type { DataTableColumn } from '$shared/components/table/types.js';
 	type OrderRow = PurchaseOrder & Record<string, unknown>;
 	import DataTable from '$shared/components/table/DataTable.svelte';
 	import Card from '$shared/components/card/Card.svelte';
 	import Button from '$shared/components/button/Button.svelte';
+	import NewOrderForm from './NewOrderForm.svelte';
+	import ReceiveOrderModal from './ReceiveOrderModal.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let receivingId = $state<string | null>(null);
+	let showNewOrderForm = $state(false);
+	let orderToReceive = $state<PurchaseOrder | null>(null);
 
 	function changePage(p: number) {
 		const qs = new URLSearchParams($page.url.searchParams);
@@ -27,6 +29,11 @@
 		received:  { label: 'Recibida',  classes: 'bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300' },
 		cancelled: { label: 'Cancelada', classes: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' }
 	};
+
+	const isMockError = $derived(
+		typeof (form as { error?: string })?.error === 'string' &&
+		(form as { error?: string }).error!.includes('backend')
+	);
 </script>
 
 <svelte:head>
@@ -44,28 +51,14 @@
 
 {#snippet actionsCell(_v: unknown, row: OrderRow, _index: number)}
 	{#if row.order_status === 'sent' || row.order_status === 'partial'}
-		<form
-			method="POST"
-			action="?/recibirOrden"
-			use:enhance={() => {
-				receivingId = row.id as string;
-				return async ({ update }) => {
-					receivingId = null;
-					await update();
-					await invalidateAll();
-				};
-			}}
+		<Button
+			type="button"
+			variant="ghost"
+			size="sm"
+			onclick={() => { orderToReceive = row as unknown as PurchaseOrder; }}
 		>
-			<input type="hidden" name="order_id" value={row.id} />
-			<Button
-				type="submit"
-				variant="ghost"
-				size="sm"
-				isLoading={receivingId === (row.id as string)}
-			>
-				Registrar recepción
-			</Button>
-		</form>
+			Registrar recepción
+		</Button>
 	{/if}
 {/snippet}
 
@@ -75,26 +68,37 @@
 			<h1 class="text-lg sm:text-xl font-bold text-ink">Órdenes de Compra</h1>
 			<p class="text-xs text-ink-muted mt-0.5">Seguimiento de compras y recepciones de inventario</p>
 		</div>
+		{#if !showNewOrderForm}
+			<Button variant="primary" size="sm" onclick={() => { showNewOrderForm = true; }}>
+				Nueva orden
+			</Button>
+		{/if}
 	</div>
 
-	{#if form?.error}
-		<p class="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
-			{form.error}
+	{#if (form as { error?: string })?.error}
+		<p class="text-sm rounded-lg px-3 py-2 border {isMockError
+			? 'text-honey-800 bg-honey-50 dark:bg-honey-900/20 border-honey-200 dark:border-honey-800'
+			: 'text-red-600 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'}">
+			{(form as { error?: string }).error}
 		</p>
 	{/if}
-	{#if form?.success}
+	{#if (form as { success?: boolean })?.success}
 		<p class="text-sm text-sage-700 bg-sage-50 dark:bg-sage-900/20 border border-sage-200 dark:border-sage-800 rounded-lg px-3 py-2">
-			Recepción registrada correctamente.
+			{#if (form as { action?: string })?.action === 'created'}
+				Orden de compra creada correctamente.
+			{:else}
+				Recepción registrada correctamente.
+			{/if}
 		</p>
 	{/if}
 
-	<!-- Nota: creación de órdenes requiere backend -->
-	<div class="flex items-start gap-2.5 p-3 rounded-lg bg-canvas-subtle border border-border text-xs text-ink-muted">
-		<svg class="w-4 h-4 shrink-0 mt-0.5 text-ink-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-			<path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-		</svg>
-		<span>La creación de nuevas órdenes de compra estará disponible con la integración al backend. Por ahora puede registrar recepciones de órdenes existentes.</span>
-	</div>
+	{#if showNewOrderForm}
+		<NewOrderForm
+			supplierOptions={data.supplierOptions}
+			medicationOptions={data.medicationOptions}
+			onCancel={() => { showNewOrderForm = false; }}
+		/>
+	{/if}
 
 	<!-- Tabla -->
 	<Card padding="none">
@@ -129,3 +133,10 @@
 		{/if}
 	</Card>
 </div>
+
+{#if orderToReceive}
+	<ReceiveOrderModal
+		order={orderToReceive}
+		onClose={() => { orderToReceive = null; }}
+	/>
+{/if}
