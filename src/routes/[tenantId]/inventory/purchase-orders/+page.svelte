@@ -30,10 +30,10 @@
 		cancelled: { label: 'Cancelada', classes: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' }
 	};
 
-	const isMockError = $derived(
-		typeof (form as { error?: string })?.error === 'string' &&
-		(form as { error?: string }).error!.includes('backend')
-	);
+	const formError = $derived(form && 'error' in form ? (form as Record<string, unknown>).error as string | undefined : undefined);
+	const formSuccess = $derived(form && 'success' in form ? true : false);
+	const formAction = $derived(form && 'action' in form ? (form as Record<string, unknown>).action as string | undefined : undefined);
+	const isMockError = $derived(typeof formError === 'string' && formError.includes('backend'));
 </script>
 
 <svelte:head>
@@ -75,16 +75,16 @@
 		{/if}
 	</div>
 
-	{#if (form as { error?: string })?.error}
+	{#if formError}
 		<p class="text-sm rounded-lg px-3 py-2 border {isMockError
 			? 'text-honey-800 bg-honey-50 dark:bg-honey-900/20 border-honey-200 dark:border-honey-800'
 			: 'text-red-600 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'}">
-			{(form as { error?: string }).error}
+			{formError}
 		</p>
 	{/if}
-	{#if (form as { success?: boolean })?.success}
+	{#if formSuccess}
 		<p class="text-sm text-sage-700 bg-sage-50 dark:bg-sage-900/20 border border-sage-200 dark:border-sage-800 rounded-lg px-3 py-2">
-			{#if (form as { action?: string })?.action === 'created'}
+			{#if formAction === 'created'}
 				Orden de compra creada correctamente.
 			{:else}
 				Recepción registrada correctamente.

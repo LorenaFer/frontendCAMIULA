@@ -21,6 +21,7 @@
 
 	let search = $state('');
 	let open = $state(false);
+	let activeIndex = $state(-1);
 	let containerEl: HTMLDivElement;
 
 	const filtered = $derived(
@@ -37,6 +38,7 @@
 		onSelect(med);
 		search = '';
 		open = false;
+		activeIndex = -1;
 	}
 
 	function clearSelection() {
@@ -47,6 +49,44 @@
 	function handleBlur(e: FocusEvent) {
 		if (!containerEl.contains(e.relatedTarget as Node)) {
 			open = false;
+			activeIndex = -1;
+		}
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (!open) {
+			if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+				open = true;
+				activeIndex = 0;
+				e.preventDefault();
+			}
+			return;
+		}
+
+		switch (e.key) {
+			case 'ArrowDown':
+				e.preventDefault();
+				activeIndex = filtered.length > 0
+					? (activeIndex + 1) % filtered.length
+					: -1;
+				break;
+			case 'ArrowUp':
+				e.preventDefault();
+				activeIndex = filtered.length > 0
+					? (activeIndex - 1 + filtered.length) % filtered.length
+					: -1;
+				break;
+			case 'Enter':
+				e.preventDefault();
+				if (activeIndex >= 0 && activeIndex < filtered.length) {
+					selectMed(filtered[activeIndex]);
+				}
+				break;
+			case 'Escape':
+				e.preventDefault();
+				open = false;
+				activeIndex = -1;
+				break;
 		}
 	}
 </script>
@@ -76,22 +116,34 @@
 			type="search"
 			bind:value={search}
 			onfocus={() => (open = true)}
-			oninput={() => (open = true)}
+			oninput={() => { open = true; activeIndex = -1; }}
+			onkeydown={handleKeydown}
 			{placeholder}
 			{disabled}
+			role="combobox"
+			aria-expanded={open}
+			aria-controls="med-listbox"
+			aria-activedescendant={activeIndex >= 0 ? `med-option-${filtered[activeIndex]?.id}` : undefined}
+			autocomplete="off"
 			class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface-elevated text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-iris-500/30 focus:border-iris-500 disabled:opacity-50"
 		/>
 
 		{#if open && !disabled}
 			<div
+				id="med-listbox"
+				role="listbox"
+				aria-label="Medicamentos"
 				class="absolute z-50 mt-1 w-full rounded-lg border border-border bg-surface-elevated shadow-[var(--shadow-3)] max-h-52 overflow-y-auto"
 			>
 				{#if filtered.length > 0}
-					{#each filtered as med (med.id)}
+					{#each filtered as med, idx (med.id)}
 						<button
 							type="button"
+							id="med-option-{med.id}"
+							role="option"
+							aria-selected={idx === activeIndex}
 							onclick={() => selectMed(med)}
-							class="w-full text-left px-3 py-2 text-sm hover:bg-canvas-subtle transition-colors"
+							class="w-full text-left px-3 py-2 text-sm hover:bg-canvas-subtle transition-colors {idx === activeIndex ? 'bg-canvas-subtle' : ''}"
 						>
 							<span class="font-medium text-ink">{med.generic_name}</span>
 							<span class="text-xs text-ink-muted ml-2">{med.code} · {med.pharmaceutical_form}</span>

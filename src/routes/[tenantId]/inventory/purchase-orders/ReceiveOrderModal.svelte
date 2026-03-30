@@ -75,11 +75,13 @@
 		action="?/recibirOrden"
 		use:enhance={() => {
 			submitting = true;
-			return async ({ update }) => {
+			return async ({ result, update }) => {
 				submitting = false;
 				await update();
-				await invalidateAll();
-				onClose();
+				if (result.type === 'success') {
+					await invalidateAll();
+					onClose();
+				}
 			};
 		}}
 	>
