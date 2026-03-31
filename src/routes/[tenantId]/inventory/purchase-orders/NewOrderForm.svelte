@@ -119,13 +119,13 @@
 	<div class="space-y-3">
 		<div class="flex items-center justify-between">
 			<span class="text-sm font-medium text-ink">Medicamentos</span>
-			<Button type="button" variant="ghost" size="sm" onclick={addItem}>+ Agregar ítem</Button>
+			<Button type="button" variant="ghost" size="md" onclick={addItem}>+ Agregar ítem</Button>
 		</div>
 
 		{#each items as item (item._key)}
 			<div class="grid grid-cols-1 sm:grid-cols-[1fr_120px_120px_auto] gap-2 items-end p-3 rounded-lg bg-canvas-subtle border border-border">
 				<div>
-					<label class="block text-xs font-medium text-ink-muted mb-1">Medicamento</label>
+					<label class="block text-sm font-medium text-ink-muted mb-1">Medicamento</label>
 					<MedicationSelector
 						options={medicationOptions}
 						selected={item.medication}
@@ -134,7 +134,7 @@
 					/>
 				</div>
 				<div>
-					<label for="qty-{item._key}" class="block text-xs font-medium text-ink-muted mb-1">Cantidad</label>
+					<label for="qty-{item._key}" class="block text-sm font-medium text-ink-muted mb-1">Cantidad</label>
 					<input
 						id="qty-{item._key}"
 						type="number"
@@ -144,7 +144,7 @@
 					/>
 				</div>
 				<div>
-					<label for="cost-{item._key}" class="block text-xs font-medium text-ink-muted mb-1">Costo unit.</label>
+					<label for="cost-{item._key}" class="block text-sm font-medium text-ink-muted mb-1">Costo unit.</label>
 					<input
 						id="cost-{item._key}"
 						type="number"
@@ -172,8 +172,8 @@
 	<input type="hidden" name="items" value={serializedItems} />
 
 	<div class="flex items-center justify-end gap-3 pt-2 border-t border-border">
-		<Button type="button" variant="ghost" size="sm" onclick={onCancel}>Cancelar</Button>
-		<Button type="submit" variant="primary" size="sm" isLoading={submitting} disabled={!isValid}>
+		<Button type="button" variant="ghost" size="md" onclick={onCancel}>Cancelar</Button>
+		<Button type="submit" variant="primary" size="md" isLoading={submitting} disabled={!isValid}>
 			Crear orden
 		</Button>
 	</div>

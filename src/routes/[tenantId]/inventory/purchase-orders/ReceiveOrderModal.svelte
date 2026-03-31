@@ -66,7 +66,7 @@
 
 <Dialog open={true} {onClose} size="lg">
 	<DialogHeader>
-		<p class="text-xs text-ink-muted font-normal">Orden {order.order_number}</p>
+		<p class="text-sm text-ink-muted font-normal">Orden {order.order_number}</p>
 		<h2 class="text-base font-semibold text-ink">Registrar Recepción</h2>
 	</DialogHeader>
 
@@ -97,14 +97,14 @@
 						<div class="rounded-lg border border-border bg-canvas-subtle p-3 space-y-3">
 							<div class="flex items-center justify-between">
 								<span class="text-sm font-medium text-ink">{draft.medication_name}</span>
-								<span class="text-xs text-ink-muted">
+								<span class="text-sm text-ink-muted">
 									Pedido: {draft.quantity_ordered} {draft.unit_measure}
 								</span>
 							</div>
 
 							<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
 								<div class="col-span-2 sm:col-span-1">
-									<label for="recv-qty-{i}" class="block text-xs font-medium text-ink-muted mb-1">
+									<label for="recv-qty-{i}" class="block text-sm font-medium text-ink-muted mb-1">
 										Cant. recibida
 									</label>
 									<input
@@ -117,7 +117,7 @@
 									/>
 								</div>
 								<div class="col-span-2 sm:col-span-1">
-									<label for="recv-lot-{i}" class="block text-xs font-medium text-ink-muted mb-1">
+									<label for="recv-lot-{i}" class="block text-sm font-medium text-ink-muted mb-1">
 										N° Lote <span class="text-red-500">*</span>
 									</label>
 									<input
@@ -129,7 +129,7 @@
 									/>
 								</div>
 								<div class="col-span-2 sm:col-span-1">
-									<label for="recv-exp-{i}" class="block text-xs font-medium text-ink-muted mb-1">
+									<label for="recv-exp-{i}" class="block text-sm font-medium text-ink-muted mb-1">
 										Vencimiento <span class="text-red-500">*</span>
 									</label>
 									<input
@@ -140,7 +140,7 @@
 									/>
 								</div>
 								<div class="col-span-2 sm:col-span-1">
-									<label for="recv-cost-{i}" class="block text-xs font-medium text-ink-muted mb-1">
+									<label for="recv-cost-{i}" class="block text-sm font-medium text-ink-muted mb-1">
 										Costo unit.
 									</label>
 									<input
@@ -160,11 +160,11 @@
 		</DialogBody>
 
 		<DialogFooter>
-			<Button type="button" variant="ghost" size="sm" onclick={onClose}>Cancelar</Button>
+			<Button type="button" variant="ghost" size="md" onclick={onClose}>Cancelar</Button>
 			<Button
 				type="submit"
 				variant="primary"
-				size="sm"
+				size="md"
 				isLoading={submitting}
 				disabled={!isValid || drafts.length === 0}
 			>

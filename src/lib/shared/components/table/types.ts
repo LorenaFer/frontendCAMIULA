@@ -18,6 +18,14 @@ export interface RowAction<T> {
   hoverOnly?: boolean;
 }
 
+export interface RowMenuItem<T> {
+  label: string;
+  onclick: (row: T, index: number) => void;
+  variant?: 'default' | 'danger';
+  /** Icon name: 'view' | 'edit' | 'delete' or custom Snippet */
+  icon?: 'view' | 'edit' | 'delete';
+}
+
 export interface BulkAction<T> {
   icon: Snippet;
   label: string;

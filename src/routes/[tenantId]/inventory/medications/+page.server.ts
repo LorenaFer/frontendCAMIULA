@@ -62,6 +62,12 @@ export const actions: Actions = {
 			input.generic_name = String(fd.get('generic_name')).trim();
 		if (fd.has('commercial_name'))
 			input.commercial_name = String(fd.get('commercial_name')).trim() || undefined;
+		if (fd.has('pharmaceutical_form') && fd.get('pharmaceutical_form'))
+			input.pharmaceutical_form = String(fd.get('pharmaceutical_form')).trim();
+		if (fd.has('concentration'))
+			input.concentration = String(fd.get('concentration')).trim() || undefined;
+		if (fd.has('unit_measure') && fd.get('unit_measure'))
+			input.unit_measure = String(fd.get('unit_measure')).trim();
 		if (fd.has('therapeutic_class'))
 			input.therapeutic_class = String(fd.get('therapeutic_class')).trim() || undefined;
 
@@ -72,6 +78,23 @@ export const actions: Actions = {
 			const status = (e as { status?: number }).status;
 			if (status === 404) return fail(404, { error: 'Medicamento no encontrado' });
 			return fail(500, { error: 'Error al actualizar medicamento' });
+		}
+	},
+
+	desactivarMedicamento: async ({ request, locals }) => {
+		assertActionPermission(locals.user, 'editarMedicamento');
+
+		const fd = await request.formData();
+		const id = String(fd.get('id') ?? '');
+		if (!id) return fail(400, { error: 'ID requerido' });
+
+		try {
+			await medicationsService.updateMedication(id, { medication_status: 'discontinued' } as Partial<CreateMedicationInput>);
+			return { success: true };
+		} catch (e: unknown) {
+			const status = (e as { status?: number }).status;
+			if (status === 404) return fail(404, { error: 'Medicamento no encontrado' });
+			return fail(500, { error: 'Error al desactivar medicamento' });
 		}
 	}
 };
