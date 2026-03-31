@@ -86,6 +86,11 @@ export interface PurchaseOrder {
 	/** Calculado en frontend: suma de items */
 	total_amount: number;
 	created_at: string;
+	created_by?: string;
+	sent_at?: string;
+	sent_by?: string;
+	received_at?: string;
+	received_by?: string;
 }
 
 // ─── Lotes ────────────────────────────────────────────────────

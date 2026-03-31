@@ -508,9 +508,52 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
 		expected_date: '2026-03-15',
 		notes: 'Pedido urgente de antibióticos',
 		order_status: 'received',
-		items: [],
-		total_amount: 850.0,
-		created_at: '2026-03-01T09:00:00Z'
+		items: [
+			{ id: 'poi-1', medication_id: 'med-1', medication: { id: 'med-1', code: 'MED-001', generic_name: 'Amoxicilina', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 350 }, quantity_ordered: 500, quantity_received: 500, unit_cost: 0.85 },
+			{ id: 'poi-2', medication_id: 'med-2', medication: { id: 'med-2', code: 'MED-002', generic_name: 'Ibuprofeno', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 200 }, quantity_ordered: 1000, quantity_received: 1000, unit_cost: 0.35 }
+		],
+		total_amount: 775.0,
+		created_at: '2026-03-01T09:00:00Z',
+		created_by: 'Admin Principal',
+		sent_at: '2026-03-02T10:30:00Z',
+		sent_by: 'Admin Principal',
+		received_at: '2026-03-14T14:20:00Z',
+		received_by: 'Farm. María López'
+	},
+	{
+		id: 'po-2',
+		order_number: 'OC-2026-002',
+		fk_supplier_id: 'sup-2',
+		supplier: { id: 'sup-2', name: 'Laboratorios Roche Venezuela', rif: 'J-98765432-1' },
+		order_date: '2026-03-20',
+		expected_date: '2026-04-05',
+		notes: '',
+		order_status: 'sent',
+		items: [
+			{ id: 'poi-3', medication_id: 'med-3', medication: { id: 'med-3', code: 'MED-003', generic_name: 'Losartán', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 80 }, quantity_ordered: 300, quantity_received: 0, unit_cost: 1.20 },
+			{ id: 'poi-4', medication_id: 'med-4', medication: { id: 'med-4', code: 'MED-004', generic_name: 'Metformina', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 45 }, quantity_ordered: 500, quantity_received: 0, unit_cost: 0.60 },
+			{ id: 'poi-5', medication_id: 'med-1', medication: { id: 'med-1', code: 'MED-001', generic_name: 'Amoxicilina', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 350 }, quantity_ordered: 200, quantity_received: 0, unit_cost: 0.90 }
+		],
+		total_amount: 840.0,
+		created_at: '2026-03-20T11:00:00Z',
+		created_by: 'Admin Principal',
+		sent_at: '2026-03-21T08:15:00Z',
+		sent_by: 'Admin Principal'
+	},
+	{
+		id: 'po-3',
+		order_number: 'OC-2026-003',
+		fk_supplier_id: 'sup-1',
+		supplier: { id: 'sup-1', name: 'Distribuidora Médica Caracas C.A.', rif: 'J-12345678-9' },
+		order_date: '2026-03-28',
+		expected_date: '2026-04-10',
+		order_status: 'draft',
+		items: [
+			{ id: 'poi-6', medication_id: 'med-5', medication: { id: 'med-5', code: 'MED-005', generic_name: 'Omeprazol', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 120 }, quantity_ordered: 400, quantity_received: 0, unit_cost: 0.45 }
+		],
+		total_amount: 180.0,
+		created_at: '2026-03-28T16:00:00Z',
+		created_by: 'Admin Principal'
 	}
 ];
 

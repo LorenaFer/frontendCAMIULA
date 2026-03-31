@@ -4,7 +4,7 @@
 	import { page } from '$app/stores';
 	import { enhance } from '$app/forms';
 	import type { PurchaseOrder } from '$shared/types/inventory.js';
-	import type { DataTableColumn } from '$shared/components/table/types.js';
+	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
 	type OrderRow = PurchaseOrder & Record<string, unknown>;
 	import DataTable from '$shared/components/table/DataTable.svelte';
 	import Card from '$shared/components/card/Card.svelte';
@@ -25,6 +25,21 @@
 	let orderDetail = $state<PurchaseOrder | null>(null);
 	let search = $state('');
 	let statusFilter = $state('');
+
+	function openDetail(row: PurchaseOrder) {
+		orderDetail = { ...row };
+	}
+
+	function formatDateTime(iso?: string) {
+		if (!iso) return '—';
+		try {
+			return new Date(iso).toLocaleString('es-VE', { dateStyle: 'medium', timeStyle: 'short' });
+		} catch { return iso; }
+	}
+
+	const orderMenu: RowMenuItem<OrderRow>[] = [
+		{ label: 'Ver detalle', icon: 'view', onclick: (row) => openDetail(row as unknown as PurchaseOrder) }
+	];
 
 	const filteredOrders = $derived(() => {
 		let items = data.orders.data as PurchaseOrder[];
@@ -69,7 +84,7 @@
 	<button
 		type="button"
 		class="text-sm font-mono text-viking-600 dark:text-viking-400 hover:underline cursor-pointer"
-		onclick={() => { orderDetail = row as unknown as PurchaseOrder; }}
+		onclick={() => openDetail(row as unknown as PurchaseOrder)}
 	>
 		{row.order_number}
 	</button>
@@ -108,37 +123,6 @@
 	{/if}
 {/snippet}
 
-{#snippet actionsCell(_v: unknown, row: OrderRow, _index: number)}
-	<div class="flex gap-2 justify-end">
-		{#if row.order_status === 'draft'}
-			<form
-				method="POST"
-				action="?/enviarOrden"
-				use:enhance={() => {
-					return async ({ update }) => {
-						await update();
-						await invalidateAll();
-					};
-				}}
-			>
-				<input type="hidden" name="order_id" value={row.id} />
-				<Button type="submit" variant="soft" size="md">
-					Enviar al proveedor
-				</Button>
-			</form>
-		{/if}
-		{#if row.order_status === 'sent' || row.order_status === 'partial'}
-			<Button
-				type="button"
-				variant="soft"
-				size="md"
-				onclick={() => { orderToReceive = row as unknown as PurchaseOrder; }}
-			>
-				Registrar recepción
-			</Button>
-		{/if}
-	</div>
-{/snippet}
 
 <div class="space-y-4 sm:space-y-6 animate-fade-in-up">
 	<Breadcrumbs items={[
@@ -224,11 +208,11 @@
 				{ key: 'supplier',     header: 'Proveedor',  render: supplierNameCell },
 				{ key: 'order_date',   header: 'Fecha',      width: '110px' },
 				{ key: 'expected_date', header: 'Esperada',  width: '110px' },
-				{ key: 'order_status', header: 'Estado',     width: '110px', align: 'center', render: statusCell },
-				{ key: '_actions',     header: '',           width: '200px', align: 'right',  render: actionsCell }
+				{ key: 'order_status', header: 'Estado',     width: '150px', align: 'center', render: statusCell }
 			] as DataTableColumn<OrderRow>[]}
 			data={filteredOrders() as OrderRow[]}
 			rowKey="id"
+			rowMenu={orderMenu}
 			emptyMessage="No hay órdenes de compra registradas."
 		/>
 
@@ -257,12 +241,12 @@
 	<Dialog open={true} onClose={() => { orderDetail = null; }} size="lg">
 		<DialogHeader>
 			<p class="text-sm text-ink-muted font-normal font-mono">{order.order_number}</p>
-			<h2 class="text-base font-semibold text-ink">Detalle de orden</h2>
+			<h2 class="text-base font-semibold text-ink">Detalle de orden de compra</h2>
 		</DialogHeader>
 		<DialogBody>
-			<div class="space-y-4">
+			<div class="space-y-5">
 				<!-- Info general -->
-				<div class="grid grid-cols-2 gap-3 text-sm">
+				<div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
 					<div>
 						<p class="text-ink-muted">Proveedor</p>
 						<p class="font-medium text-ink">{order.supplier?.name ?? '—'}</p>
@@ -270,6 +254,10 @@
 					<div>
 						<p class="text-ink-muted">Estado</p>
 						<span class="inline-flex items-center px-2.5 py-1 rounded text-sm font-medium {s.classes}">{s.label}</span>
+					</div>
+					<div>
+						<p class="text-ink-muted">Monto total</p>
+						<p class="font-medium text-ink font-mono">{order.total_amount.toFixed(2)}</p>
 					</div>
 					<div>
 						<p class="text-ink-muted">Fecha de orden</p>
@@ -288,34 +276,68 @@
 					</div>
 				{/if}
 
-				<!-- Ítems -->
+				<!-- Trazabilidad -->
 				<div>
-					<h3 class="text-sm font-semibold text-ink mb-2">Medicamentos ({order.items.length})</h3>
-					<div class="space-y-2">
-						{#each order.items as item}
-							<div class="bg-canvas-subtle rounded-lg border border-border p-3 flex items-center justify-between">
-								<div>
-									<p class="text-sm font-medium text-ink">{item.medication.generic_name}</p>
-									<p class="text-sm text-ink-muted">
-										Pedido: {item.quantity_ordered} · Recibido: {item.quantity_received}
-									</p>
-								</div>
-								<div class="text-right">
-									<p class="text-sm font-mono text-ink">{item.unit_cost.toFixed(2)}</p>
-									<p class="text-sm text-ink-muted">c/u</p>
-								</div>
+					<h3 class="text-sm font-semibold text-ink mb-2">Historial de la orden</h3>
+					<div class="relative pl-4 border-l-2 border-border space-y-3">
+						<!-- Creada -->
+						<div class="relative">
+							<div class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-slate-400 border-2 border-surface-elevated"></div>
+							<p class="text-sm font-medium text-ink">Creada</p>
+							<p class="text-sm text-ink-muted">{formatDateTime(order.created_at)} {order.created_by ? `por ${order.created_by}` : ''}</p>
+						</div>
+						<!-- Enviada -->
+						{#if order.sent_at}
+							<div class="relative">
+								<div class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-iris-500 border-2 border-surface-elevated"></div>
+								<p class="text-sm font-medium text-ink">Enviada al proveedor</p>
+								<p class="text-sm text-ink-muted">{formatDateTime(order.sent_at)} {order.sent_by ? `por ${order.sent_by}` : ''}</p>
 							</div>
-						{/each}
+						{/if}
+						<!-- Recibida -->
+						{#if order.received_at}
+							<div class="relative">
+								<div class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-sage-500 border-2 border-surface-elevated"></div>
+								<p class="text-sm font-medium text-ink">Recibida</p>
+								<p class="text-sm text-ink-muted">{formatDateTime(order.received_at)} {order.received_by ? `por ${order.received_by}` : ''}</p>
+							</div>
+						{/if}
 					</div>
 				</div>
 
-				{#if order.total_amount > 0}
-					<div class="flex justify-end pt-2 border-t border-border">
-						<p class="text-sm font-semibold text-ink">
-							Total: <span class="font-mono">{order.total_amount.toFixed(2)}</span>
-						</p>
-					</div>
-				{/if}
+				<!-- Ítems -->
+				<div>
+					<h3 class="text-sm font-semibold text-ink mb-2">Medicamentos ({order.items.length})</h3>
+					{#if order.items.length === 0}
+						<p class="text-sm text-ink-muted py-3 text-center">No hay ítems en esta orden.</p>
+					{:else}
+						<div class="space-y-2">
+							{#each order.items as item}
+								{@const pct = item.quantity_ordered > 0 ? Math.round((item.quantity_received / item.quantity_ordered) * 100) : 0}
+								<div class="bg-canvas-subtle rounded-lg border border-border p-3">
+									<div class="flex items-start justify-between mb-1.5">
+										<div>
+											<p class="text-sm font-medium text-ink">{item.medication.generic_name}</p>
+											<p class="text-sm text-ink-muted">{item.medication.pharmaceutical_form} · {item.medication.unit_measure}</p>
+										</div>
+										<p class="text-sm font-mono text-ink shrink-0">{item.unit_cost.toFixed(2)} c/u</p>
+									</div>
+									<div class="flex items-center gap-3">
+										<div class="flex-1 bg-border/40 rounded-full h-2 overflow-hidden">
+											<div
+												class="h-full rounded-full transition-all {pct >= 100 ? 'bg-sage-500' : pct > 0 ? 'bg-honey-500' : 'bg-border'}"
+												style="width: {Math.min(pct, 100)}%"
+											></div>
+										</div>
+										<span class="text-sm text-ink-muted shrink-0 tabular-nums">
+											{item.quantity_received}/{item.quantity_ordered}
+										</span>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</div>
 			</div>
 		</DialogBody>
 		<DialogFooter>
