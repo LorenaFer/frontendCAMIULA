@@ -463,7 +463,7 @@
 		</DialogBody>
 		<DialogFooter>
 			<Button type="button" variant="ghost" size="md" onclick={() => { viewingMed = null; }}>Cerrar</Button>
-			<Button type="button" variant="primary" size="md" onclick={() => { const med = viewingMed; viewingMed = null; openEdit(med!); }}>Editar</Button>
+			<Button type="button" variant="primary" size="md" onclick={() => { const med = viewingMed; viewingMed = null; setTimeout(() => openEdit(med!), 150); }}>Editar</Button>
 		</DialogFooter>
 	</Dialog>
 {/if}

@@ -343,7 +343,7 @@
 		</DialogBody>
 		<DialogFooter>
 			<Button type="button" variant="ghost" size="md" onclick={() => { viewingSupplier = null; }}>Cerrar</Button>
-			<Button type="button" variant="primary" size="md" onclick={() => { const s = viewingSupplier; viewingSupplier = null; openEdit(s!); }}>Editar</Button>
+			<Button type="button" variant="primary" size="md" onclick={() => { const s = viewingSupplier; viewingSupplier = null; setTimeout(() => openEdit(s!), 150); }}>Editar</Button>
 		</DialogFooter>
 	</Dialog>
 {/if}

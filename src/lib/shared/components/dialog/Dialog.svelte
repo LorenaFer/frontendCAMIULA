@@ -51,15 +51,21 @@
 		return () => document.removeEventListener('keydown', handleKeyDown);
 	});
 
-	// Lock body scroll when open
+	// Lock body scroll when open (counter-based to support stacked dialogs)
 	$effect(() => {
-		if (open) {
-			document.body.style.overflow = 'hidden';
-		} else {
-			document.body.style.overflow = '';
-		}
+		if (!open) return;
+
+		const count = parseInt(document.body.dataset.dialogCount ?? '0', 10);
+		document.body.dataset.dialogCount = String(count + 1);
+		document.body.style.overflow = 'hidden';
+
 		return () => {
-			document.body.style.overflow = '';
+			const c = parseInt(document.body.dataset.dialogCount ?? '1', 10) - 1;
+			document.body.dataset.dialogCount = String(c);
+			if (c <= 0) {
+				document.body.style.overflow = '';
+				delete document.body.dataset.dialogCount;
+			}
 		};
 	});
 
