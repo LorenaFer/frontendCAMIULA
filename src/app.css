@@ -4,6 +4,11 @@
 /* Class-based dark mode for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Native <dialog> scroll lock — browser handles everything */
+html:has(dialog[open]:modal) {
+  overflow: hidden;
+}
+
 @theme {
   /* ═══════════════════════════════════════════════════════════════════════════
      HAND-CRAFTED TYPOGRAPHY - Breaking the "AI default" look

@@ -27,17 +27,29 @@
 
 	let deletingSupplier = $state<Supplier | null>(null);
 
+	function closeAllModals() {
+		viewingSupplier = null;
+		editingSupplier = null;
+		deletingSupplier = null;
+	}
+
 	function openEdit(row: Supplier) {
+		closeAllModals();
 		editingSupplier = { ...row };
 	}
 	function openDetail(row: Supplier) {
+		closeAllModals();
 		viewingSupplier = { ...row };
+	}
+	function openDelete(row: Supplier) {
+		closeAllModals();
+		deletingSupplier = { ...row };
 	}
 
 	const supplierMenu: RowMenuItem<SupplierRow>[] = [
 		{ label: 'Ver detalle', icon: 'view', onclick: (row) => openDetail(row as unknown as Supplier) },
 		{ label: 'Editar', icon: 'edit', onclick: (row) => openEdit(row as unknown as Supplier) },
-		{ label: 'Eliminar', icon: 'delete', variant: 'danger', onclick: (row) => { deletingSupplier = { ...row } as unknown as Supplier; } }
+		{ label: 'Eliminar', icon: 'delete', variant: 'danger', onclick: (row) => openDelete(row as unknown as Supplier) }
 	];
 
 	const filteredSuppliers = $derived(
@@ -343,7 +355,7 @@
 		</DialogBody>
 		<DialogFooter>
 			<Button type="button" variant="ghost" size="md" onclick={() => { viewingSupplier = null; }}>Cerrar</Button>
-			<Button type="button" variant="primary" size="md" onclick={() => { const s = viewingSupplier; viewingSupplier = null; setTimeout(() => openEdit(s!), 150); }}>Editar</Button>
+			<Button type="button" variant="primary" size="md" onclick={() => { const s = viewingSupplier!; openEdit(s); }}>Editar</Button>
 		</DialogFooter>
 	</Dialog>
 {/if}

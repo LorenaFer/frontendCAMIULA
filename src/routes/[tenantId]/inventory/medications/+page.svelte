@@ -29,17 +29,29 @@
 
 	let deletingMed = $state<Medication | null>(null);
 
+	function closeAllModals() {
+		viewingMed = null;
+		editingMed = null;
+		deletingMed = null;
+	}
+
 	function openEdit(row: Medication) {
+		closeAllModals();
 		editingMed = { ...row };
 	}
 	function openDetail(row: Medication) {
+		closeAllModals();
 		viewingMed = { ...row };
+	}
+	function openDelete(row: Medication) {
+		closeAllModals();
+		deletingMed = { ...row };
 	}
 
 	const medicationMenu: RowMenuItem<MedicationRow>[] = [
 		{ label: 'Ver detalle', icon: 'view', onclick: (row) => openDetail(row as unknown as Medication) },
 		{ label: 'Editar', icon: 'edit', onclick: (row) => openEdit(row as unknown as Medication) },
-		{ label: 'Eliminar', icon: 'delete', variant: 'danger', onclick: (row) => { deletingMed = { ...row } as unknown as Medication; } }
+		{ label: 'Eliminar', icon: 'delete', variant: 'danger', onclick: (row) => openDelete(row as unknown as Medication) }
 	];
 
 	const statsTotal  = $derived(data.medications.total);
@@ -463,7 +475,7 @@
 		</DialogBody>
 		<DialogFooter>
 			<Button type="button" variant="ghost" size="md" onclick={() => { viewingMed = null; }}>Cerrar</Button>
-			<Button type="button" variant="primary" size="md" onclick={() => { const med = viewingMed; viewingMed = null; setTimeout(() => openEdit(med!), 150); }}>Editar</Button>
+			<Button type="button" variant="primary" size="md" onclick={() => { const med = viewingMed!; openEdit(med); }}>Editar</Button>
 		</DialogFooter>
 	</Dialog>
 {/if}
