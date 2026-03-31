@@ -8,12 +8,14 @@
 	type DispatchRow = Dispatch & Record<string, unknown>;
 	import DataTable from '$shared/components/table/DataTable.svelte';
 	import Card from '$shared/components/card/Card.svelte';
+	import Badge from '$shared/components/badge/Badge.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import Dialog from '$shared/components/dialog/Dialog.svelte';
 	import DialogHeader from '$shared/components/dialog/DialogHeader.svelte';
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import LimitProgressBar from '$shared/components/inventory/LimitProgressBar.svelte';
+	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -81,22 +83,7 @@
 </svelte:head>
 
 {#snippet statusCell(_v: unknown, row: DispatchRow, _index: number)}
-	{#if row.dispatch_status === 'completed'}
-		<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-sm font-medium bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300">
-			<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" /></svg>
-			Completado
-		</span>
-	{:else if row.dispatch_status === 'cancelled'}
-		<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-sm font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
-			<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd" /></svg>
-			Cancelado
-		</span>
-	{:else}
-		<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-sm font-medium bg-honey-100 text-honey-800 dark:bg-honey-900/30 dark:text-honey-300">
-			<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clip-rule="evenodd" /></svg>
-			Pendiente
-		</span>
-	{/if}
+	<StatusBadge status={row.dispatch_status as string} />
 {/snippet}
 
 <div class="space-y-4 sm:space-y-6 animate-fade-in-up">
@@ -165,19 +152,9 @@
 						{/if}
 					</div>
 					{#if activeValidation.can_dispatch}
-						<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300">
-							<svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-								<path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
-							</svg>
-							Puede despacharse
-						</span>
+						<Badge variant="success" style="soft" size="sm" dot>Puede despacharse</Badge>
 					{:else}
-						<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
-							<svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-								<path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
-							</svg>
-							Bloqueado
-						</span>
+						<Badge variant="danger" style="soft" size="sm" dot>Bloqueado</Badge>
 					{/if}
 				</div>
 
@@ -205,7 +182,7 @@
 									medication_name="Límite mensual"
 								/>
 								{#if item.has_exception}
-									<p class="text-[11px] text-viking-600 dark:text-viking-400">Excepción activa aplicada</p>
+									<p class="text-xs text-viking-600 dark:text-viking-400">Excepción activa aplicada</p>
 								{/if}
 							{/if}
 						</li>
@@ -355,13 +332,7 @@
 					</div>
 					<div>
 						<p class="text-ink-muted">Estado</p>
-						{#if d.dispatch_status === 'completed'}
-							<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-sm font-medium bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300">Completado</span>
-						{:else if d.dispatch_status === 'cancelled'}
-							<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-sm font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">Cancelado</span>
-						{:else}
-							<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-sm font-medium bg-honey-100 text-honey-800 dark:bg-honey-900/30 dark:text-honey-300">Pendiente</span>
-						{/if}
+						<StatusBadge status={d.dispatch_status} />
 					</div>
 					<div>
 						<p class="text-ink-muted">Fecha de despacho</p>

@@ -14,7 +14,7 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
-	import MedicationBadge from '$shared/components/inventory/MedicationBadge.svelte';
+	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
 	import StockIndicator from '$shared/components/inventory/StockIndicator.svelte';
 	import InventoryFilters from '$shared/components/inventory/InventoryFilters.svelte';
 
@@ -82,7 +82,7 @@
 </svelte:head>
 
 {#snippet statusCell(_v: unknown, row: MedicationRow, _index: number)}
-	<MedicationBadge status={row.medication_status as Medication['medication_status']} />
+	<StatusBadge status={row.medication_status as string} />
 {/snippet}
 
 {#snippet stockCell(_v: unknown, row: MedicationRow, _index: number)}
@@ -449,7 +449,7 @@
 				</div>
 				<div>
 					<p class="text-ink-muted">Estado</p>
-					<MedicationBadge status={viewingMed.medication_status} />
+					<StatusBadge status={viewingMed.medication_status} />
 				</div>
 				<div>
 					<p class="text-ink-muted">Forma farmacéutica</p>

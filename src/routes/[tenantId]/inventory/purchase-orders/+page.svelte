@@ -14,6 +14,7 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
+	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
 	import NewOrderForm from './NewOrderForm.svelte';
 	import ReceiveOrderModal from './ReceiveOrderModal.svelte';
 
@@ -253,7 +254,7 @@
 					</div>
 					<div>
 						<p class="text-ink-muted">Estado</p>
-						<span class="inline-flex items-center px-2.5 py-1 rounded text-sm font-medium {s.classes}">{s.label}</span>
+						<StatusBadge status={order.order_status} />
 					</div>
 					<div>
 						<p class="text-ink-muted">Monto total</p>
