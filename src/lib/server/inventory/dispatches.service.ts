@@ -101,9 +101,35 @@ export async function validateDispatch(
  */
 export async function executeDispatch(input: ExecuteDispatchInput): Promise<Dispatch> {
 	if (mockFlags.inventoryDispatches) {
-		throw new Error(
-			'El despacho requiere backend real: necesita FEFO, SELECT FOR UPDATE y transacciones atómicas.'
-		);
+		const prescription = mockPrescriptions.find((p) => p.id === input.prescription_id);
+		if (!prescription) {
+			throw Object.assign(new Error('Receta no encontrada'), { status: 404 });
+		}
+
+		const dispatch: Dispatch = {
+			id: `disp-${Date.now()}`,
+			fk_prescription_id: prescription.id,
+			prescription_number: prescription.prescription_number,
+			fk_patient_id: prescription.fk_patient_id,
+			patient_name: prescription.patient_name,
+			fk_pharmacist_id: input.pharmacist_id,
+			pharmacist_name: 'Admin Principal',
+			dispatch_date: new Date().toISOString().split('T')[0],
+			dispatch_status: 'completed',
+			items: prescription.items.map((item) => ({
+				id: `di-${Date.now()}-${item.id}`,
+				fk_batch_id: 'batch-mock',
+				lot_number: 'LOTE-MOCK',
+				expiration_date: '2027-12-31',
+				fk_medication_id: item.fk_medication_id,
+				medication: item.medication,
+				quantity_dispatched: item.quantity_prescribed
+			})),
+			created_at: new Date().toISOString()
+		};
+
+		mockDispatches.push(dispatch);
+		return dispatch;
 	}
 
 	return apiFetch<Dispatch>('/inventory/dispatches', {

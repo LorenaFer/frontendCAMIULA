@@ -4,7 +4,7 @@
 	import { page } from '$app/stores';
 	import { enhance } from '$app/forms';
 	import type { Dispatch, DispatchValidation } from '$shared/types/inventory.js';
-	import type { DataTableColumn } from '$shared/components/table/types.js';
+	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
 	type DispatchRow = Dispatch & Record<string, unknown>;
 	import DataTable from '$shared/components/table/DataTable.svelte';
 	import Card from '$shared/components/card/Card.svelte';
@@ -45,6 +45,29 @@
 			?? _lastPrescription
 			?? null
 	);
+
+	let viewingDispatch = $state<Dispatch | null>(null);
+	let cancellingDispatch = $state<Dispatch | null>(null);
+
+	function openDetail(row: Dispatch) {
+		viewingDispatch = { ...row };
+	}
+
+	function formatDateTime(iso?: string) {
+		if (!iso) return '—';
+		try {
+			return new Date(iso).toLocaleString('es-VE', { dateStyle: 'medium', timeStyle: 'short' });
+		} catch { return iso; }
+	}
+
+	const dispatchMenu: RowMenuItem<DispatchRow>[] = [
+		{ label: 'Ver detalle', icon: 'view', onclick: (row) => openDetail(row as unknown as Dispatch) },
+		{ label: 'Cancelar despacho', icon: 'delete', variant: 'danger', onclick: (row) => {
+			if ((row as unknown as Dispatch).dispatch_status === 'completed') {
+				cancellingDispatch = { ...row } as unknown as Dispatch;
+			}
+		}}
+	];
 
 	function changePage(p: number) {
 		const qs = new URLSearchParams($page.url.searchParams);
@@ -241,6 +264,7 @@
 			] as DataTableColumn<DispatchRow>[]}
 			data={data.dispatches.data as DispatchRow[]}
 			rowKey="id"
+			rowMenu={dispatchMenu}
 			emptyMessage="No hay despachos registrados."
 		/>
 
@@ -306,5 +330,138 @@
 				Sí, despachar
 			</Button>
 		</DialogFooter>
+	</Dialog>
+{/if}
+
+<!-- Modal de detalle de despacho -->
+{#if viewingDispatch}
+	{@const d = viewingDispatch}
+	<Dialog open={true} onClose={() => { viewingDispatch = null; }} size="lg">
+		<DialogHeader>
+			<p class="text-sm text-ink-muted font-normal">Receta <span class="font-mono">{d.prescription_number}</span></p>
+			<h2 class="text-base font-semibold text-ink">Detalle de despacho</h2>
+		</DialogHeader>
+		<DialogBody>
+			<div class="space-y-5">
+				<!-- Info general -->
+				<div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+					<div>
+						<p class="text-ink-muted">Paciente</p>
+						<p class="font-medium text-ink">{d.patient_name ?? '—'}</p>
+					</div>
+					<div>
+						<p class="text-ink-muted">Farmacéutico</p>
+						<p class="font-medium text-ink">{d.pharmacist_name ?? '—'}</p>
+					</div>
+					<div>
+						<p class="text-ink-muted">Estado</p>
+						{#if d.dispatch_status === 'completed'}
+							<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-sm font-medium bg-sage-100 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300">Completado</span>
+						{:else if d.dispatch_status === 'cancelled'}
+							<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-sm font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">Cancelado</span>
+						{:else}
+							<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-sm font-medium bg-honey-100 text-honey-800 dark:bg-honey-900/30 dark:text-honey-300">Pendiente</span>
+						{/if}
+					</div>
+					<div>
+						<p class="text-ink-muted">Fecha de despacho</p>
+						<p class="font-medium text-ink">{d.dispatch_date}</p>
+					</div>
+					<div>
+						<p class="text-ink-muted">Registrado</p>
+						<p class="font-medium text-ink">{formatDateTime(d.created_at)}</p>
+					</div>
+				</div>
+
+				{#if d.notes}
+					<div class="text-sm">
+						<p class="text-ink-muted">Notas</p>
+						<p class="text-ink">{d.notes}</p>
+					</div>
+				{/if}
+
+				<!-- Ítems despachados -->
+				<div>
+					<h3 class="text-sm font-semibold text-ink mb-2">Medicamentos despachados ({d.items.length})</h3>
+					{#if d.items.length === 0}
+						<p class="text-sm text-ink-muted py-3 text-center">Sin ítems.</p>
+					{:else}
+						<div class="space-y-2">
+							{#each d.items as item}
+								<div class="bg-canvas-subtle rounded-lg border border-border p-3">
+									<div class="flex items-start justify-between">
+										<div>
+											<p class="text-sm font-medium text-ink">{item.medication.generic_name}</p>
+											<p class="text-sm text-ink-muted">{item.medication.pharmaceutical_form} · {item.medication.unit_measure}</p>
+										</div>
+										<p class="text-sm font-mono text-ink shrink-0">{item.quantity_dispatched} uds</p>
+									</div>
+									<div class="mt-1.5 flex gap-4 text-sm text-ink-muted">
+										<span>Lote: <span class="font-mono text-ink">{item.lot_number}</span></span>
+										<span>Vence: <span class="text-ink">{item.expiration_date}</span></span>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			</div>
+		</DialogBody>
+		<DialogFooter>
+			<Button type="button" variant="ghost" size="md" onclick={() => { viewingDispatch = null; }}>Cerrar</Button>
+			{#if d.dispatch_status === 'completed'}
+				<Button type="button" variant="danger" size="md" onclick={() => { cancellingDispatch = d; viewingDispatch = null; }}>Cancelar despacho</Button>
+			{/if}
+		</DialogFooter>
+	</Dialog>
+{/if}
+
+<!-- Modal de cancelación de despacho -->
+{#if cancellingDispatch}
+	<Dialog open={true} onClose={() => { cancellingDispatch = null; }} size="sm">
+		<DialogHeader>
+			<h2 class="text-base font-semibold text-ink">Cancelar despacho</h2>
+		</DialogHeader>
+		<form
+			method="POST"
+			action="?/cancelarDespacho"
+			use:enhance={() => {
+				return async ({ result, update }) => {
+					await update();
+					if (result.type === 'success') {
+						cancellingDispatch = null;
+						await invalidateAll();
+					}
+				};
+			}}
+		>
+			<input type="hidden" name="id" value={cancellingDispatch.id} />
+			<DialogBody>
+				<p class="text-sm text-ink mb-3">
+					¿Está seguro de que desea cancelar el despacho de la receta
+					<strong class="font-mono">{cancellingDispatch.prescription_number}</strong>
+					para {cancellingDispatch.patient_name ?? 'paciente'}?
+				</p>
+				<div>
+					<label class="block text-sm font-medium text-ink-muted mb-1" for="cancel-reason">Motivo de cancelación *</label>
+					<textarea
+						id="cancel-reason"
+						name="reason"
+						required
+						rows="2"
+						placeholder="Ej: Error en la receta, medicamento incorrecto..."
+						class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface-elevated text-ink
+						       focus:outline-none focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60 resize-none"
+					></textarea>
+				</div>
+				<p class="text-sm text-honey-700 dark:text-honey-400 mt-2">
+					El stock de los medicamentos se repondrá automáticamente.
+				</p>
+			</DialogBody>
+			<DialogFooter>
+				<Button type="button" variant="ghost" size="md" onclick={() => { cancellingDispatch = null; }}>No cancelar</Button>
+				<Button type="submit" variant="danger" size="md">Confirmar cancelación</Button>
+			</DialogFooter>
+		</form>
 	</Dialog>
 {/if}

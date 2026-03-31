@@ -593,7 +593,55 @@ export const mockPrescriptions: Prescription[] = [
 
 // ─── Despachos ────────────────────────────────────────────────
 
-export const mockDispatches: Dispatch[] = [];
+export const mockDispatches: Dispatch[] = [
+	{
+		id: 'disp-1',
+		fk_prescription_id: 'presc-1',
+		prescription_number: 'RX-2026-001',
+		fk_patient_id: '1',
+		patient_name: 'Pedro González',
+		fk_pharmacist_id: 'pharm-1',
+		pharmacist_name: 'Farm. María López',
+		dispatch_date: '2026-03-20',
+		dispatch_status: 'completed',
+		items: [
+			{ id: 'di-1', fk_batch_id: 'batch-1', lot_number: 'L2026-A001', expiration_date: '2027-06-15', fk_medication_id: 'med-1', medication: { id: 'med-1', code: 'MED-001', generic_name: 'Amoxicilina', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 350 }, quantity_dispatched: 21 }
+		],
+		created_at: '2026-03-20T10:30:00Z'
+	},
+	{
+		id: 'disp-2',
+		fk_prescription_id: 'presc-2',
+		prescription_number: 'RX-2026-002',
+		fk_patient_id: '2',
+		patient_name: 'Ana Martínez',
+		fk_pharmacist_id: 'pharm-1',
+		pharmacist_name: 'Farm. María López',
+		dispatch_date: '2026-03-22',
+		dispatch_status: 'completed',
+		items: [
+			{ id: 'di-2', fk_batch_id: 'batch-2', lot_number: 'L2026-B003', expiration_date: '2027-03-01', fk_medication_id: 'med-2', medication: { id: 'med-2', code: 'MED-002', generic_name: 'Ibuprofeno', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 200 }, quantity_dispatched: 30 },
+			{ id: 'di-3', fk_batch_id: 'batch-3', lot_number: 'L2026-C001', expiration_date: '2027-09-20', fk_medication_id: 'med-5', medication: { id: 'med-5', code: 'MED-005', generic_name: 'Omeprazol', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 120 }, quantity_dispatched: 14 }
+		],
+		created_at: '2026-03-22T09:15:00Z'
+	},
+	{
+		id: 'disp-3',
+		fk_prescription_id: 'presc-3',
+		prescription_number: 'RX-2026-003',
+		fk_patient_id: '3',
+		patient_name: 'Carlos Rodríguez',
+		fk_pharmacist_id: 'pharm-1',
+		pharmacist_name: 'Farm. María López',
+		dispatch_date: '2026-03-25',
+		notes: 'Paciente alérgico a penicilina — verificado',
+		dispatch_status: 'cancelled',
+		items: [
+			{ id: 'di-4', fk_batch_id: 'batch-1', lot_number: 'L2026-A001', expiration_date: '2027-06-15', fk_medication_id: 'med-1', medication: { id: 'med-1', code: 'MED-001', generic_name: 'Amoxicilina', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 350 }, quantity_dispatched: 21 }
+		],
+		created_at: '2026-03-25T14:00:00Z'
+	}
+];
 
 // ─── Límites de Despacho ──────────────────────────────────────
 
