@@ -74,7 +74,27 @@ export class FormStore {
 
 	validateAll(): boolean {
 		this.errors = validateAllFields(this._schema.sections, this.data);
+		// Marcar todos los campos con error como touched para que se muestren visualmente
+		for (const path of Object.keys(this.errors)) {
+			this.touched[path] = true;
+		}
+		this.touched = { ...this.touched }; // Trigger reactivity
 		return Object.keys(this.errors).length === 0;
+	}
+
+	/** Retorna los nombres legibles de los campos con error */
+	getErrorFieldNames(): string[] {
+		const names: string[] = [];
+		for (const section of this._schema.sections) {
+			for (const group of section.groups) {
+				for (const field of group.fields) {
+					if (this.errors[field.key]) {
+						names.push(field.label);
+					}
+				}
+			}
+		}
+		return names;
 	}
 
 	getFieldError(path: string): string | undefined {

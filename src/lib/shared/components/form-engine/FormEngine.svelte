@@ -3,6 +3,7 @@
 	import { FormStore } from './FormStore.svelte.js';
 	import FormSection from './FormSection.svelte';
 	import AutosaveIndicator from './AutosaveIndicator.svelte';
+	import { toastError } from '$shared/components/toast/toast.svelte.js';
 
 	interface Props {
 		schema: MedicalFormSchema;
@@ -37,6 +38,17 @@
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		if (isReadonly) return;
+
+		// Validar antes de guardar — si hay errores, mostrar toast con nombres
+		store.validateAll();
+		if (store.errorCount > 0) {
+			const fieldNames = store.getErrorFieldNames();
+			toastError(
+				`${store.errorCount} campo${store.errorCount > 1 ? 's' : ''} con errores`,
+				fieldNames.length > 0 ? `Revise: ${fieldNames.join(', ')}` : 'Revise los campos marcados.'
+			);
+			return;
+		}
 
 		await store.save(onSave);
 	}
@@ -88,11 +100,5 @@
 		</div>
 	{/if}
 
-	{#if store.errorCount > 0}
-		<div
-			class="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300"
-		>
-			{store.errorCount} campo{store.errorCount > 1 ? 's' : ''} con errores. Revise los campos marcados.
-		</div>
-	{/if}
+	<!-- Errores se muestran via Toast -->
 </form>
