@@ -3,6 +3,8 @@
 	import type { DisponibilidadDoctor } from '$shared/types/appointments.js';
 	import Button from '$shared/components/button/Button.svelte';
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -138,13 +140,13 @@
 <svelte:head><title>Mi Disponibilidad — Doctor</title></svelte:head>
 
 <!-- Hidden forms -->
-<form bind:this={createFormEl} method="POST" action="?/agregar" use:enhance class="hidden">
+<form bind:this={createFormEl} method="POST" action="?/agregar" use:enhance={() => { return async ({ result, update }) => { await update(); if (result.type === 'success') { toastSuccess('Bloque creado', `Bloque de ${createInicio}–${createFin} agregado (${createSlot} min por cita).`); } else { toastError('Error', 'No se pudo crear el bloque.'); } }; }} class="hidden">
 	<input type="hidden" name="day_of_week" value={createDia} />
 	<input type="hidden" name="hora_inicio" value={createInicio} />
 	<input type="hidden" name="hora_fin" value={createFin} />
 	<input type="hidden" name="duracion_slot" value={createSlot} />
 </form>
-<form bind:this={updateFormEl} method="POST" action="?/actualizar" use:enhance class="hidden">
+<form bind:this={updateFormEl} method="POST" action="?/actualizar" use:enhance={() => { return async ({ result, update }) => { await update(); if (result.type === 'success') { toastSuccess('Bloque actualizado', 'El horario fue ajustado correctamente.'); } else { toastError('Error', 'No se pudo actualizar el bloque.'); } }; }} class="hidden">
 	<input type="hidden" name="bloqueId" value={updateId} />
 	<input type="hidden" name="hora_inicio" value={updateInicio} />
 	<input type="hidden" name="hora_fin" value={updateFin} />
@@ -164,13 +166,13 @@
 	</div>
 
 	<!-- Selector de duración de slot para nuevos bloques -->
-	<div class="flex items-center gap-3 bg-surface-elevated border border-border/60 rounded-xl px-4 py-2.5">
-		<span class="text-sm text-ink-muted shrink-0">Duración de cita:</span>
-		<div class="flex gap-1">
+	<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
+		<p class="text-sm text-ink-muted mb-2">Duración de cada cita:</p>
+		<div class="grid grid-cols-4 gap-2">
 			{#each ['15', '30', '45', '60'] as d}
 				<button
 					type="button"
-					class="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
+					class="py-2.5 text-sm font-medium rounded-lg transition-colors
 						{selectedSlotDuration === d ? 'bg-viking-600 text-white shadow-sm' : 'text-ink-muted hover:bg-canvas-subtle border border-border/60'}"
 					onclick={() => { selectedSlotDuration = d; }}
 				>{d} min</button>
@@ -178,26 +180,21 @@
 		</div>
 	</div>
 
-	<!-- Feedback -->
-	{#if form?.success}
-		<div class="px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs text-emerald-700 dark:text-emerald-300">{form.message}</div>
-	{/if}
-	{#if form?.error}
-		<div class="px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-700 dark:text-red-300">{form.error}</div>
-	{/if}
+	<!-- Feedback via Toast (eliminados alerts inline) -->
 
 	<!-- ═══ MOBILE: Single-day view (< sm) ═══ -->
 	<div class="sm:hidden">
-		<!-- Day tabs -->
-		<div class="flex border-b border-border/40 mb-3">
+		<!-- Day tabs — touch-friendly -->
+		<div class="flex gap-1 p-1 bg-canvas-subtle rounded-xl border border-border/40 mb-3">
 			{#each [1, 2, 3, 4, 5] as dia}
 				<button
 					onclick={() => mobileDay = dia}
-					class="flex-1 py-2 text-center text-xs font-medium transition-colors {mobileDay === dia ? 'text-viking-600 border-b-2 border-viking-600' : 'text-ink-muted'}"
+					class="flex-1 py-2.5 text-center text-sm font-medium rounded-lg transition-colors
+						{mobileDay === dia ? 'bg-surface-elevated text-viking-600 shadow-sm border border-border/60' : 'text-ink-muted'}"
 				>
 					{diasSemana[dia]}
 					{#if bloquesPorDia[dia].length > 0}
-						<span class="ml-0.5 text-xs opacity-60">·{bloquesPorDia[dia].length}</span>
+						<span class="text-xs opacity-60 block">{bloquesPorDia[dia].length}</span>
 					{/if}
 				</button>
 			{/each}
@@ -244,7 +241,7 @@
 									<p class="text-xs font-semibold text-viking-800 dark:text-viking-200">{lb.s}–{lb.e}</p>
 									<p class="text-xs text-viking-600 dark:text-viking-400">{lb.n} slots · {bloque.duracion_slot}min</p>
 								</div>
-								<form method="POST" action="?/eliminar" use:enhance class="pointer-events-auto">
+								<form method="POST" action="?/eliminar" use:enhance={() => { return async ({ result, update }) => { await update(); if (result.type === 'success') { toastWarning('Bloque eliminado', 'El bloque de disponibilidad fue eliminado.'); } else { toastError('Error', 'No se pudo eliminar el bloque.'); } }; }} class="pointer-events-auto">
 									<input type="hidden" name="bloqueId" value={bloque.id} />
 									<button type="submit" class="p-1 rounded text-viking-400 hover:text-red-500 transition-colors" title="Eliminar">
 										<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
@@ -318,7 +315,7 @@
 										<p class="text-xs font-semibold text-viking-800 dark:text-viking-200 leading-tight">{lb.s}–{lb.e}</p>
 										<p class="text-xs text-viking-600 dark:text-viking-400">{lb.n} slots · {bloque.duracion_slot}min</p>
 									</div>
-									<form method="POST" action="?/eliminar" use:enhance class="self-end pointer-events-auto">
+									<form method="POST" action="?/eliminar" use:enhance={() => { return async ({ result, update }) => { await update(); if (result.type === 'success') { toastWarning('Bloque eliminado', 'El bloque de disponibilidad fue eliminado.'); } else { toastError('Error', 'No se pudo eliminar el bloque.'); } }; }} class="self-end pointer-events-auto">
 										<input type="hidden" name="bloqueId" value={bloque.id} />
 										<button type="submit" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded text-viking-500 hover:text-red-500" title="Eliminar">
 											<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
