@@ -7,6 +7,13 @@ function toPublic(p: Paciente): PacientePublic {
 	return { id: p.id, nhm: p.nhm, nombre: p.nombre, apellido: p.apellido, relacion_univ: p.relacion_univ, es_nuevo: p.es_nuevo };
 }
 
+export async function getAllPacientes(): Promise<Paciente[]> {
+	if (mockFlags.pacientes) {
+		return [...mockPacientes].sort((a, b) => a.apellido.localeCompare(b.apellido));
+	}
+	return apiFetch<Paciente[]>('/patients');
+}
+
 export async function findByNHM(nhm: number): Promise<PacientePublic | null> {
 	if (mockFlags.pacientes) {
 		const p = mockPacientes.find((x) => x.nhm === nhm);
