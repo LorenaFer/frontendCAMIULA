@@ -1,6 +1,8 @@
 <script lang="ts">
 	import EditableTable from '$shared/components/table/EditableTable.svelte';
 	import Button from '$shared/components/button/Button.svelte';
+	import MedicationSelector from '$shared/components/inventory/MedicationSelector.svelte';
+	import Input from '$shared/components/input/Input.svelte';
 	import type { EditableColumn } from '$shared/components/table/types';
 	import type { MedicationOption } from '$shared/types/inventory.js';
 	import {
@@ -27,6 +29,34 @@
 	let { items, disabled = false, onchange, medicationOptions = [], onEmitRecipe, recipeEmitted = false, emitting = false, class: className = '' }: Props = $props();
 
 	let collapsed = $state(false);
+	let medSearch = $state('');
+
+	const medSuggestions = $derived.by(() => {
+		const q = medSearch.trim().toLowerCase();
+		if (q.length < 2 || medicationOptions.length === 0) return [];
+		return medicationOptions
+			.filter((m) => m.generic_name.toLowerCase().includes(q) || m.code.toLowerCase().includes(q))
+			.filter((m) => !items.some((i) => i.medication_id === m.id))
+			.slice(0, 6);
+	});
+
+	function addFromInventory(med: MedicationOption) {
+		const newItem = createPrescriptionItem();
+		newItem.medicamento = med.generic_name;
+		newItem.medication_id = med.id;
+		newItem.source = 'inventario';
+		newItem.presentacion = med.pharmaceutical_form?.toLowerCase() ?? '';
+		onchange([...items, newItem]);
+		medSearch = '';
+	}
+
+	function addExternal() {
+		const newItem = createPrescriptionItem();
+		newItem.medicamento = medSearch.trim();
+		newItem.source = 'externo';
+		onchange([...items, newItem]);
+		medSearch = '';
+	}
 
 	const columns: EditableColumn<PrescriptionItem>[] = [
 		{ key: 'medicamento', header: 'Medicamento', width: '22%', render: medicamentoCell },
@@ -44,63 +74,20 @@
 
 {#snippet medicamentoCell(value: PrescriptionItem[keyof PrescriptionItem], row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
 	{@const isFromInventory = row.source === 'inventario' && row.medication_id}
-	{@const query = String(value ?? '').toLowerCase()}
-	{@const matches = query.length >= 2 && !row.medication_id && medicationOptions.length > 0
-		? medicationOptions.filter((m) => m.generic_name.toLowerCase().includes(query) || m.code.toLowerCase().includes(query)).slice(0, 5)
-		: []}
-	<div class="relative">
+	<div class="flex items-center gap-1.5 px-2 py-1">
 		{#if isFromInventory}
-			<div class="flex items-center gap-1 px-2 py-1">
-				<span class="text-sm text-viking-700 dark:text-viking-300 truncate font-medium">{String(value ?? '')}</span>
-				{#if !disabled}
-					<button type="button" class="shrink-0 text-ink-subtle hover:text-red-500 transition-colors" onclick={() => {
-						onChange('medicamento', '');
-						onChange('medication_id', '');
-						onChange('source', 'inventario');
-						onChange('presentacion', '');
-					}}>
-						<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-					</button>
-				{/if}
-			</div>
+			<span class="w-1.5 h-1.5 rounded-full bg-viking-500 shrink-0" title="Del inventario del hospital"></span>
+			<span class="text-sm text-ink truncate font-medium">{String(value ?? '')}</span>
 		{:else}
+			<span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="Farmacia externa"></span>
 			<input
 				type="text"
 				value={String(value ?? '')}
-				placeholder="Buscar medicamento..."
+				placeholder="Nombre..."
 				{disabled}
-				oninput={(e) => {
-					onChange('medicamento', e.currentTarget.value);
-					onChange('medication_id', '');
-					onChange('source', e.currentTarget.value ? 'externo' : 'inventario');
-				}}
-				class="w-full px-2 py-1 text-sm bg-transparent border border-transparent hover:border-border focus:border-border-strong focus:ring-1 focus:ring-border-subtle rounded text-ink placeholder:text-ink-subtle outline-none transition-colors"
+				oninput={(e) => onChange('medicamento', e.currentTarget.value)}
+				class="flex-1 text-sm bg-transparent text-ink placeholder:text-ink-subtle outline-none"
 			/>
-			{#if matches.length > 0}
-				<div class="absolute left-0 right-0 top-full mt-0.5 z-30 bg-surface-elevated border border-border/60 rounded-lg shadow-[var(--shadow-2)] py-1 max-h-40 overflow-y-auto">
-					{#each matches as med (med.id)}
-						<button
-							type="button"
-							class="w-full text-left px-2.5 py-1.5 text-sm hover:bg-canvas-subtle transition-colors"
-							onmousedown={(e: MouseEvent) => e.preventDefault()}
-							onclick={() => {
-								onChange('medicamento', med.generic_name);
-								onChange('medication_id', med.id);
-								onChange('source', 'inventario');
-								onChange('presentacion', med.pharmaceutical_form?.toLowerCase() ?? '');
-							}}
-						>
-							<span class="font-medium text-ink">{med.generic_name}</span>
-							<span class="text-xs text-ink-muted block">{med.pharmaceutical_form} · Stock: {med.current_stock}</span>
-						</button>
-					{/each}
-					{#if query.length >= 2}
-						<div class="px-2.5 py-1.5 text-xs text-ink-subtle border-t border-border/40">
-							Escriba el nombre completo para farmacia externa
-						</div>
-					{/if}
-				</div>
-			{/if}
 		{/if}
 	</div>
 {/snippet}
@@ -223,13 +210,44 @@
 	<!-- Content -->
 	{#if !collapsed}
 		<div class="px-5 pb-5 border-t border-border/50">
-			<div class="pt-4">
+			<!-- Agregar medicamento via MedicationSelector o texto libre -->
+			{#if !disabled && medicationOptions.length > 0}
+				<div class="pt-4 pb-3 space-y-2">
+					<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider">Agregar medicamento</p>
+					<div class="flex gap-2">
+						<div class="flex-1">
+							<MedicationSelector
+								options={medicationOptions}
+								selected={null}
+								onSelect={(med) => addFromInventory(med)}
+								onClear={() => {}}
+								placeholder="Buscar en inventario del hospital..."
+							/>
+						</div>
+					</div>
+					{#if medSearch.trim()}
+						<button
+							type="button"
+							class="text-xs text-amber-600 dark:text-amber-400 hover:underline"
+							onclick={addExternal}
+						>
+							+ Agregar "{medSearch}" como medicamento externo
+						</button>
+					{/if}
+					<p class="text-xs text-ink-subtle">
+						<span class="inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-viking-500"></span> Inventario hospital</span>
+						<span class="ml-3 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Farmacia externa</span>
+					</p>
+				</div>
+			{/if}
+
+			<div class="pt-2">
 				<EditableTable
 					{columns}
 					data={items}
 					{onchange}
 					createRow={createPrescriptionItem}
-					addLabel="Agregar medicamento"
+					addLabel={medicationOptions.length > 0 ? 'Agregar medicamento externo' : 'Agregar medicamento'}
 					showRowNumbers={true}
 					{disabled}
 				/>
