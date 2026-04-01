@@ -97,7 +97,7 @@
 		<div class="min-w-0">
 			<p class="font-medium text-ink truncate">
 				{row.paciente.nombre} {row.paciente.apellido}
-				{#if row.es_primera_vez}<span class="ml-1 text-[10px] text-viking-600 font-semibold">★ 1ra</span>{/if}
+				{#if row.es_primera_vez}<span class="ml-1 text-xs text-viking-600 font-semibold">★ 1ra</span>{/if}
 			</p>
 			<p class="text-xs text-ink-muted">NHM {row.paciente.nhm}</p>
 		</div>
@@ -235,13 +235,13 @@
 						<div>
 							<div class="flex items-center justify-between mb-0.5">
 								<span class="text-xs font-medium text-ink">{doc.name}</span>
-								<span class="text-[10px] text-ink-subtle">{doc.specialty}</span>
+								<span class="text-xs text-ink-subtle">{doc.specialty}</span>
 							</div>
 							<div class="flex items-center gap-2">
 								<div class="flex-1 h-1.5 bg-canvas-subtle rounded-full overflow-hidden">
 									<div class="h-full bg-sage-500 rounded-full" style:width="{atendidasPct}%"></div>
 								</div>
-								<span class="text-[10px] font-mono text-ink-muted w-16 text-right">
+								<span class="text-xs font-mono text-ink-muted w-16 text-right">
 									{doc.atendidas}/{doc.count}
 								</span>
 							</div>
@@ -282,8 +282,8 @@
 							{/if}
 						</div>
 						<div class="flex justify-between mt-1">
-							<span class="text-[10px] text-viking-600 dark:text-viking-400">Nuevos ({stats.firstTimeCount})</span>
-							<span class="text-[10px] text-iris-600 dark:text-iris-400">Retorno ({stats.returningCount})</span>
+							<span class="text-xs text-viking-600 dark:text-viking-400">Nuevos ({stats.firstTimeCount})</span>
+							<span class="text-xs text-iris-600 dark:text-iris-400">Retorno ({stats.returningCount})</span>
 						</div>
 					</div>
 
@@ -292,7 +292,7 @@
 						<span class="text-xs text-ink-muted block mb-1.5">Por tipo de paciente</span>
 						<div class="flex flex-wrap gap-1.5">
 							{#each Object.entries(stats.byPatientType) as [tipo, count] (tipo)}
-								<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-canvas-subtle text-ink border border-border/50">
+								<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-canvas-subtle text-ink border border-border/50">
 									{patientTypeLabels[tipo] ?? tipo}
 									<span class="font-mono font-bold text-ink">{count}</span>
 								</span>
@@ -303,11 +303,11 @@
 					<!-- Hora pico y top especialidad -->
 					<div class="grid grid-cols-2 gap-2 pt-1 border-t border-border/50">
 						<div>
-							<span class="text-[10px] text-ink-subtle block">Hora pico</span>
+							<span class="text-xs text-ink-subtle block">Hora pico</span>
 							<span class="text-sm font-semibold text-ink font-mono">{peakHour}</span>
 						</div>
 						<div>
-							<span class="text-[10px] text-ink-subtle block">Top especialidad</span>
+							<span class="text-xs text-ink-subtle block">Top especialidad</span>
 							<span class="text-sm font-semibold text-ink">{topSpecialty}</span>
 						</div>
 					</div>
@@ -315,7 +315,7 @@
 					<!-- Distribución por hora -->
 					{#if stats.peakHours.length >= 2}
 						<div>
-							<span class="text-[10px] text-ink-subtle block mb-1">Distribución horaria</span>
+							<span class="text-xs text-ink-subtle block mb-1">Distribución horaria</span>
 							<div class="flex items-end gap-0.5 h-8">
 								{#each stats.peakHours as h (h.hour)}
 									{@const maxCount = Math.max(...stats.peakHours.map(x => x.count))}
@@ -326,7 +326,7 @@
 											style:height="{heightPct}%"
 											title="{h.hour}: {h.count} citas"
 										></div>
-										<span class="text-[8px] text-ink-subtle">{h.hour.split(':')[0]}</span>
+										<span class="text-xs text-ink-subtle">{h.hour.split(':')[0]}</span>
 									</div>
 								{/each}
 							</div>
@@ -378,7 +378,7 @@
 		<!-- Paginación -->
 		{#if data.citas.pagination.total > data.citas.pagination.page_size}
 			<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-t border-border">
-				<span class="text-[11px] sm:text-xs text-ink-muted">
+				<span class="text-xs text-ink-muted">
 					{(data.citas.pagination.page - 1) * data.citas.pagination.page_size + 1}–{Math.min(data.citas.pagination.page * data.citas.pagination.page_size, data.citas.pagination.total)} de {data.citas.pagination.total}
 				</span>
 				<div class="flex gap-2">

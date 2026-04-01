@@ -127,9 +127,9 @@
 	<div class="flex items-start justify-between gap-3">
 		<div>
 			<h1 class="text-lg sm:text-xl font-bold text-ink">Mi Disponibilidad</h1>
-			<p class="text-[11px] sm:text-xs text-ink-muted mt-0.5">Dr. {data.doctorNombre}</p>
+			<p class="text-xs text-ink-muted mt-0.5">Dr. {data.doctorNombre}</p>
 		</div>
-		<div class="flex items-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-ink-muted">
+		<div class="flex items-center gap-2 sm:gap-4 text-xs text-ink-muted">
 			<span><b class="text-ink">{resumenSemanal.totalSlots}</b> slots</span>
 			<span class="hidden sm:inline"><b class="text-ink">{resumenSemanal.totalHoras}h{resumenSemanal.totalMin > 0 ? `${resumenSemanal.totalMin}m` : ''}</b></span>
 		</div>
@@ -154,7 +154,7 @@
 				>
 					{diasSemana[dia]}
 					{#if bloquesPorDia[dia].length > 0}
-						<span class="ml-0.5 text-[9px] opacity-60">·{bloquesPorDia[dia].length}</span>
+						<span class="ml-0.5 text-xs opacity-60">·{bloquesPorDia[dia].length}</span>
 					{/if}
 				</button>
 			{/each}
@@ -164,14 +164,14 @@
 		<div class="bg-surface-elevated border border-border/60 rounded-xl shadow-[var(--shadow-1)] overflow-hidden select-none">
 			<div class="px-3 py-2 border-b border-border/40 flex items-center justify-between">
 				<p class="text-sm font-semibold text-ink">{diasSemanaFull[mobileDay]}</p>
-				<p class="text-[10px] text-ink-muted">{bloquesPorDia[mobileDay].length} bloque{bloquesPorDia[mobileDay].length !== 1 ? 's' : ''}</p>
+				<p class="text-xs text-ink-muted">{bloquesPorDia[mobileDay].length} bloque{bloquesPorDia[mobileDay].length !== 1 ? 's' : ''}</p>
 			</div>
 
 			<div class="grid grid-cols-[2rem_1fr] relative h-[400px]">
 				<!-- Hour axis -->
 				<div class="relative border-r border-border/20">
 					{#each horasEje as hora}
-						<div class="absolute right-1 text-[8px] text-ink-subtle tabular-nums -translate-y-1/2" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%">{String(hora).padStart(2, '0')}</div>
+						<div class="absolute right-1 text-xs text-ink-subtle tabular-nums -translate-y-1/2" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%">{String(hora).padStart(2, '0')}</div>
 					{/each}
 				</div>
 
@@ -199,7 +199,7 @@
 							<div class="px-2 py-1.5 h-full flex items-center justify-between overflow-hidden pointer-events-none">
 								<div>
 									<p class="text-xs font-semibold text-viking-800 dark:text-viking-200">{lb.s}–{lb.e}</p>
-									<p class="text-[10px] text-viking-600 dark:text-viking-400">{lb.n} slots · {bloque.duracion_slot}min</p>
+									<p class="text-xs text-viking-600 dark:text-viking-400">{lb.n} slots · {bloque.duracion_slot}min</p>
 								</div>
 								<form method="POST" action="?/eliminar" use:enhance class="pointer-events-auto">
 									<input type="hidden" name="bloqueId" value={bloque.id} />
@@ -235,8 +235,8 @@
 				<div></div>
 				{#each [1, 2, 3, 4, 5] as dia}
 					<div class="py-2 text-center border-l border-border/20">
-						<p class="text-[10px] text-ink-muted uppercase">{diasSemana[dia]}</p>
-						<p class="text-[11px] font-semibold text-ink">{diasSemanaFull[dia]}</p>
+						<p class="text-xs text-ink-muted uppercase">{diasSemana[dia]}</p>
+						<p class="text-xs font-semibold text-ink">{diasSemanaFull[dia]}</p>
 					</div>
 				{/each}
 			</div>
@@ -245,7 +245,7 @@
 			<div class="grid grid-cols-[2.5rem_repeat(5,1fr)] h-[420px] lg:h-[520px]">
 				<div class="relative">
 					{#each horasEje as hora}
-						<div class="absolute right-1.5 text-[9px] text-ink-subtle tabular-nums -translate-y-1/2" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%">{String(hora).padStart(2, '0')}</div>
+						<div class="absolute right-1.5 text-xs text-ink-subtle tabular-nums -translate-y-1/2" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%">{String(hora).padStart(2, '0')}</div>
 					{/each}
 				</div>
 
@@ -272,8 +272,8 @@
 
 								<div class="px-1.5 py-1 h-full flex flex-col justify-between overflow-hidden pointer-events-none">
 									<div>
-										<p class="text-[10px] font-semibold text-viking-800 dark:text-viking-200 leading-tight">{lb.s}–{lb.e}</p>
-										<p class="text-[9px] text-viking-600 dark:text-viking-400">{lb.n} slots · {bloque.duracion_slot}min</p>
+										<p class="text-xs font-semibold text-viking-800 dark:text-viking-200 leading-tight">{lb.s}–{lb.e}</p>
+										<p class="text-xs text-viking-600 dark:text-viking-400">{lb.n} slots · {bloque.duracion_slot}min</p>
 									</div>
 									<form method="POST" action="?/eliminar" use:enhance class="self-end pointer-events-auto">
 										<input type="hidden" name="bloqueId" value={bloque.id} />
@@ -287,13 +287,13 @@
 
 						{#if drag && drag.mode === 'create' && drag.dia === dia && previewHeight > 0}
 							<div class="absolute inset-x-0.5 rounded bg-viking-200/60 dark:bg-viking-700/40 border-2 border-dashed border-viking-400 z-20 pointer-events-none" style="top: {previewTop}%; height: {previewHeight}%;">
-								<div class="px-1.5 py-0.5"><p class="text-[10px] font-semibold text-viking-700 dark:text-viking-200">{previewLabel}</p></div>
+								<div class="px-1.5 py-0.5"><p class="text-xs font-semibold text-viking-700 dark:text-viking-200">{previewLabel}</p></div>
 							</div>
 						{/if}
 
 						{#if bloquesPorDia[dia].length === 0 && !(drag && drag.mode === 'create' && drag.dia === dia)}
 							<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-								<p class="text-[9px] text-ink-subtle">Arrastra</p>
+								<p class="text-xs text-ink-subtle">Arrastra</p>
 							</div>
 						{/if}
 					</div>
@@ -303,7 +303,7 @@
 	</div>
 
 	<!-- Legend -->
-	<div class="flex flex-wrap items-center gap-3 sm:gap-4 text-[9px] sm:text-[10px] text-ink-subtle px-1">
+	<div class="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-ink-subtle px-1">
 		<div class="flex items-center gap-1.5">
 			<span class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded bg-viking-100 dark:bg-viking-900/30 border border-viking-300/50"></span>
 			Disponible
