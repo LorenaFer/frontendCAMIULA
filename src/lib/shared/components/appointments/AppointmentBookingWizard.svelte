@@ -36,9 +36,12 @@
 	let loading = $state(false);
 	let formError = $state('');
 
-	// Paso 1 — Identificación
-	let queryType = $state<'nhm' | 'cedula'>('cedula');
+	// Paso 1 — Identificación (auto-detect: NHM si < 100000 y numérico puro, sino cédula)
 	let query = $state('');
+	const queryType = $derived.by<'nhm' | 'cedula'>(() => {
+		const trimmed = query.trim().replace(/[^0-9]/g, '');
+		return trimmed.length > 0 && Number(trimmed) < 100000 && query.trim() === trimmed ? 'nhm' : 'cedula';
+	});
 	let paciente = $state<PacientePublic | null>(null);
 	let esNuevo = $state(false);
 
@@ -79,21 +82,31 @@
 	// Paso 3 — Doctor
 	let selectedEspecialidadId = $state('');
 	let selectedDoctorId = $state('');
+	let doctorSearch = $state('');
 
-	const doctoresFiltrados = $derived(
-		selectedEspecialidadId
-			? doctores.filter((d) => d.especialidad_id === selectedEspecialidadId)
-			: doctores
-	);
+	const doctoresFiltrados = $derived.by(() => {
+		let result = doctores;
+		const q = doctorSearch.trim().toLowerCase();
+		if (q) {
+			result = result.filter((d) =>
+				d.nombre_completo.toLowerCase().includes(q) ||
+				d.especialidad.toLowerCase().includes(q)
+			);
+		} else if (selectedEspecialidadId) {
+			result = result.filter((d) => d.especialidad_id === selectedEspecialidadId);
+		}
+		return result;
+	});
+
+	function selectDoctor(doc: DoctorOption) {
+		selectedDoctorId = doc.id;
+		selectedEspecialidadId = doc.especialidad_id;
+		doctorSearch = doc.nombre_completo;
+	}
 
 	const especialidadOpciones = $derived([
-		{ value: '', label: 'Seleccione especialidad' },
+		{ value: '', label: 'Todas las especialidades' },
 		...especialidades.map((e) => ({ value: e.id, label: e.nombre }))
-	]);
-
-	const doctorOpciones = $derived([
-		{ value: '', label: 'Seleccione doctor' },
-		...doctoresFiltrados.map((d) => ({ value: d.id, label: d.nombre_completo }))
 	]);
 
 	// Paso 4 — Fecha y hora
@@ -169,7 +182,7 @@
 		formError = '';
 		loading = true;
 		try {
-			const { data } = await api<{ found: boolean; paciente: PacientePublic | null }>('buscarPaciente', { query: query.trim(), queryType });
+			const { data } = await api<{ found: boolean; paciente: PacientePublic | null }>('buscarPaciente', { query: query.trim(), queryType: queryType });
 			if (data.found) {
 				paciente = data.paciente;
 				esNuevo = false;
@@ -338,25 +351,21 @@
 					<!-- ── Paso 1: Identificación ── -->
 					{#if currentStep === 0}
 						<div class="space-y-4">
-							<p class="text-sm text-ink">Ingrese su cédula o NHM para verificar si ya está registrado.</p>
-
-							<div class="flex gap-4">
-								<label class="flex items-center gap-1.5 text-sm text-ink cursor-pointer">
-									<input type="radio" bind:group={queryType} value="cedula" class="accent-viking-600" />
-									Cédula
-								</label>
-								<label class="flex items-center gap-1.5 text-sm text-ink cursor-pointer">
-									<input type="radio" bind:group={queryType} value="nhm" class="accent-viking-600" />
-									NHM
-								</label>
-							</div>
+							<p class="text-sm text-ink">Ingrese su cédula de identidad o número de historia médica.</p>
 
 							<Input
-								label={queryType === 'cedula' ? 'Cédula de identidad' : 'Número de Historia Médica'}
-								placeholder={queryType === 'cedula' ? 'V-12345678' : '1001'}
+								label="Cédula o NHM"
+								placeholder="Ej: V-12345678 o 1001"
 								bind:value={query}
 								oninput={() => formError = ''}
+								inputSize="lg"
 							/>
+
+							{#if query.trim()}
+								<p class="text-xs text-ink-muted">
+									Buscando como: <strong>{queryType === 'nhm' ? 'N° de Historia Médica' : 'Cédula de identidad'}</strong>
+								</p>
+							{/if}
 
 							<Button variant="primary" fullWidth onclick={buscarPaciente} isLoading={loading}>
 								Continuar
@@ -520,20 +529,42 @@
 								</div>
 							{/if}
 
-							<Select
-								label="Especialidad"
-								options={especialidadOpciones}
-								value={selectedEspecialidadId}
-								onchange={(v) => { if (typeof v === 'string') { selectedEspecialidadId = v; selectedDoctorId = ''; } }}
+							<Input
+								label="Buscar doctor o especialidad"
+								placeholder="Ej: Cardiología, Dr. Pérez..."
+								bind:value={doctorSearch}
+								oninput={() => { selectedDoctorId = ''; }}
 							/>
 
-							<Select
-								label="Doctor"
-								options={doctorOpciones}
-								value={selectedDoctorId}
-								onchange={(v) => { if (typeof v === 'string') selectedDoctorId = v; }}
-								disabled={!selectedEspecialidadId}
-							/>
+							{#if !doctorSearch.trim()}
+								<Select
+									label="O filtrar por especialidad"
+									options={especialidadOpciones}
+									value={selectedEspecialidadId}
+									onchange={(v) => { if (typeof v === 'string') { selectedEspecialidadId = v; selectedDoctorId = ''; } }}
+								/>
+							{/if}
+
+							<!-- Lista de doctores encontrados -->
+							{#if doctoresFiltrados.length > 0}
+								<div class="space-y-1.5 max-h-48 overflow-y-auto">
+									{#each doctoresFiltrados as doc (doc.id)}
+										<button
+											type="button"
+											class="w-full text-left px-3 py-2.5 rounded-lg border transition-colors
+												{selectedDoctorId === doc.id
+													? 'border-viking-400 bg-viking-50 dark:bg-viking-900/20'
+													: 'border-border/60 hover:bg-canvas-subtle'}"
+											onclick={() => selectDoctor(doc)}
+										>
+											<p class="text-sm font-medium text-ink">{doc.nombre_completo}</p>
+											<p class="text-xs text-ink-muted">{doc.especialidad}</p>
+										</button>
+									{/each}
+								</div>
+							{:else if doctorSearch.trim()}
+								<p class="text-sm text-ink-muted text-center py-3">No se encontraron doctores para "{doctorSearch}"</p>
+							{/if}
 
 							<div class="flex gap-3">
 								{#if !esNuevo}<Button variant="ghost" onclick={prev}>Volver</Button>{/if}
