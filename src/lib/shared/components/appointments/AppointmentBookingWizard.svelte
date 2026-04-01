@@ -45,7 +45,8 @@
 	let paciente = $state<PacientePublic | null>(null);
 	let esNuevo = $state(false);
 
-	// Paso 2 — Registro (campos planilla ULA)
+	// Paso 2 — Registro (campos planilla ULA, dividido en 3 sub-pasos)
+	let regSubStep = $state(0); // 0=básicos, 1=universidad, 2=opcional
 	let regNombre = $state('');
 	let regApellido = $state('');
 	let regCedula = $state('');
@@ -372,149 +373,138 @@
 							</Button>
 						</div>
 
-					<!-- ── Paso 2: Registro ── -->
+					<!-- ── Paso 2: Registro (3 sub-pasos) ── -->
 					{:else if currentStep === 1}
 						<div>
 							<div class="mb-4">
 								<h2 class="text-lg font-semibold text-ink">Identificación del paciente</h2>
-								<p class="text-xs text-ink-muted mt-0.5">Complete los datos para crear su ficha médica.</p>
-							</div>
-
-							<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Datos personales</p>
-							<div class="space-y-2.5 mb-5">
-								<div class="flex flex-col sm:flex-row gap-2.5">
-									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Nombres *" bind:value={regNombre} inputSize="sm" /></div>
-									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Apellidos *" bind:value={regApellido} inputSize="sm" /></div>
-								</div>
-								<div class="flex flex-col sm:flex-row gap-2.5 sm:items-end">
-									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="C.I. *" bind:value={regCedula} placeholder="V-12345678" inputSize="sm" /></div>
-									<div class="flex-1 min-w-0 sm:min-w-28">
-										<fieldset>
-											<legend class="block text-xs font-medium text-ink mb-1">Sexo</legend>
-											<div class="flex gap-3">
-												{#each [['M','M'],['F','F']] as [val, lbl]}
-													<label class="flex items-center gap-1.5 text-sm text-ink cursor-pointer">
-														<input type="radio" bind:group={regSexo} value={val} class="accent-viking-600" />
-														{lbl}
-													</label>
-												{/each}
-											</div>
-										</fieldset>
-									</div>
-								</div>
-								<div class="flex flex-col sm:flex-row gap-2.5">
-									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Fecha de nacimiento" type="date" bind:value={regFechaNacimiento} inputSize="sm" /></div>
-									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Lugar de nacimiento" bind:value={regLugarNacimiento} placeholder="Ciudad, Estado" inputSize="sm" /></div>
-								</div>
-								<fieldset>
-									<legend class="block text-xs font-medium text-ink mb-1">Estado civil</legend>
-									<div class="flex flex-wrap gap-x-3 gap-y-1">
-										{#each [['soltero','Soltero/a'],['casado','Casado/a'],['divorciado','Divorciado/a'],['viudo','Viudo/a'],['union_libre','Unión libre']] as [val, lbl]}
-											<label class="flex items-center gap-1.5 text-xs text-ink cursor-pointer">
-												<input type="radio" bind:group={regEstadoCivil} value={val} class="accent-viking-600" />
-												{lbl}
-											</label>
-										{/each}
-									</div>
-								</fieldset>
-								<div class="flex flex-col sm:flex-row gap-2.5">
-									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Religión" bind:value={regReligion} inputSize="sm" /></div>
-									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Procedencia" bind:value={regProcedencia} placeholder="Ciudad o estado" inputSize="sm" /></div>
+								<p class="text-xs text-ink-muted mt-0.5">
+									{regSubStep === 0 ? 'Datos básicos (obligatorio)' : regSubStep === 1 ? 'Relación con la universidad (obligatorio)' : 'Datos adicionales (puede completar después)'}
+								</p>
+								<!-- Mini progress -->
+								<div class="flex gap-1.5 mt-2">
+									{#each [0, 1, 2] as s}
+										<div class="h-1 flex-1 rounded-full {s <= regSubStep ? 'bg-viking-500' : 'bg-border/60'}"></div>
+									{/each}
 								</div>
 							</div>
 
-							<div class="border-t border-border/40 pt-4 mb-5">
-								<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Contacto y ubicación</p>
-								<div class="space-y-2.5">
-									<Input label="Dirección de habitación" bind:value={regDireccionHabitacion} placeholder="Av., calle, urbanización, casa/apto" inputSize="sm" />
+							<!-- Sub-paso 1: Datos básicos -->
+							{#if regSubStep === 0}
+								<div class="space-y-3">
 									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Teléfono *" bind:value={regTelefono} placeholder="0412-XXXXXXX" inputSize="sm" /></div>
-										<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Dirección del trabajo" bind:value={regDireccionTrabajo} inputSize="sm" /></div>
+										<div class="flex-1 min-w-0"><Input label="Nombres *" bind:value={regNombre} /></div>
+										<div class="flex-1 min-w-0"><Input label="Apellidos *" bind:value={regApellido} /></div>
 									</div>
-								</div>
-							</div>
-
-							<div class="border-t border-border/40 pt-4 mb-5">
-								<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Datos profesionales</p>
-								<div class="flex flex-col sm:flex-row gap-2.5">
-									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Profesión" bind:value={regProfesion} inputSize="sm" /></div>
-									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Ocupación actual" bind:value={regOcupacionActual} inputSize="sm" /></div>
-									<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Clasificación económica" bind:value={regClasificacionEconomica} inputSize="sm" /></div>
-								</div>
-							</div>
-
-							<div class="border-t border-border/40 pt-4 mb-5">
-								<fieldset>
-									<legend class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Relación con la universidad *</legend>
-									<div class="flex flex-wrap gap-x-4 gap-y-1.5">
-										{#each [['P','Profesor'],['E','Empleado'],['O','Obrero'],['B','Estudiante'],['familiar','Familiar'],['X','Caso Especial']] as [val, lbl]}
-											<label class="flex items-center gap-1.5 text-sm text-ink cursor-pointer">
-												<input type="radio" bind:group={regTipoBase} value={val} class="accent-viking-600" />
-												{lbl}
-											</label>
-										{/each}
-									</div>
-								</fieldset>
-								{#if esFamiliar}
-									<div class="mt-3 pl-4 border-l-2 border-viking-200 dark:border-viking-800 space-y-2">
-										<fieldset>
-											<legend class="block text-xs font-medium text-ink mb-1">Familiar de</legend>
-											<div class="flex flex-wrap gap-x-3 gap-y-1">
-												{#each [['R','Profesor'],['S','Empleado'],['T','Obrero'],['C','Estudiante'],['F','Otro']] as [val, lbl]}
-													<label class="flex items-center gap-1.5 text-xs text-ink cursor-pointer">
-														<input type="radio" bind:group={regFamiliarDe} value={val} class="accent-viking-600" />
-														{lbl}
-													</label>
-												{/each}
-											</div>
-										</fieldset>
-										<fieldset>
-											<legend class="block text-xs font-medium text-ink mb-1">Parentesco</legend>
-											<div class="flex flex-wrap gap-x-3 gap-y-1">
-												{#each [['hijo','Hijo/a'],['padre','Padre'],['madre','Madre'],['conyuge','Cónyuge'],['otro','Otro']] as [val, lbl]}
-													<label class="flex items-center gap-1.5 text-xs text-ink cursor-pointer">
-														<input type="radio" bind:group={regParentesco} value={val} class="accent-viking-600" />
-														{lbl}
-													</label>
-												{/each}
-											</div>
-										</fieldset>
-										<Input label="Cédula del titular" bind:value={regTitularCedula} placeholder="V-XXXXXXXX" inputSize="sm" />
-									</div>
-								{/if}
-							</div>
-
-							<div class="border-t border-border/40 pt-4 mb-5">
-								<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Datos médicos</p>
-								<div class="space-y-2.5">
+									<Input label="Cédula de identidad *" bind:value={regCedula} placeholder="V-12345678" />
 									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0 sm:min-w-28"><Input label="Grupo sanguíneo" bind:value={regTipoSangre} placeholder="O+" inputSize="sm" /></div>
-										<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Teléfono contacto médico" bind:value={regContacto} placeholder="0412-XXXXXXX" inputSize="sm" /></div>
+										<div class="flex-1 min-w-0">
+											<fieldset>
+												<legend class="block text-sm font-medium text-ink mb-1">Sexo</legend>
+												<div class="flex gap-4">
+													{#each [['M','Masculino'],['F','Femenino']] as [val, lbl]}
+														<label class="flex items-center gap-2 text-sm text-ink cursor-pointer">
+															<input type="radio" bind:group={regSexo} value={val} class="accent-viking-600 w-4 h-4" />
+															{lbl}
+														</label>
+													{/each}
+												</div>
+											</fieldset>
+										</div>
+										<div class="flex-1 min-w-0"><Input label="Fecha de nacimiento" type="date" bind:value={regFechaNacimiento} /></div>
 									</div>
-									<Input label="Alergias (separadas por coma)" bind:value={regAlergias} placeholder="Penicilina, Aspirina" inputSize="sm" />
-								</div>
-							</div>
+									<Input label="Teléfono *" bind:value={regTelefono} placeholder="0412-XXXXXXX" />
 
-							<div class="border-t border-border/40 pt-4 mb-5">
-								<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Contacto de emergencia</p>
-								<div class="space-y-2.5">
-									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Nombre completo" bind:value={regEmergenciaNombre} inputSize="sm" /></div>
-										<div class="flex-1 min-w-0 sm:min-w-28"><Input label="Parentesco" bind:value={regEmergenciaParentesco} placeholder="Esposa, Hijo" inputSize="sm" /></div>
-									</div>
-									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0 sm:min-w-36"><Input label="Dirección" bind:value={regEmergenciaDireccion} inputSize="sm" /></div>
-										<div class="flex-1 min-w-0 sm:min-w-28"><Input label="Teléfono" bind:value={regEmergenciaTelefono} placeholder="0412-XXXXXXX" inputSize="sm" /></div>
+									<div class="flex gap-3 pt-3">
+										<Button variant="ghost" onclick={prev}>Volver</Button>
+										<Button variant="primary" fullWidth disabled={!regNombre || !regApellido || !regCedula} onclick={() => { regSubStep = 1; }}>
+											Siguiente
+										</Button>
 									</div>
 								</div>
-							</div>
 
-							<div class="flex gap-3 pt-2 border-t border-border/40">
-								<Button variant="ghost" onclick={prev}>Volver</Button>
-								<Button variant="primary" fullWidth onclick={registrarPaciente} isLoading={loading}>
-									Registrarme y continuar
-								</Button>
-							</div>
+							<!-- Sub-paso 2: Relación con la universidad -->
+							{:else if regSubStep === 1}
+								<div class="space-y-3">
+									<fieldset>
+										<legend class="text-sm font-medium text-ink mb-2">¿Cuál es su relación con la universidad? *</legend>
+										<div class="space-y-2">
+											{#each [['P','Profesor/a'],['E','Empleado/a'],['O','Obrero/a'],['B','Estudiante'],['familiar','Familiar de alguien de la universidad'],['X','Caso especial']] as [val, lbl]}
+												<label class="flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors
+													{regTipoBase === val ? 'border-viking-400 bg-viking-50 dark:bg-viking-900/20' : 'border-border/60 hover:bg-canvas-subtle'}">
+													<input type="radio" bind:group={regTipoBase} value={val} class="accent-viking-600 w-4 h-4" />
+													<span class="text-sm text-ink">{lbl}</span>
+												</label>
+											{/each}
+										</div>
+									</fieldset>
+
+									{#if esFamiliar}
+										<div class="pl-4 border-l-2 border-viking-200 dark:border-viking-800 space-y-3 mt-2">
+											<fieldset>
+												<legend class="block text-sm font-medium text-ink mb-1">Familiar de</legend>
+												<div class="flex flex-wrap gap-2">
+													{#each [['R','Profesor'],['S','Empleado'],['T','Obrero'],['C','Estudiante'],['F','Otro']] as [val, lbl]}
+														<label class="flex items-center gap-2 text-sm text-ink cursor-pointer px-3 py-1.5 rounded-lg border
+															{regFamiliarDe === val ? 'border-viking-400 bg-viking-50 dark:bg-viking-900/20' : 'border-border/60'}">
+															<input type="radio" bind:group={regFamiliarDe} value={val} class="accent-viking-600" />
+															{lbl}
+														</label>
+													{/each}
+												</div>
+											</fieldset>
+											<fieldset>
+												<legend class="block text-sm font-medium text-ink mb-1">Parentesco</legend>
+												<div class="flex flex-wrap gap-2">
+													{#each [['hijo','Hijo/a'],['padre','Padre'],['madre','Madre'],['conyuge','Cónyuge'],['otro','Otro']] as [val, lbl]}
+														<label class="flex items-center gap-2 text-sm text-ink cursor-pointer px-3 py-1.5 rounded-lg border
+															{regParentesco === val ? 'border-viking-400 bg-viking-50 dark:bg-viking-900/20' : 'border-border/60'}">
+															<input type="radio" bind:group={regParentesco} value={val} class="accent-viking-600" />
+															{lbl}
+														</label>
+													{/each}
+												</div>
+											</fieldset>
+											<Input label="Cédula del titular *" bind:value={regTitularCedula} placeholder="V-XXXXXXXX" />
+										</div>
+									{/if}
+
+									<div class="flex gap-3 pt-3">
+										<Button variant="ghost" onclick={() => { regSubStep = 0; }}>Volver</Button>
+										<Button variant="primary" fullWidth disabled={!regTipoBase} onclick={() => { regSubStep = 2; }}>
+											Siguiente
+										</Button>
+									</div>
+								</div>
+
+							<!-- Sub-paso 3: Datos opcionales -->
+							{:else}
+								<div class="space-y-3">
+									<div class="px-3 py-2 bg-viking-50 dark:bg-viking-900/20 border border-viking-200 dark:border-viking-800 rounded-lg text-xs text-viking-700 dark:text-viking-300">
+										Estos datos son opcionales. Puede completarlos ahora o en su próxima visita.
+									</div>
+
+									<div class="flex flex-col sm:flex-row gap-2.5">
+										<div class="flex-1 min-w-0"><Input label="Grupo sanguíneo" bind:value={regTipoSangre} placeholder="O+" inputSize="sm" /></div>
+										<div class="flex-1 min-w-0"><Input label="Alergias" bind:value={regAlergias} placeholder="Penicilina, Aspirina" inputSize="sm" /></div>
+									</div>
+
+									<Input label="Dirección" bind:value={regDireccionHabitacion} placeholder="Av., calle, urbanización" inputSize="sm" />
+
+									<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider pt-2">Contacto de emergencia</p>
+									<div class="flex flex-col sm:flex-row gap-2.5">
+										<div class="flex-1 min-w-0"><Input label="Nombre" bind:value={regEmergenciaNombre} inputSize="sm" /></div>
+										<div class="flex-1 min-w-0"><Input label="Teléfono" bind:value={regEmergenciaTelefono} placeholder="0412-XXXXXXX" inputSize="sm" /></div>
+									</div>
+
+									<div class="flex gap-3 pt-3">
+										<Button variant="ghost" onclick={() => { regSubStep = 1; }}>Volver</Button>
+										<Button variant="primary" fullWidth onclick={registrarPaciente} isLoading={loading}>
+											Registrarme y continuar
+										</Button>
+									</div>
+								</div>
+							{/if}
 						</div>
 
 					<!-- ── Paso 3: Doctor ── -->
