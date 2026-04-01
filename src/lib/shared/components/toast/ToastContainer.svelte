@@ -1,25 +1,26 @@
 <script lang="ts">
 	import { getToasts, dismissToast, type ToastVariant } from './toast.svelte.js';
 
+	// Colors aligned with Badge component soft styles
 	const iconMap: Record<ToastVariant, { bg: string; color: string; path: string }> = {
 		success: {
-			bg: 'bg-sage-100 dark:bg-sage-900/30',
-			color: 'text-sage-600 dark:text-sage-400',
+			bg: 'bg-emerald-100/60 dark:bg-emerald-500/20',
+			color: 'text-emerald-700 dark:text-emerald-300',
 			path: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'
 		},
 		error: {
-			bg: 'bg-red-100 dark:bg-red-900/30',
-			color: 'text-red-600 dark:text-red-400',
+			bg: 'bg-red-100/60 dark:bg-red-500/20',
+			color: 'text-red-700 dark:text-red-300',
 			path: 'm9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'
 		},
 		warning: {
-			bg: 'bg-honey-100 dark:bg-honey-900/30',
-			color: 'text-honey-600 dark:text-honey-400',
+			bg: 'bg-amber-100/60 dark:bg-amber-500/20',
+			color: 'text-amber-700 dark:text-amber-300',
 			path: 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z'
 		},
 		info: {
-			bg: 'bg-viking-100 dark:bg-viking-900/30',
-			color: 'text-viking-600 dark:text-viking-400',
+			bg: 'bg-blue-100/60 dark:bg-blue-500/20',
+			color: 'text-blue-700 dark:text-blue-300',
 			path: 'm11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z'
 		}
 	};
