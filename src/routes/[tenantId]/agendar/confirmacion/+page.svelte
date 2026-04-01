@@ -3,12 +3,20 @@
 	import Button from '$shared/components/button/Button.svelte';
 
 	const citaId = $derived($page.url.searchParams.get('citaId') ?? '');
-	const code = $derived($page.url.searchParams.get('code') ?? '');
+	const rawCode = $derived($page.url.searchParams.get('code') ?? '');
 	const tenantId = $derived($page.params.tenantId);
+
+	// Generar código corto legible: toma primeros 8 chars del UUID en mayúsculas
+	const shortCode = $derived(rawCode.replace(/-/g, '').slice(0, 8).toUpperCase());
+	const displayCode = $derived(
+		shortCode.length >= 8
+			? `${shortCode.slice(0, 4)}-${shortCode.slice(4)}`
+			: shortCode || '----'
+	);
 </script>
 
 <svelte:head>
-	<title>Cita Confirmada — {code}</title>
+	<title>Cita Confirmada — {displayCode}</title>
 </svelte:head>
 
 <div class="min-h-screen bg-canvas flex items-center justify-center px-4 py-10">
@@ -25,11 +33,9 @@
 
 		<!-- Código de confirmación -->
 		<div class="bg-surface border border-border rounded-xl p-6 mb-6 shadow-[var(--shadow-1)]">
-			<p class="text-xs text-ink-muted uppercase tracking-wider mb-1">Código de confirmación</p>
-			<p class="text-3xl font-mono font-bold text-viking-600 tracking-widest">{code}</p>
-			{#if citaId}
-				<p class="text-xs text-ink-subtle mt-2">Cita #{citaId}</p>
-			{/if}
+			<p class="text-xs text-ink-muted uppercase tracking-wider mb-2">Código de confirmación</p>
+			<p class="text-4xl font-mono font-bold text-viking-600 tracking-[0.25em]">{displayCode}</p>
+			<p class="text-xs text-ink-subtle mt-3">Presente este código al llegar a su cita.</p>
 		</div>
 
 		<div class="space-y-3 text-sm text-ink-muted bg-surface-elevated rounded-lg border border-border p-4 mb-8 text-left">
