@@ -137,15 +137,7 @@
 		</div>
 	</div>
 
-	<!-- Feedback -->
-	{#if form?.success && form?.noAsistio}
-		<div class="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-amber-700 dark:text-amber-300">Slot liberado.</div>
-	{/if}
-	{#if form?.success && form?.emergencia}
-		<div class="px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs text-emerald-700 dark:text-emerald-300">Cita de emergencia creada.</div>
-	{/if}
-
-	<!-- Emergency form is now a Dialog (shared between mobile and desktop) -->
+	<!-- Feedback is now handled via Toast notifications -->
 
 	<!-- Main layout -->
 	<div class="flex gap-4">
@@ -309,11 +301,11 @@
 			</a>
 			{#if cita.estado === 'pendiente' || cita.estado === 'confirmada'}
 				<div class="flex gap-2">
-					<form method="POST" action="?/marcarAtendida" use:enhance class="flex-1">
+					<form method="POST" action="?/marcarAtendida" use:enhance={() => { return async ({ result, update }) => { await update(); if (result.type === 'success') { selected = null; await invalidateAll(); toastSuccess('Cita atendida', `${cita.paciente.nombre} ${cita.paciente.apellido} fue marcada como atendida.`); } }; }} class="flex-1">
 						<input type="hidden" name="citaId" value={cita.id} />
 						<button type="submit" class="w-full px-3 py-2 rounded-lg text-xs font-medium border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">Atendida</button>
 					</form>
-					<form method="POST" action="?/marcarNoAsistio" use:enhance class="flex-1">
+					<form method="POST" action="?/marcarNoAsistio" use:enhance={() => { return async ({ result, update }) => { await update(); if (result.type === 'success') { selected = null; await invalidateAll(); toastWarning('No asistió', `${cita.paciente.nombre} ${cita.paciente.apellido} fue marcada como inasistente.`); } }; }} class="flex-1">
 						<input type="hidden" name="citaId" value={cita.id} />
 						<button type="submit" class="w-full px-3 py-2 rounded-lg text-xs font-medium border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">No asistió</button>
 					</form>
