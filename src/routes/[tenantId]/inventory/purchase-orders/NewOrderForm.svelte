@@ -5,7 +5,7 @@
 	import MedicationSelector from '$shared/components/inventory/MedicationSelector.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import Select from '$shared/components/select/Select.svelte';
-	import Input from '$shared/components/input/Input.svelte';
+	import DateInput from '$shared/components/input/DateInput.svelte';
 	import Textarea from '$shared/components/input/Textarea.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 
@@ -103,9 +103,8 @@
 			value={selectedSupplierId}
 			onchange={(v) => { if (typeof v === 'string') selectedSupplierId = v; }}
 		/>
-		<Input
+		<DateInput
 			label="Fecha esperada"
-			type="date"
 			bind:value={expectedDate}
 		/>
 	</div>
