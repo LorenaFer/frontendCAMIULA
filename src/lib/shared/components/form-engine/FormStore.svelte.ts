@@ -104,7 +104,7 @@ export class FormStore {
 	// ─── Guardado ────────────────────────────────────────────
 
 	getSubmitData(): Record<string, unknown> {
-		return structuredClone(this.data);
+		return $state.snapshot(this.data) as Record<string, unknown>;
 	}
 
 	/** Marca el formulario como limpio (sin cambios pendientes) */
