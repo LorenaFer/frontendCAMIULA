@@ -1,4 +1,5 @@
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad, Actions } from './$types';
+import { fail } from '@sveltejs/kit';
 import * as citasService from '$lib/server/citas.service.js';
 import { mockPacientes } from '$lib/server/mock/data.js';
 
@@ -33,4 +34,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 		citas: citasPaciente,
 		pacienteNombre: `${pacienteMock.nombre} ${pacienteMock.apellido}`
 	};
+};
+
+export const actions: Actions = {
+	cancelarCita: async ({ request }) => {
+		const fd = await request.formData();
+		const citaId = String(fd.get('citaId') ?? '');
+		if (!citaId) return fail(400, { error: 'ID de cita requerido' });
+
+		try {
+			await citasService.updateEstadoCita(citaId, 'cancelada');
+			return { success: true, action: 'cancelled' };
+		} catch {
+			return fail(500, { error: 'Error al cancelar la cita' });
+		}
+	}
 };

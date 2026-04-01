@@ -1,5 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SELF-HOSTED FONTS — Eliminates render-blocking Google Fonts import.
+   ~170KB total WOFF2 served locally, no external HTTP requests.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@font-face { font-family: 'Geist'; font-weight: 400; font-style: normal; font-display: swap; src: url('/fonts/geist-400.woff2') format('woff2'); }
+@font-face { font-family: 'Geist'; font-weight: 500; font-style: normal; font-display: swap; src: url('/fonts/geist-500.woff2') format('woff2'); }
+@font-face { font-family: 'Geist'; font-weight: 600; font-style: normal; font-display: swap; src: url('/fonts/geist-600.woff2') format('woff2'); }
+@font-face { font-family: 'Geist'; font-weight: 700; font-style: normal; font-display: swap; src: url('/fonts/geist-700.woff2') format('woff2'); }
+@font-face { font-family: 'Geist Mono'; font-weight: 400; font-style: normal; font-display: swap; src: url('/fonts/geist-mono-400.woff2') format('woff2'); }
+@font-face { font-family: 'Geist Mono'; font-weight: 500; font-style: normal; font-display: swap; src: url('/fonts/geist-mono-500.woff2') format('woff2'); }
 
 /* Class-based dark mode for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
