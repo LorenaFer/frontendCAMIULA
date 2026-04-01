@@ -237,7 +237,20 @@
 		}
 	}
 
-	// ─── Paso 4: cargar slots ─────────────────────────────────
+	// ─── Paso 4: cargar slots (con caché + pre-fetch) ────────
+
+	const slotsCache = new Map<string, { slots: TimeSlot[]; duracion: 30 | 60 }>();
+
+	async function fetchSlotsForDate(date: string): Promise<{ slots: TimeSlot[]; duracion: 30 | 60 }> {
+		const cacheKey = `${selectedDoctorId}:${date}:${esNuevo}`;
+		if (slotsCache.has(cacheKey)) return slotsCache.get(cacheKey)!;
+
+		const { data } = await api<{ slots: TimeSlot[]; duracion: 30 | 60 }>('obtenerSlots', {
+			doctorId: selectedDoctorId, fecha: date, esNuevo
+		});
+		slotsCache.set(cacheKey, data);
+		return data;
+	}
 
 	async function cargarSlots(date: string) {
 		selectedDate = date;
@@ -247,17 +260,29 @@
 
 		loadingSlots = true;
 		try {
-			const { data } = await api<{ slots: TimeSlot[]; duracion: 30 | 60 }>('obtenerSlots', {
-				doctorId: selectedDoctorId, fecha: date, esNuevo
-			});
-			slots = data.slots;
-			slotDuracion = data.duracion;
+			const result = await fetchSlotsForDate(date);
+			slots = result.slots;
+			slotDuracion = result.duracion;
 		} catch {
 			slots = [];
 		} finally {
 			loadingSlots = false;
 		}
 	}
+
+	/** Pre-fetch slots de las primeras 3 fechas disponibles (fire & forget) */
+	function prefetchSlots() {
+		if (!selectedDoctorId || availableDates.length === 0) return;
+		const toFetch = availableDates.slice(0, 3);
+		for (const date of toFetch) {
+			fetchSlotsForDate(date).catch(() => {});
+		}
+	}
+
+	// Lanzar pre-fetch al llegar al paso de fecha/hora
+	$effect(() => {
+		if (currentStep === 3) prefetchSlots();
+	});
 
 	// ─── Paso 5: confirmar cita ───────────────────────────────
 
