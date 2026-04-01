@@ -56,8 +56,9 @@
 			await onSave(store.getSubmitData());
 			// Limpiar dirty state
 			store.markClean();
-		} catch {
-			toastError('Error al guardar', 'Ocurrió un error inesperado.');
+		} catch (err) {
+			console.error('FormEngine save error:', err);
+			toastError('Error al guardar', err instanceof Error ? err.message : 'Ocurrió un error inesperado.');
 		} finally {
 			store.isSaving = false;
 		}

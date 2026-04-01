@@ -46,26 +46,29 @@
 		};
 	}
 
-	// Guardar evaluación via fetch directo (más confiable que requestSubmit en hidden form)
+	// Guardar evaluación via fetch directo
 	async function handleSave(formData: Record<string, unknown>) {
+		const merged = mergeAllData(formData);
+		const body = new FormData();
+		body.set('evaluacion', JSON.stringify(merged));
+		body.set('schema_id', schemaId);
+		body.set('schema_version', schemaVersion);
+
+		const res = await fetch('?/guardarEvaluacion', { method: 'POST', body });
+		let result;
 		try {
-			const merged = mergeAllData(formData);
-			const body = new FormData();
-			body.set('evaluacion', JSON.stringify(merged));
-			body.set('schema_id', schemaId);
-			body.set('schema_version', schemaVersion);
-
-			const res = await fetch('?/guardarEvaluacion', { method: 'POST', body });
-			const result = deserialize(await res.text());
-
-			if (result.type === 'success') {
-				saved = true;
-				toastSuccess('Evaluación guardada', `Evaluación de ${data.cita.paciente.nombre} ${data.cita.paciente.apellido} guardada correctamente.`);
-			} else {
-				toastError('Error al guardar', 'No se pudo guardar la evaluación. Intente nuevamente.');
-			}
+			result = deserialize(await res.text());
 		} catch {
-			toastError('Error de conexión', 'Verifique su conexión e intente nuevamente.');
+			toastError('Error al guardar', 'Respuesta inesperada del servidor.');
+			return;
+		}
+
+		if (result.type === 'success') {
+			saved = true;
+			toastSuccess('Evaluación guardada', `Evaluación de ${data.cita.paciente.nombre} ${data.cita.paciente.apellido} guardada correctamente.`);
+		} else {
+			const errMsg = result.type === 'failure' ? ((result.data as Record<string, string>)?.error ?? 'Error al guardar') : 'No se pudo guardar la evaluación.';
+			toastError('Error al guardar', errMsg);
 		}
 	}
 
