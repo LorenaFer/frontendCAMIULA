@@ -73,6 +73,7 @@ export async function getMedicationOptions(): Promise<MedicationOption[]> {
 			code: m.code,
 			generic_name: m.generic_name,
 			pharmaceutical_form: m.pharmaceutical_form,
+			concentration: m.concentration,
 			unit_measure: m.unit_measure,
 			current_stock: m.current_stock
 		}));

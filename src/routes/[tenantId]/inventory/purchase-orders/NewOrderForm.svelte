@@ -4,6 +4,10 @@
 	import type { SupplierOption, MedicationOption } from '$shared/types/inventory.js';
 	import MedicationSelector from '$shared/components/inventory/MedicationSelector.svelte';
 	import Button from '$shared/components/button/Button.svelte';
+	import Select from '$shared/components/select/Select.svelte';
+	import DateInput from '$shared/components/input/DateInput.svelte';
+	import Textarea from '$shared/components/input/Textarea.svelte';
+	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 
 	let {
 		supplierOptions,
@@ -23,7 +27,15 @@
 	}
 
 	let submitting = $state(false);
+	let selectedSupplierId = $state('');
+	let expectedDate = $state('');
+	let notes = $state('');
 	let items = $state<ItemDraft[]>([{ _key: 0, medication: null, quantity_ordered: 1, unit_cost: 0 }]);
+
+	const supplierSelectOptions = $derived([
+		{ value: '', label: 'Seleccionar proveedor...' },
+		...supplierOptions.map((s) => ({ value: s.id, label: s.name }))
+	]);
 	let keyCounter = 1;
 
 	function addItem() {
@@ -56,9 +68,15 @@
 	action="?/crearOrden"
 	use:enhance={() => {
 		submitting = true;
-		return async ({ update }) => {
+		return async ({ result, update }) => {
 			submitting = false;
 			await update();
+			if (result.type === 'success') {
+				toastSuccess('Orden creada', 'La orden de compra fue creada correctamente.');
+				onCancel();
+			} else if (result.type === 'failure') {
+				toastError('Error al crear orden', (result.data as { error?: string })?.error ?? 'No se pudo crear la orden de compra.');
+			}
 			await invalidateAll();
 		};
 	}}
@@ -79,53 +97,40 @@
 	</div>
 
 	<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-		<div>
-			<label for="po-supplier" class="block text-sm font-medium text-ink mb-1">Proveedor <span class="text-red-500">*</span></label>
-			<select
-				id="po-supplier"
-				name="fk_supplier_id"
-				required
-				class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface-elevated text-ink focus:outline-none focus:ring-2 focus:ring-iris-500/30 focus:border-iris-500"
-			>
-				<option value="">Seleccionar proveedor...</option>
-				{#each supplierOptions as s (s.id)}
-					<option value={s.id}>{s.name}</option>
-				{/each}
-			</select>
-		</div>
-		<div>
-			<label for="po-expected" class="block text-sm font-medium text-ink mb-1">Fecha esperada</label>
-			<input
-				id="po-expected"
-				type="date"
-				name="expected_date"
-				class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface-elevated text-ink focus:outline-none focus:ring-2 focus:ring-iris-500/30 focus:border-iris-500"
-			/>
-		</div>
+		<Select
+			label="Proveedor *"
+			options={supplierSelectOptions}
+			value={selectedSupplierId}
+			onchange={(v) => { if (typeof v === 'string') selectedSupplierId = v; }}
+		/>
+		<DateInput
+			label="Fecha esperada"
+			bind:value={expectedDate}
+		/>
 	</div>
+	<input type="hidden" name="fk_supplier_id" value={selectedSupplierId} />
+	<input type="hidden" name="expected_date" value={expectedDate} />
 
-	<div>
-		<label for="po-notes" class="block text-sm font-medium text-ink mb-1">Notas</label>
-		<textarea
-			id="po-notes"
-			name="notes"
-			rows="2"
-			class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface-elevated text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-iris-500/30 focus:border-iris-500 resize-none"
-			placeholder="Observaciones opcionales..."
-		></textarea>
-	</div>
+	<Textarea
+		label="Notas"
+		value={notes}
+		placeholder="Observaciones opcionales..."
+		rows={2}
+		oninput={(e) => { notes = e.currentTarget.value; }}
+	/>
+	<input type="hidden" name="notes" value={notes} />
 
 	<!-- Items -->
 	<div class="space-y-3">
 		<div class="flex items-center justify-between">
 			<span class="text-sm font-medium text-ink">Medicamentos</span>
-			<Button type="button" variant="ghost" size="sm" onclick={addItem}>+ Agregar ítem</Button>
+			<Button type="button" variant="ghost" size="md" onclick={addItem}>+ Agregar ítem</Button>
 		</div>
 
 		{#each items as item (item._key)}
 			<div class="grid grid-cols-1 sm:grid-cols-[1fr_120px_120px_auto] gap-2 items-end p-3 rounded-lg bg-canvas-subtle border border-border">
 				<div>
-					<label class="block text-xs font-medium text-ink-muted mb-1">Medicamento</label>
+					<label class="block text-sm font-medium text-ink-muted mb-1">Medicamento</label>
 					<MedicationSelector
 						options={medicationOptions}
 						selected={item.medication}
@@ -134,7 +139,7 @@
 					/>
 				</div>
 				<div>
-					<label for="qty-{item._key}" class="block text-xs font-medium text-ink-muted mb-1">Cantidad</label>
+					<label for="qty-{item._key}" class="block text-sm font-medium text-ink-muted mb-1">Cantidad</label>
 					<input
 						id="qty-{item._key}"
 						type="number"
@@ -144,7 +149,7 @@
 					/>
 				</div>
 				<div>
-					<label for="cost-{item._key}" class="block text-xs font-medium text-ink-muted mb-1">Costo unit.</label>
+					<label for="cost-{item._key}" class="block text-sm font-medium text-ink-muted mb-1">Costo unit.</label>
 					<input
 						id="cost-{item._key}"
 						type="number"
@@ -172,8 +177,8 @@
 	<input type="hidden" name="items" value={serializedItems} />
 
 	<div class="flex items-center justify-end gap-3 pt-2 border-t border-border">
-		<Button type="button" variant="ghost" size="sm" onclick={onCancel}>Cancelar</Button>
-		<Button type="submit" variant="primary" size="sm" isLoading={submitting} disabled={!isValid}>
+		<Button type="button" variant="ghost" size="md" onclick={onCancel}>Cancelar</Button>
+		<Button type="submit" variant="primary" size="md" isLoading={submitting} disabled={!isValid}>
 			Crear orden
 		</Button>
 	</div>

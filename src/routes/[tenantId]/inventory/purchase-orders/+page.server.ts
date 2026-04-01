@@ -52,6 +52,24 @@ export const actions: Actions = {
 		}
 	},
 
+	enviarOrden: async ({ request, locals }) => {
+		assertActionPermission(locals.user, 'enviarOrden');
+
+		const fd = await request.formData();
+		const order_id = String(fd.get('order_id') ?? '');
+		if (!order_id) return fail(400, { error: 'ID de orden requerido' });
+
+		try {
+			await purchaseOrdersService.sendPurchaseOrder(order_id);
+			return { success: true, action: 'sent' };
+		} catch (e: unknown) {
+			const status = (e as { status?: number }).status;
+			if (status === 404) return fail(404, { error: 'Orden no encontrada' });
+			if (status === 400) return fail(400, { error: (e as Error).message });
+			return fail(500, { error: 'Error al enviar la orden' });
+		}
+	},
+
 	recibirOrden: async ({ request, locals }) => {
 		assertActionPermission(locals.user, 'recibirOrden');
 

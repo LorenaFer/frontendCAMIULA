@@ -105,23 +105,23 @@
 	{#if formEngineRef?.store}
 		<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
 			<div class="px-3 py-2 rounded-lg bg-canvas-subtle border border-border text-center">
-				<p class="text-[10px] text-ink-muted uppercase tracking-wider">Dirty</p>
+				<p class="text-xs text-ink-muted uppercase tracking-wider">Dirty</p>
 				<p class="text-sm font-semibold text-ink">
 					{formEngineRef.store.isDirty ? 'Sí' : 'No'}
 				</p>
 			</div>
 			<div class="px-3 py-2 rounded-lg bg-canvas-subtle border border-border text-center">
-				<p class="text-[10px] text-ink-muted uppercase tracking-wider">Válido</p>
+				<p class="text-xs text-ink-muted uppercase tracking-wider">Válido</p>
 				<p class="text-sm font-semibold text-ink">
 					{formEngineRef.store.isValid ? 'Sí' : 'No'}
 				</p>
 			</div>
 			<div class="px-3 py-2 rounded-lg bg-canvas-subtle border border-border text-center">
-				<p class="text-[10px] text-ink-muted uppercase tracking-wider">Errores</p>
+				<p class="text-xs text-ink-muted uppercase tracking-wider">Errores</p>
 				<p class="text-sm font-semibold text-ink">{formEngineRef.store.errorCount}</p>
 			</div>
 			<div class="px-3 py-2 rounded-lg bg-canvas-subtle border border-border text-center">
-				<p class="text-[10px] text-ink-muted uppercase tracking-wider">Último guardado</p>
+				<p class="text-xs text-ink-muted uppercase tracking-wider">Último guardado</p>
 				<p class="text-sm font-semibold text-ink">
 					{formEngineRef.store.lastSavedAt ?? '—'}
 				</p>

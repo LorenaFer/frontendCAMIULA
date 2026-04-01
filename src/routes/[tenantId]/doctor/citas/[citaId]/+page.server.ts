@@ -3,6 +3,8 @@ import { error, fail } from '@sveltejs/kit';
 import * as citasService from '$lib/server/citas.service.js';
 import * as historiasService from '$lib/server/historias.service.js';
 import * as schemasService from '$lib/server/schemas.service.js';
+import * as prescriptionsService from '$lib/server/inventory/prescriptions.service.js';
+import * as medicationsService from '$lib/server/inventory/medications.service.js';
 import type { Evaluacion } from '$shared/types/appointments.js';
 import { assertActionPermission, requireDoctorId } from '$lib/server/rbac.js';
 
@@ -20,15 +22,17 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	// Cargar schema de la especialidad y historial previo en paralelo
 	const specialtyName = cita.doctor?.especialidad?.nombre ?? 'Medicina General';
-	const [formSchema, previousHistories] = await Promise.all([
+	const [formSchema, previousHistories, existingPrescription, medicationOptions] = await Promise.all([
 		schemasService.getFormSchema(specialtyName),
 		historiasService.findByPaciente(cita.paciente_id, {
 			limit: 5,
 			excludeCitaId: citaId
-		})
+		}),
+		prescriptionsService.getPrescriptionByAppointment(citaId).catch(() => null),
+		medicationsService.getMedicationOptions()
 	]);
 
-	return { cita, historia, formSchema, previousHistories };
+	return { cita, historia, formSchema, previousHistories, existingPrescription, medicationOptions };
 };
 
 export const actions: Actions = {
@@ -119,5 +123,87 @@ export const actions: Actions = {
 		);
 
 		return { autosaved: true };
+	},
+
+	emitirReceta: async ({ request, params, locals }) => {
+		assertActionPermission(locals.user, 'emitirReceta');
+		const citaId = params.citaId;
+		if (!citaId) return fail(400, { error: 'ID inválido' });
+
+		const fd = await request.formData();
+		const itemsRaw = String(fd.get('items') ?? '[]');
+		let items: Array<Record<string, unknown>>;
+		try { items = JSON.parse(itemsRaw); } catch { return fail(400, { error: 'Datos inválidos' }); }
+		if (!items.length) return fail(400, { error: 'Debe agregar al menos un medicamento' });
+
+		const cita = await citasService.getCitaById(citaId);
+		if (!cita) return fail(404, { error: 'Cita no encontrada' });
+
+		// Separar items del inventario vs externos
+		const inventoryItems = items.filter((i) => i.source === 'inventario' && i.medication_id);
+		const allItems = items; // Todos van en la receta impresa
+
+		try {
+			// Crear prescripción formal (con todos los items para impresión)
+			await prescriptionsService.createPrescription({
+				fk_appointment_id: citaId,
+				fk_patient_id: cita.paciente_id,
+				notes: inventoryItems.length > 0
+					? `${inventoryItems.length} medicamento(s) para despacho en farmacia del hospital`
+					: 'Todos los medicamentos son de farmacia externa',
+				items: inventoryItems.map((i) => ({
+					medication_id: String(i.medication_id),
+					quantity_prescribed: Number(i.cantidad) || 1,
+					dosage_instructions: `${i.dosis ?? ''} ${i.via ?? ''} ${i.frecuencia ?? ''}`.trim(),
+					duration_days: parseInt(String(i.duracion ?? '0')) || undefined
+				}))
+			});
+
+			const hasInventory = inventoryItems.length > 0;
+			const hasExternal = allItems.length > inventoryItems.length;
+
+			return {
+				recipeEmitted: true,
+				inventoryCount: inventoryItems.length,
+				externalCount: allItems.length - inventoryItems.length,
+				message: hasInventory && hasExternal
+					? `Receta emitida. ${inventoryItems.length} para farmacia del hospital, ${allItems.length - inventoryItems.length} para farmacia externa.`
+					: hasInventory
+						? `Receta emitida. ${inventoryItems.length} medicamento(s) disponibles para despacho en farmacia.`
+						: 'Receta emitida. Todos los medicamentos son de farmacia externa.'
+			};
+		} catch {
+			return fail(500, { error: 'Error al emitir receta' });
+		}
+	},
+
+	finalizarCita: async ({ request, params, locals }) => {
+		assertActionPermission(locals.user, 'guardarEvaluacion');
+		const citaId = params.citaId;
+		if (!citaId) return fail(400, { error: 'ID inválido' });
+
+		const fd = await request.formData();
+		const cita = await citasService.getCitaById(citaId);
+		if (!cita) return fail(404, { error: 'Cita no encontrada' });
+
+		// 1. Guardar evaluación
+		const schemaId = String(fd.get('schema_id') ?? '');
+		const schemaVersion = String(fd.get('schema_version') ?? '');
+		const evaluacionJson = String(fd.get('evaluacion') ?? '{}');
+
+		if (schemaId) {
+			let evaluacion: Record<string, unknown>;
+			try { evaluacion = JSON.parse(evaluacionJson); } catch { return fail(400, { error: 'Datos inválidos' }); }
+
+			await historiasService.upsertHistoriaDynamic(
+				citaId, cita.paciente_id, cita.doctor_id,
+				evaluacion, schemaId, schemaVersion
+			);
+		}
+
+		// 2. Marcar como atendida
+		await citasService.updateEstadoCita(citaId, 'atendida');
+
+		return { finalized: true };
 	}
 };

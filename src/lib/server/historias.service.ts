@@ -1,6 +1,6 @@
 import { mockFlags } from './mock-flags.js';
 import { apiFetch } from './api.js';
-import { mockHistorias } from './mock/data.js';
+import { mockHistorias, mockDoctores, mockCitas } from './mock/data.js';
 import type { HistoriaMedica, Evaluacion } from '$shared/types/appointments.js';
 import type { HistorialPrevioEntry } from '$shared/types/medical-records.js';
 
@@ -65,14 +65,18 @@ export async function findByPaciente(
 			)
 			.sort((a, b) => b.created_at.localeCompare(a.created_at))
 			.slice(0, limit)
-			.map((h) => ({
-				id: h.id,
-				fecha: h.created_at.split('T')[0],
-				especialidad: 'Medicina General',
-				doctor_nombre: 'Dr. Mock',
-				diagnostico_descripcion: h.evaluacion.diagnostico?.descripcion,
-				diagnostico_cie10: h.evaluacion.diagnostico?.cie10
-			}));
+			.map((h) => {
+				const doc = mockDoctores.find((d) => d.id === h.doctor_id);
+				const cita = mockCitas.find((c) => c.id === h.cita_id);
+				return {
+					id: h.id,
+					fecha: h.created_at.split('T')[0],
+					especialidad: doc?.especialidad?.nombre ?? cita?.especialidad_id ?? 'Medicina General',
+					doctor_nombre: doc ? `${doc.nombre} ${doc.apellido}` : 'Doctor',
+					diagnostico_descripcion: h.evaluacion.diagnostico?.descripcion,
+					diagnostico_cie10: h.evaluacion.diagnostico?.cie10
+				};
+			});
 	}
 
 	return apiFetch<HistorialPrevioEntry[]>(

@@ -64,6 +64,6 @@
 	</div>
 
 	<div class="flex gap-2 pb-0.5">
-		<Button variant="ghost" size="sm" onclick={clear}>Limpiar</Button>
+		<Button variant="ghost" size="md" onclick={clear}>Limpiar</Button>
 	</div>
 </div>

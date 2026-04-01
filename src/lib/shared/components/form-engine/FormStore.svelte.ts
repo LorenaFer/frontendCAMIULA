@@ -12,8 +12,11 @@ export class FormStore {
 	isSaving = $state(false);
 	lastSavedAt = $state<string | null>(null);
 
+	// ─── Tracking de cambios (reemplaza JSON.stringify dirty-check) ──
+	private _changedKeys = $state(new Set<string>());
+
 	// ─── Derivados ───────────────────────────────────────────
-	isDirty = $derived(this._computeIsDirty());
+	isDirty = $derived(this._changedKeys.size > 0);
 	isValid = $derived(Object.keys(this.errors).length === 0);
 	errorCount = $derived(Object.keys(this.errors).length);
 
@@ -38,7 +41,7 @@ export class FormStore {
 
 		// Construir estado inicial: defaults del schema + datos existentes
 		this.data = this._buildInitialState(schema, initialData);
-		this._initialSnapshot = JSON.stringify(this.data);
+		this._initialSnapshot = JSON.stringify(this.data); this._changedKeys = new Set();
 	}
 
 	// ─── Acceso a valores ────────────────────────────────────
@@ -50,6 +53,7 @@ export class FormStore {
 	setValue(path: string, value: unknown, fieldSchema?: FormFieldSchema): void {
 		this.data = setNestedValue(this.data, path, value);
 		this.touched[path] = true;
+		this._changedKeys = new Set([...this._changedKeys, path]);
 
 		// Validar campo si tenemos el schema
 		if (fieldSchema) {
@@ -70,7 +74,27 @@ export class FormStore {
 
 	validateAll(): boolean {
 		this.errors = validateAllFields(this._schema.sections, this.data);
+		// Marcar todos los campos con error como touched para que se muestren visualmente
+		for (const path of Object.keys(this.errors)) {
+			this.touched[path] = true;
+		}
+		this.touched = { ...this.touched }; // Trigger reactivity
 		return Object.keys(this.errors).length === 0;
+	}
+
+	/** Retorna los nombres legibles de los campos con error */
+	getErrorFieldNames(): string[] {
+		const names: string[] = [];
+		for (const section of this._schema.sections) {
+			for (const group of section.groups) {
+				for (const field of group.fields) {
+					if (this.errors[field.key]) {
+						names.push(field.label);
+					}
+				}
+			}
+		}
+		return names;
 	}
 
 	getFieldError(path: string): string | undefined {
@@ -80,7 +104,14 @@ export class FormStore {
 	// ─── Guardado ────────────────────────────────────────────
 
 	getSubmitData(): Record<string, unknown> {
-		return structuredClone(this.data);
+		return $state.snapshot(this.data) as Record<string, unknown>;
+	}
+
+	/** Marca el formulario como limpio (sin cambios pendientes) */
+	markClean(): void {
+		this._initialSnapshot = JSON.stringify(this.data);
+		this._changedKeys = new Set();
+		this.lastSavedAt = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
 	}
 
 	async save(callback: (data: Record<string, unknown>) => Promise<void>): Promise<boolean> {
@@ -89,7 +120,7 @@ export class FormStore {
 		this.isSaving = true;
 		try {
 			await callback(this.getSubmitData());
-			this._initialSnapshot = JSON.stringify(this.data);
+			this._initialSnapshot = JSON.stringify(this.data); this._changedKeys = new Set();
 			this.lastSavedAt = new Date().toLocaleTimeString('es-VE', {
 				hour: '2-digit',
 				minute: '2-digit'
@@ -110,12 +141,12 @@ export class FormStore {
 	}
 
 	private async _performAutosave(): Promise<void> {
-		if (!this._autosaveCallback || !this._computeIsDirty()) return;
+		if (!this._autosaveCallback || this._changedKeys.size === 0) return;
 
 		this.isSaving = true;
 		try {
 			await this._autosaveCallback(this.getSubmitData());
-			this._initialSnapshot = JSON.stringify(this.data);
+			this._initialSnapshot = JSON.stringify(this.data); this._changedKeys = new Set();
 			this.lastSavedAt = new Date().toLocaleTimeString('es-VE', {
 				hour: '2-digit',
 				minute: '2-digit'
@@ -139,7 +170,7 @@ export class FormStore {
 	// ─── Helpers internos ────────────────────────────────────
 
 	private _computeIsDirty(): boolean {
-		return JSON.stringify(this.data) !== this._initialSnapshot;
+		return this._changedKeys.size > 0;
 	}
 
 	private _buildInitialState(

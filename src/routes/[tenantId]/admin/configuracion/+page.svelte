@@ -121,10 +121,10 @@
 				<table class="w-full">
 					<thead class="bg-canvas-subtle border-b border-border">
 						<tr>
-							<th class="px-5 py-3 text-left text-[11px] font-medium text-ink-muted uppercase tracking-wider">Nombre</th>
-							<th class="px-5 py-3 text-center text-[11px] font-medium text-ink-muted uppercase tracking-wider w-32">Estado</th>
-							<th class="px-5 py-3 text-center text-[11px] font-medium text-ink-muted uppercase tracking-wider w-32">Formulario</th>
-							<th class="px-5 py-3 text-right text-[11px] font-medium text-ink-muted uppercase tracking-wider w-40">Acciones</th>
+							<th class="px-5 py-3 text-left text-xs font-medium text-ink-muted uppercase tracking-wider">Nombre</th>
+							<th class="px-5 py-3 text-center text-xs font-medium text-ink-muted uppercase tracking-wider w-32">Estado</th>
+							<th class="px-5 py-3 text-center text-xs font-medium text-ink-muted uppercase tracking-wider w-32">Formulario</th>
+							<th class="px-5 py-3 text-right text-xs font-medium text-ink-muted uppercase tracking-wider w-40">Acciones</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-border-subtle">

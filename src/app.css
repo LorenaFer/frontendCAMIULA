@@ -1,8 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SELF-HOSTED FONTS — Eliminates render-blocking Google Fonts import.
+   ~170KB total WOFF2 served locally, no external HTTP requests.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@font-face { font-family: 'Geist'; font-weight: 400; font-style: normal; font-display: swap; src: url('/fonts/geist-400.woff2') format('woff2'); }
+@font-face { font-family: 'Geist'; font-weight: 500; font-style: normal; font-display: swap; src: url('/fonts/geist-500.woff2') format('woff2'); }
+@font-face { font-family: 'Geist'; font-weight: 600; font-style: normal; font-display: swap; src: url('/fonts/geist-600.woff2') format('woff2'); }
+@font-face { font-family: 'Geist'; font-weight: 700; font-style: normal; font-display: swap; src: url('/fonts/geist-700.woff2') format('woff2'); }
+@font-face { font-family: 'Geist Mono'; font-weight: 400; font-style: normal; font-display: swap; src: url('/fonts/geist-mono-400.woff2') format('woff2'); }
+@font-face { font-family: 'Geist Mono'; font-weight: 500; font-style: normal; font-display: swap; src: url('/fonts/geist-mono-500.woff2') format('woff2'); }
 
 /* Class-based dark mode for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Native <dialog> scroll lock — browser handles everything */
+html:has(dialog[open]:modal) {
+  overflow: hidden;
+}
 
 @theme {
   /* ═══════════════════════════════════════════════════════════════════════════
@@ -700,4 +715,19 @@ html.transitioning * {
 
 .dark .custom-scrollbar-subtle::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REDUCED MOTION — Disables animations on low-end devices and for
+   users who prefer reduced motion (accessibility + performance)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

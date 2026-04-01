@@ -54,6 +54,25 @@ export async function createPurchaseOrder(
 	});
 }
 
+export async function sendPurchaseOrder(orderId: string): Promise<PurchaseOrder> {
+	if (mockFlags.inventoryPurchaseOrders) {
+		const order = mockPurchaseOrders.find((o) => o.id === orderId);
+		if (!order) {
+			throw Object.assign(new Error('Orden de compra no encontrada'), { status: 404 });
+		}
+		if (order.order_status !== 'draft') {
+			throw Object.assign(new Error('Solo se pueden enviar órdenes en borrador'), { status: 400 });
+		}
+		order.order_status = 'sent';
+		return order;
+	}
+
+	return apiFetch<PurchaseOrder>(
+		`/inventory/purchase-orders/${orderId}/send`,
+		{ method: 'POST' }
+	);
+}
+
 export async function receivePurchaseOrder(
 	input: ReceivePurchaseOrderInput
 ): Promise<PurchaseOrder> {

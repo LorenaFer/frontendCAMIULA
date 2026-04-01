@@ -42,6 +42,23 @@ export const actions: Actions = {
 		}
 	},
 
+	desactivarProveedor: async ({ request, locals }) => {
+		assertActionPermission(locals.user, 'editarProveedor');
+
+		const fd = await request.formData();
+		const id = String(fd.get('id') ?? '');
+		if (!id) return fail(400, { error: 'ID requerido' });
+
+		try {
+			await suppliersService.updateSupplier(id, { supplier_status: 'inactive' } as unknown as Partial<CreateSupplierInput>);
+			return { success: true };
+		} catch (e: unknown) {
+			const status = (e as { status?: number }).status;
+			if (status === 404) return fail(404, { error: 'Proveedor no encontrado' });
+			return fail(500, { error: 'Error al desactivar proveedor' });
+		}
+	},
+
 	editarProveedor: async ({ request, locals }) => {
 		assertActionPermission(locals.user, 'editarProveedor');
 

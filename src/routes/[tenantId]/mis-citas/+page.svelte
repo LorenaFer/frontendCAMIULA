@@ -1,13 +1,21 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { PageData, ActionData } from './$types';
 	import type { CitaConPaciente } from '$shared/types/appointments.js';
 	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
 	import Button from '$shared/components/button/Button.svelte';
+	import Dialog from '$shared/components/dialog/Dialog.svelte';
+	import DialogHeader from '$shared/components/dialog/DialogHeader.svelte';
+	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
+	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import EmptyState from '$shared/components/empty-state/EmptyState.svelte';
 	import { page } from '$app/stores';
+	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import { toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const tenantId = $derived($page.params.tenantId);
+	let cancellingCita = $state<CitaConPaciente | null>(null);
 
 	// Agrupar citas por estado
 	const proximas = $derived(
@@ -67,24 +75,42 @@
 										<p class="text-sm font-semibold text-ink">
 											{cita.fecha === hoy ? 'Hoy' : formatFecha(cita.fecha)}
 										</p>
-										<span class="text-[11px] sm:text-xs text-ink-muted font-mono">{cita.hora_inicio}–{cita.hora_fin}</span>
+										<span class="text-xs text-ink-muted font-mono">{cita.hora_inicio}–{cita.hora_fin}</span>
 										<AppointmentStatusBadge status={cita.estado} />
 									</div>
-									<p class="text-[11px] sm:text-xs text-ink-muted truncate">
+									<p class="text-xs text-ink-muted truncate">
 										{cita.doctor.especialidad.nombre} — Dr. {cita.doctor.nombre} {cita.doctor.apellido}
 									</p>
 									{#if cita.motivo_consulta}
-										<p class="text-[11px] text-ink-subtle mt-1 truncate">{cita.motivo_consulta}</p>
+										<p class="text-xs text-ink-subtle mt-1 truncate">{cita.motivo_consulta}</p>
 									{/if}
 								</div>
 								<div class="hidden sm:block text-right shrink-0">
 									<p class="text-lg font-mono font-bold text-viking-600">{cita.hora_inicio}</p>
-									<p class="text-[10px] text-ink-muted">{cita.duracion_min} min</p>
+									<p class="text-xs text-ink-muted">{cita.duracion_min} min</p>
 								</div>
 							</div>
+							<!-- Acciones del paciente -->
+							<div class="mt-3 flex gap-2 pt-2 border-t border-border/40">
+								<Button
+									type="button"
+									variant="ghost"
+									size="md"
+									onclick={() => { cancellingCita = cita; }}
+								>
+									Cancelar cita
+								</Button>
+								<a
+									href="/{tenantId}/agendar"
+									class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-viking-600 hover:bg-viking-50 dark:hover:bg-viking-900/20 transition-colors"
+								>
+									Reagendar
+								</a>
+							</div>
+
 							{#if cita.observaciones}
 								<div class="mt-2 px-2.5 py-1.5 bg-canvas-subtle rounded-lg">
-									<p class="text-[10px] text-ink-muted uppercase tracking-wider mb-0.5">Observaciones</p>
+									<p class="text-xs text-ink-muted uppercase tracking-wider mb-0.5">Observaciones</p>
 									<p class="text-xs text-ink">{cita.observaciones}</p>
 								</div>
 							{/if}
@@ -102,14 +128,14 @@
 					{#each pasadas as cita (cita.id)}
 						<div class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 bg-surface-elevated border border-border/40 rounded-lg {cita.estado === 'cancelada' || cita.estado === 'no_asistio' ? 'opacity-60' : ''}">
 							<div class="w-10 sm:w-12 text-center shrink-0">
-								<p class="text-[11px] sm:text-xs font-mono font-medium text-ink">{cita.hora_inicio}</p>
+								<p class="text-xs font-mono font-medium text-ink">{cita.hora_inicio}</p>
 							</div>
 							<div class="flex-1 min-w-0">
-								<p class="text-[11px] sm:text-xs text-ink truncate">
+								<p class="text-xs text-ink truncate">
 									<span class="font-medium">{formatFecha(cita.fecha)}</span>
 									<span class="hidden sm:inline"> — {cita.doctor.especialidad.nombre}, Dr. {cita.doctor.nombre} {cita.doctor.apellido}</span>
 								</p>
-								<p class="sm:hidden text-[10px] text-ink-muted truncate">{cita.doctor.especialidad.nombre}</p>
+								<p class="sm:hidden text-xs text-ink-muted truncate">{cita.doctor.especialidad.nombre}</p>
 							</div>
 							<AppointmentStatusBadge status={cita.estado} />
 						</div>
@@ -119,3 +145,47 @@
 		{/if}
 	{/if}
 </div>
+
+<!-- Dialog de confirmación de cancelación -->
+{#if cancellingCita}
+	{@const cita = cancellingCita}
+	<Dialog open={true} onClose={() => { cancellingCita = null; }} size="sm">
+		<DialogHeader>
+			<h2 class="text-base font-semibold text-ink">Cancelar cita</h2>
+		</DialogHeader>
+		<form
+			method="POST"
+			action="?/cancelarCita"
+			use:enhance={() => {
+				return async ({ result, update }) => {
+					await update();
+					if (result.type === 'success') {
+						cancellingCita = null;
+						await invalidateAll();
+						toastWarning('Cita cancelada', 'Su cita fue cancelada correctamente. Puede agendar una nueva cuando lo desee.');
+					} else {
+						toastError('Error', 'No se pudo cancelar la cita. Intente nuevamente.');
+					}
+				};
+			}}
+		>
+			<input type="hidden" name="citaId" value={cita.id} />
+			<DialogBody>
+				<p class="text-sm text-ink mb-3">
+					¿Está seguro de que desea cancelar esta cita?
+				</p>
+				<div class="bg-canvas-subtle rounded-lg border border-border/60 p-3 space-y-1 text-sm">
+					<p class="font-medium text-ink">{cita.fecha === hoy ? 'Hoy' : formatFecha(cita.fecha)} · {cita.hora_inicio}–{cita.hora_fin}</p>
+					<p class="text-ink-muted">{cita.doctor.especialidad.nombre} — Dr. {cita.doctor.nombre} {cita.doctor.apellido}</p>
+				</div>
+				<p class="text-sm text-honey-700 dark:text-honey-400 mt-3">
+					Deberá agendar una nueva cita si desea ser atendido.
+				</p>
+			</DialogBody>
+			<DialogFooter>
+				<Button type="button" variant="ghost" size="md" onclick={() => { cancellingCita = null; }}>No cancelar</Button>
+				<Button type="submit" variant="danger" size="md">Sí, cancelar cita</Button>
+			</DialogFooter>
+		</form>
+	</Dialog>
+{/if}

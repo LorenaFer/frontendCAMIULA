@@ -315,9 +315,102 @@ export const mockHistorias: HistoriaMedica[] = [
 			indicaciones: 'Cepillado 3 veces al día, hilo dental'
 		},
 		preparado: true,
-		preparado_at: new Date().toISOString(),
-		created_at: new Date().toISOString(),
-		updated_at: new Date().toISOString()
+		preparado_at: '2026-03-15T10:00:00Z',
+		created_at: '2026-03-15T10:00:00Z',
+		updated_at: '2026-03-15T10:00:00Z'
+	},
+	// Pedro González — consulta previa de medicina general
+	{
+		id: 'hist-002',
+		cita_id: 'cit-prev-001',
+		paciente_id: PAC_IDS[0],
+		doctor_id: DOC_IDS[0],
+		evaluacion: {
+			motivo_consulta: 'Dolor lumbar crónico',
+			anamnesis: 'Paciente refiere dolor lumbar de 3 meses. Sin irradiación. Mejora con reposo.',
+			examen_fisico: { ta: '130/85', fc: '78', fr: '18', temp: '36.7', peso: '82', talla: '1.72' },
+			diagnostico: { cie10: 'M54.5', descripcion: 'Lumbago no especificado' },
+			tratamiento: 'Ibuprofeno 400mg c/8h por 5 días + relajante muscular',
+			indicaciones: 'Evitar cargar peso. Aplicar calor local. Control en 2 semanas.'
+		},
+		preparado: true,
+		preparado_at: '2026-02-10T09:30:00Z',
+		created_at: '2026-02-10T09:30:00Z',
+		updated_at: '2026-02-10T09:30:00Z'
+	},
+	// Laura Martínez — historial de consultas
+	{
+		id: 'hist-003',
+		cita_id: 'cit-prev-002',
+		paciente_id: PAC_IDS[1],
+		doctor_id: DOC_IDS[0],
+		evaluacion: {
+			motivo_consulta: 'Control de hipertensión',
+			anamnesis: 'Paciente hipertensa en tratamiento. T.A. controlada con Losartán 50mg.',
+			examen_fisico: { ta: '140/90', fc: '76', fr: '16', temp: '36.4', peso: '68', talla: '1.60' },
+			diagnostico: { cie10: 'I10', descripcion: 'Hipertensión esencial (primaria)' },
+			tratamiento: 'Continuar Losartán 50mg/día',
+			indicaciones: 'Dieta baja en sodio. Ejercicio aeróbico 30 min/día. Control mensual.'
+		},
+		preparado: true,
+		preparado_at: '2026-03-01T11:00:00Z',
+		created_at: '2026-03-01T11:00:00Z',
+		updated_at: '2026-03-01T11:00:00Z'
+	},
+	{
+		id: 'hist-004',
+		cita_id: 'cit-prev-003',
+		paciente_id: PAC_IDS[1],
+		doctor_id: DOC_IDS[1],
+		evaluacion: {
+			motivo_consulta: 'Cefalea recurrente',
+			anamnesis: 'Cefalea frontal pulsátil, 2-3 veces por semana. Empeora con estrés.',
+			examen_fisico: { ta: '135/88', fc: '80', fr: '17', temp: '36.5', peso: '68', talla: '1.60' },
+			diagnostico: { cie10: 'G43.9', descripcion: 'Migraña sin especificar' },
+			tratamiento: 'Paracetamol 500mg PRN + Amitriptilina 10mg/noche',
+			indicaciones: 'Llevar diario de cefaleas. Evitar factores desencadenantes.'
+		},
+		preparado: true,
+		preparado_at: '2026-01-15T14:00:00Z',
+		created_at: '2026-01-15T14:00:00Z',
+		updated_at: '2026-01-15T14:00:00Z'
+	},
+	// Roberto Jiménez — historial (primera vez actual, pero tiene consultas en otro servicio)
+	{
+		id: 'hist-005',
+		cita_id: 'cit-prev-004',
+		paciente_id: PAC_IDS[2],
+		doctor_id: DOC_IDS[1],
+		evaluacion: {
+			motivo_consulta: 'Dolor de espalda irradiado a miembros inferiores',
+			anamnesis: 'Dolor lumbar de 6 meses con irradiación a pierna derecha. Parestesias en pie.',
+			examen_fisico: { ta: '125/80', fc: '70', fr: '16', temp: '36.6', peso: '90', talla: '1.78' },
+			diagnostico: { cie10: 'M51.1', descripcion: 'Trastorno de disco lumbar con radiculopatía' },
+			tratamiento: 'Pregabalina 75mg c/12h + fisioterapia',
+			indicaciones: 'Reposo relativo. Fisioterapia 3 veces/semana. RMN lumbar. Control en 1 mes.'
+		},
+		preparado: true,
+		preparado_at: '2026-02-20T10:00:00Z',
+		created_at: '2026-02-20T10:00:00Z',
+		updated_at: '2026-02-20T10:00:00Z'
+	},
+	{
+		id: 'hist-006',
+		cita_id: 'cit-prev-005',
+		paciente_id: PAC_IDS[2],
+		doctor_id: DOC_IDS[2],
+		evaluacion: {
+			motivo_consulta: 'Evaluación odontológica',
+			anamnesis: 'Dolor molar inferior derecho. Caries visible en pieza 46.',
+			examen_fisico: { ta: '120/80', fc: '68', fr: '15', temp: '36.5', peso: '90', talla: '1.78' },
+			diagnostico: { cie10: 'K02.1', descripcion: 'Caries de la dentina' },
+			tratamiento: 'Obturación pieza 46',
+			indicaciones: 'Higiene oral reforzada. Control en 6 meses.'
+		},
+		preparado: true,
+		preparado_at: '2025-12-05T09:00:00Z',
+		created_at: '2025-12-05T09:00:00Z',
+		updated_at: '2025-12-05T09:00:00Z'
 	}
 ];
 
@@ -508,9 +601,52 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
 		expected_date: '2026-03-15',
 		notes: 'Pedido urgente de antibióticos',
 		order_status: 'received',
-		items: [],
-		total_amount: 850.0,
-		created_at: '2026-03-01T09:00:00Z'
+		items: [
+			{ id: 'poi-1', medication_id: 'med-1', medication: { id: 'med-1', code: 'MED-001', generic_name: 'Amoxicilina', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 350 }, quantity_ordered: 500, quantity_received: 500, unit_cost: 0.85 },
+			{ id: 'poi-2', medication_id: 'med-2', medication: { id: 'med-2', code: 'MED-002', generic_name: 'Ibuprofeno', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 200 }, quantity_ordered: 1000, quantity_received: 1000, unit_cost: 0.35 }
+		],
+		total_amount: 775.0,
+		created_at: '2026-03-01T09:00:00Z',
+		created_by: 'Admin Principal',
+		sent_at: '2026-03-02T10:30:00Z',
+		sent_by: 'Admin Principal',
+		received_at: '2026-03-14T14:20:00Z',
+		received_by: 'Farm. María López'
+	},
+	{
+		id: 'po-2',
+		order_number: 'OC-2026-002',
+		fk_supplier_id: 'sup-2',
+		supplier: { id: 'sup-2', name: 'Laboratorios Roche Venezuela', rif: 'J-98765432-1' },
+		order_date: '2026-03-20',
+		expected_date: '2026-04-05',
+		notes: '',
+		order_status: 'sent',
+		items: [
+			{ id: 'poi-3', medication_id: 'med-3', medication: { id: 'med-3', code: 'MED-003', generic_name: 'Losartán', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 80 }, quantity_ordered: 300, quantity_received: 0, unit_cost: 1.20 },
+			{ id: 'poi-4', medication_id: 'med-4', medication: { id: 'med-4', code: 'MED-004', generic_name: 'Metformina', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 45 }, quantity_ordered: 500, quantity_received: 0, unit_cost: 0.60 },
+			{ id: 'poi-5', medication_id: 'med-1', medication: { id: 'med-1', code: 'MED-001', generic_name: 'Amoxicilina', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 350 }, quantity_ordered: 200, quantity_received: 0, unit_cost: 0.90 }
+		],
+		total_amount: 840.0,
+		created_at: '2026-03-20T11:00:00Z',
+		created_by: 'Admin Principal',
+		sent_at: '2026-03-21T08:15:00Z',
+		sent_by: 'Admin Principal'
+	},
+	{
+		id: 'po-3',
+		order_number: 'OC-2026-003',
+		fk_supplier_id: 'sup-1',
+		supplier: { id: 'sup-1', name: 'Distribuidora Médica Caracas C.A.', rif: 'J-12345678-9' },
+		order_date: '2026-03-28',
+		expected_date: '2026-04-10',
+		order_status: 'draft',
+		items: [
+			{ id: 'poi-6', medication_id: 'med-5', medication: { id: 'med-5', code: 'MED-005', generic_name: 'Omeprazol', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 120 }, quantity_ordered: 400, quantity_received: 0, unit_cost: 0.45 }
+		],
+		total_amount: 180.0,
+		created_at: '2026-03-28T16:00:00Z',
+		created_by: 'Admin Principal'
 	}
 ];
 
@@ -550,7 +686,55 @@ export const mockPrescriptions: Prescription[] = [
 
 // ─── Despachos ────────────────────────────────────────────────
 
-export const mockDispatches: Dispatch[] = [];
+export const mockDispatches: Dispatch[] = [
+	{
+		id: 'disp-1',
+		fk_prescription_id: 'presc-1',
+		prescription_number: 'RX-2026-001',
+		fk_patient_id: '1',
+		patient_name: 'Pedro González',
+		fk_pharmacist_id: 'pharm-1',
+		pharmacist_name: 'Farm. María López',
+		dispatch_date: '2026-03-20',
+		dispatch_status: 'completed',
+		items: [
+			{ id: 'di-1', fk_batch_id: 'batch-1', lot_number: 'L2026-A001', expiration_date: '2027-06-15', fk_medication_id: 'med-1', medication: { id: 'med-1', code: 'MED-001', generic_name: 'Amoxicilina', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 350 }, quantity_dispatched: 21 }
+		],
+		created_at: '2026-03-20T10:30:00Z'
+	},
+	{
+		id: 'disp-2',
+		fk_prescription_id: 'presc-2',
+		prescription_number: 'RX-2026-002',
+		fk_patient_id: '2',
+		patient_name: 'Ana Martínez',
+		fk_pharmacist_id: 'pharm-1',
+		pharmacist_name: 'Farm. María López',
+		dispatch_date: '2026-03-22',
+		dispatch_status: 'completed',
+		items: [
+			{ id: 'di-2', fk_batch_id: 'batch-2', lot_number: 'L2026-B003', expiration_date: '2027-03-01', fk_medication_id: 'med-2', medication: { id: 'med-2', code: 'MED-002', generic_name: 'Ibuprofeno', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 200 }, quantity_dispatched: 30 },
+			{ id: 'di-3', fk_batch_id: 'batch-3', lot_number: 'L2026-C001', expiration_date: '2027-09-20', fk_medication_id: 'med-5', medication: { id: 'med-5', code: 'MED-005', generic_name: 'Omeprazol', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 120 }, quantity_dispatched: 14 }
+		],
+		created_at: '2026-03-22T09:15:00Z'
+	},
+	{
+		id: 'disp-3',
+		fk_prescription_id: 'presc-3',
+		prescription_number: 'RX-2026-003',
+		fk_patient_id: '3',
+		patient_name: 'Carlos Rodríguez',
+		fk_pharmacist_id: 'pharm-1',
+		pharmacist_name: 'Farm. María López',
+		dispatch_date: '2026-03-25',
+		notes: 'Paciente alérgico a penicilina — verificado',
+		dispatch_status: 'cancelled',
+		items: [
+			{ id: 'di-4', fk_batch_id: 'batch-1', lot_number: 'L2026-A001', expiration_date: '2027-06-15', fk_medication_id: 'med-1', medication: { id: 'med-1', code: 'MED-001', generic_name: 'Amoxicilina', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 350 }, quantity_dispatched: 21 }
+		],
+		created_at: '2026-03-25T14:00:00Z'
+	}
+];
 
 // ─── Límites de Despacho ──────────────────────────────────────
 

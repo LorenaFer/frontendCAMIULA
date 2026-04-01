@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { setContext } from 'svelte';
-	import Portal from '$shared/components/util/Portal.svelte';
 
 	type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
@@ -29,7 +28,7 @@
 		class?: string;
 	} = $props();
 
-	let dialogEl: HTMLDivElement;
+	let dialogEl: HTMLDialogElement | undefined;
 
 	setContext('dialog', {
 		get onClose() {
@@ -37,107 +36,59 @@
 		}
 	});
 
-	// Handle escape key
+	// Sync native <dialog> open state with the `open` prop
 	$effect(() => {
-		if (!open) return;
-
-		function handleKeyDown(e: KeyboardEvent) {
-			if (e.key === 'Escape' && !persistent) {
-				onClose();
-			}
+		if (!dialogEl) return;
+		if (open && !dialogEl.open) {
+			dialogEl.showModal();
+		} else if (!open && dialogEl.open) {
+			dialogEl.close();
 		}
-
-		document.addEventListener('keydown', handleKeyDown);
-		return () => document.removeEventListener('keydown', handleKeyDown);
 	});
 
-	// Lock body scroll when open
-	$effect(() => {
-		if (open) {
-			document.body.style.overflow = 'hidden';
+	// Handle native close event (Escape key, etc.)
+	function handleCancel(e: Event) {
+		if (persistent) {
+			e.preventDefault();
 		} else {
-			document.body.style.overflow = '';
+			e.preventDefault();
+			onClose();
 		}
-		return () => {
-			document.body.style.overflow = '';
-		};
-	});
+	}
 
-	// Focus trap
-	$effect(() => {
-		if (!open || !dialogEl) return;
-
-		const focusableElements = dialogEl.querySelectorAll<HTMLElement>(
-			'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-		);
-		const firstElement = focusableElements[0];
-		const lastElement = focusableElements[focusableElements.length - 1];
-
-		firstElement?.focus();
-
-		function handleTabKey(e: KeyboardEvent) {
-			if (e.key !== 'Tab') return;
-
-			if (e.shiftKey) {
-				if (document.activeElement === firstElement) {
-					e.preventDefault();
-					lastElement?.focus();
-				}
-			} else {
-				if (document.activeElement === lastElement) {
-					e.preventDefault();
-					firstElement?.focus();
-				}
-			}
-		}
-
-		dialogEl.addEventListener('keydown', handleTabKey);
-		return () => dialogEl.removeEventListener('keydown', handleTabKey);
-	});
-
-	function handleBackdropClick() {
-		if (!persistent) {
+	// Handle backdrop click: <dialog> fires click on itself when backdrop is clicked
+	function handleClick(e: MouseEvent) {
+		if (persistent) return;
+		if (e.target === dialogEl) {
 			onClose();
 		}
 	}
 </script>
 
-{#if open}
-	<Portal>
-		<div
-			class="flex items-end sm:items-center justify-center sm:p-4"
-			role="dialog"
-			aria-modal="true"
-			style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; isolation: isolate;"
-		>
-			<!-- Backdrop -->
-			<div
-				class="bg-gray-900/50 animate-in fade-in duration-200"
-				style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; -webkit-backdrop-filter: blur(12px) saturate(180%); backdrop-filter: blur(12px) saturate(180%);"
-				onclick={handleBackdropClick}
-				aria-hidden="true"
-				role="presentation"
-			></div>
-
-			<!-- Dialog panel - drawer on mobile, modal on sm+ -->
-			<div
-				bind:this={dialogEl}
-				class="
-					w-full bg-surface-elevated shadow-[var(--shadow-4)] flex flex-col
-					max-h-[85vh] sm:max-h-[90vh]
-					rounded-t-2xl sm:rounded-xl
-					animate-in fade-in dialog-panel duration-200
-					{sizeClasses[size]}
-					{className}
-				"
-				style="position: relative; z-index: 1;"
-			>
-				<!-- Drag handle - visible only on mobile -->
-				<div class="flex justify-center pt-3 pb-1 sm:hidden">
-					<div class="w-10 h-1 bg-border-strong rounded-full"></div>
-				</div>
-				{@render children()}
-			</div>
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<dialog
+	bind:this={dialogEl}
+	oncancel={handleCancel}
+	onclick={handleClick}
+	class="
+		backdrop:bg-gray-900/50 backdrop:[-webkit-backdrop-filter:blur(12px)_saturate(180%)] backdrop:[backdrop-filter:blur(12px)_saturate(180%)]
+		bg-transparent p-0 max-w-none max-h-none w-screen h-screen
+		open:flex items-end sm:items-center justify-center sm:p-4
+		{className}
+	"
+>
+	<div
+		class="
+			w-full bg-surface-elevated shadow-[var(--shadow-4)] flex flex-col
+			max-h-[85vh] sm:max-h-[90vh]
+			rounded-t-2xl sm:rounded-xl
+			{sizeClasses[size]}
+		"
+	>
+		<!-- Drag handle - visible only on mobile -->
+		<div class="flex justify-center pt-3 pb-1 sm:hidden">
+			<div class="w-10 h-1 bg-border-strong rounded-full"></div>
 		</div>
-	</Portal>
-{/if}
+		{@render children()}
+	</div>
+</dialog>

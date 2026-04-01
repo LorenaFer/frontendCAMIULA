@@ -296,7 +296,7 @@
 							<CategoryTag color={activity.color}>&bull;</CategoryTag>
 							<div class="flex-1 min-w-0">
 								<p class="text-xs text-ink leading-relaxed">{activity.text}</p>
-								<p class="text-[11px] text-ink-subtle mt-0.5">{activity.time}</p>
+								<p class="text-xs text-ink-subtle mt-0.5">{activity.time}</p>
 							</div>
 						</div>
 					{/each}

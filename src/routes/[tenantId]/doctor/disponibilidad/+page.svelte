@@ -3,6 +3,8 @@
 	import type { DisponibilidadDoctor } from '$shared/types/appointments.js';
 	import Button from '$shared/components/button/Button.svelte';
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -42,7 +44,9 @@
 
 	// ─── Hidden forms ────────────────────────────────────────
 	let createFormEl: HTMLFormElement | undefined = $state();
-	let createDia = $state(''), createInicio = $state(''), createFin = $state(''), createSlot = $state('30');
+	let createDia = $state(''), createInicio = $state(''), createFin = $state('');
+	let selectedSlotDuration = $state('30');
+	const createSlot = $derived(selectedSlotDuration);
 	let updateFormEl: HTMLFormElement | undefined = $state();
 	let updateId = $state(''), updateInicio = $state(''), updateFin = $state('');
 
@@ -74,10 +78,15 @@
 		attachDragListeners();
 	}
 
+	function getClientY(e: MouseEvent | TouchEvent): number {
+		return 'touches' in e ? e.touches[0]?.clientY ?? e.changedTouches[0]?.clientY ?? 0 : e.clientY;
+	}
+
 	function attachDragListeners() {
-		const onMove = (e: MouseEvent) => {
+		const onMove = (e: MouseEvent | TouchEvent) => {
 			if (!drag) return;
-			const mins = yToMins(drag.colEl, e.clientY);
+			if ('touches' in e) e.preventDefault(); // prevent scroll while dragging
+			const mins = yToMins(drag.colEl, getClientY(e));
 			const clamped = Math.max(HORA_MIN * 60, Math.min(HORA_MAX * 60, mins));
 			if (drag.mode === 'create') drag = { ...drag, endMins: clamped };
 			else if (drag.mode === 'resize-top') { if (clamped < drag.endMins) drag = { ...drag, startMins: clamped }; }
@@ -85,11 +94,12 @@
 		};
 		const onUp = () => {
 			window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp);
+			window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onUp);
 			if (!drag) return;
 			const lo = Math.min(drag.startMins, drag.endMins), hi = Math.max(drag.startMins, drag.endMins);
 			if (hi - lo < SNAP) { drag = null; return; }
 			if (drag.mode === 'create') {
-				createDia = String(drag.dia); createInicio = m2t(lo); createFin = m2t(hi); createSlot = '30';
+				createDia = String(drag.dia); createInicio = m2t(lo); createFin = m2t(hi);
 				drag = null; requestAnimationFrame(() => createFormEl?.requestSubmit());
 			} else {
 				const ns = m2t(lo), ne = m2t(hi);
@@ -100,6 +110,26 @@
 			}
 		};
 		window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+		window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onUp);
+	}
+
+	function onGridTouchStart(dia: number, e: TouchEvent) {
+		const colEl = e.currentTarget as HTMLElement;
+		const mins = yToMins(colEl, getClientY(e));
+		if (isInsideBlock(dia, mins)) return;
+		e.preventDefault();
+		drag = { mode: 'create', dia, colEl, startMins: mins, endMins: mins + SNAP };
+		attachDragListeners();
+	}
+
+	function onResizeTouchStart(e: TouchEvent, bloqueId: string, edge: 'top' | 'bottom', bloque: DisponibilidadDoctor) {
+		e.preventDefault(); e.stopPropagation();
+		const colEl = (e.target as HTMLElement).closest('[data-day-col]') as HTMLElement;
+		if (!colEl) return;
+		const [sh, sm] = bloque.hora_inicio.split(':').map(Number);
+		const [eh, em] = bloque.hora_fin.split(':').map(Number);
+		drag = { mode: edge === 'top' ? 'resize-top' : 'resize-bottom', dia: bloque.day_of_week, colEl, startMins: sh * 60 + sm, endMins: eh * 60 + em, bloqueId, originalStart: bloque.hora_inicio, originalEnd: bloque.hora_fin };
+		attachDragListeners();
 	}
 
 	function bTop(b: DisponibilidadDoctor) { return drag?.bloqueId === b.id ? t2p(m2t(Math.min(drag.startMins, drag.endMins))) : t2p(b.hora_inicio); }
@@ -110,13 +140,13 @@
 <svelte:head><title>Mi Disponibilidad — Doctor</title></svelte:head>
 
 <!-- Hidden forms -->
-<form bind:this={createFormEl} method="POST" action="?/agregar" use:enhance class="hidden">
+<form bind:this={createFormEl} method="POST" action="?/agregar" use:enhance={() => { return async ({ result, update }) => { await update(); if (result.type === 'success') { toastSuccess('Bloque creado', `Bloque de ${createInicio}–${createFin} agregado (${createSlot} min por cita).`); } else { toastError('Error', 'No se pudo crear el bloque.'); } }; }} class="hidden">
 	<input type="hidden" name="day_of_week" value={createDia} />
 	<input type="hidden" name="hora_inicio" value={createInicio} />
 	<input type="hidden" name="hora_fin" value={createFin} />
 	<input type="hidden" name="duracion_slot" value={createSlot} />
 </form>
-<form bind:this={updateFormEl} method="POST" action="?/actualizar" use:enhance class="hidden">
+<form bind:this={updateFormEl} method="POST" action="?/actualizar" use:enhance={() => { return async ({ result, update }) => { await update(); if (result.type === 'success') { toastSuccess('Bloque actualizado', 'El horario fue ajustado correctamente.'); } else { toastError('Error', 'No se pudo actualizar el bloque.'); } }; }} class="hidden">
 	<input type="hidden" name="bloqueId" value={updateId} />
 	<input type="hidden" name="hora_inicio" value={updateInicio} />
 	<input type="hidden" name="hora_fin" value={updateFin} />
@@ -127,34 +157,44 @@
 	<div class="flex items-start justify-between gap-3">
 		<div>
 			<h1 class="text-lg sm:text-xl font-bold text-ink">Mi Disponibilidad</h1>
-			<p class="text-[11px] sm:text-xs text-ink-muted mt-0.5">Dr. {data.doctorNombre}</p>
+			<p class="text-xs text-ink-muted mt-0.5">Dr. {data.doctorNombre}</p>
 		</div>
-		<div class="flex items-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-ink-muted">
+		<div class="flex items-center gap-2 sm:gap-4 text-xs text-ink-muted">
 			<span><b class="text-ink">{resumenSemanal.totalSlots}</b> slots</span>
 			<span class="hidden sm:inline"><b class="text-ink">{resumenSemanal.totalHoras}h{resumenSemanal.totalMin > 0 ? `${resumenSemanal.totalMin}m` : ''}</b></span>
 		</div>
 	</div>
 
-	<!-- Feedback -->
-	{#if form?.success}
-		<div class="px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs text-emerald-700 dark:text-emerald-300">{form.message}</div>
-	{/if}
-	{#if form?.error}
-		<div class="px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-700 dark:text-red-300">{form.error}</div>
-	{/if}
+	<!-- Selector de duración de slot para nuevos bloques -->
+	<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
+		<p class="text-sm text-ink-muted mb-2">Duración de cada cita:</p>
+		<div class="grid grid-cols-4 gap-2">
+			{#each ['15', '30', '45', '60'] as d}
+				<button
+					type="button"
+					class="py-2.5 text-sm font-medium rounded-lg transition-colors
+						{selectedSlotDuration === d ? 'bg-viking-600 text-white shadow-sm' : 'text-ink-muted hover:bg-canvas-subtle border border-border/60'}"
+					onclick={() => { selectedSlotDuration = d; }}
+				>{d} min</button>
+			{/each}
+		</div>
+	</div>
+
+	<!-- Feedback via Toast (eliminados alerts inline) -->
 
 	<!-- ═══ MOBILE: Single-day view (< sm) ═══ -->
 	<div class="sm:hidden">
-		<!-- Day tabs -->
-		<div class="flex border-b border-border/40 mb-3">
+		<!-- Day tabs — touch-friendly -->
+		<div class="flex gap-1 p-1 bg-canvas-subtle rounded-xl border border-border/40 mb-3">
 			{#each [1, 2, 3, 4, 5] as dia}
 				<button
 					onclick={() => mobileDay = dia}
-					class="flex-1 py-2 text-center text-xs font-medium transition-colors {mobileDay === dia ? 'text-viking-600 border-b-2 border-viking-600' : 'text-ink-muted'}"
+					class="flex-1 py-2.5 text-center text-sm font-medium rounded-lg transition-colors
+						{mobileDay === dia ? 'bg-surface-elevated text-viking-600 shadow-sm border border-border/60' : 'text-ink-muted'}"
 				>
 					{diasSemana[dia]}
 					{#if bloquesPorDia[dia].length > 0}
-						<span class="ml-0.5 text-[9px] opacity-60">·{bloquesPorDia[dia].length}</span>
+						<span class="text-xs opacity-60 block">{bloquesPorDia[dia].length}</span>
 					{/if}
 				</button>
 			{/each}
@@ -164,20 +204,20 @@
 		<div class="bg-surface-elevated border border-border/60 rounded-xl shadow-[var(--shadow-1)] overflow-hidden select-none">
 			<div class="px-3 py-2 border-b border-border/40 flex items-center justify-between">
 				<p class="text-sm font-semibold text-ink">{diasSemanaFull[mobileDay]}</p>
-				<p class="text-[10px] text-ink-muted">{bloquesPorDia[mobileDay].length} bloque{bloquesPorDia[mobileDay].length !== 1 ? 's' : ''}</p>
+				<p class="text-xs text-ink-muted">{bloquesPorDia[mobileDay].length} bloque{bloquesPorDia[mobileDay].length !== 1 ? 's' : ''}</p>
 			</div>
 
 			<div class="grid grid-cols-[2rem_1fr] relative h-[400px]">
 				<!-- Hour axis -->
 				<div class="relative border-r border-border/20">
 					{#each horasEje as hora}
-						<div class="absolute right-1 text-[8px] text-ink-subtle tabular-nums -translate-y-1/2" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%">{String(hora).padStart(2, '0')}</div>
+						<div class="absolute right-1 text-xs text-ink-subtle tabular-nums -translate-y-1/2" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%">{String(hora).padStart(2, '0')}</div>
 					{/each}
 				</div>
 
 				<!-- Day column -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div class="relative cursor-crosshair" data-day-col={mobileDay} onmousedown={(e) => onGridMouseDown(mobileDay, e)}>
+				<div class="relative cursor-crosshair" data-day-col={mobileDay} onmousedown={(e) => onGridMouseDown(mobileDay, e)} ontouchstart={(e) => onGridTouchStart(mobileDay, e)}>
 					{#each horasEje as hora}
 						<div class="absolute inset-x-0 border-t border-border/15" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%"></div>
 						<div class="absolute inset-x-0 border-t border-border/8 border-dashed" style="top: {((hora - HORA_MIN + 0.5) / (HORA_MAX - HORA_MIN)) * 100}%"></div>
@@ -192,16 +232,16 @@
 							onmousedown={(e) => e.stopPropagation()}
 						>
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<div class="absolute inset-x-0 top-0 h-3 cursor-n-resize z-10 hover:bg-viking-400/20 rounded-t" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'top', bloque)}></div>
+							<div class="absolute inset-x-0 top-0 h-3 cursor-n-resize z-10 hover:bg-viking-400/20 rounded-t" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'top', bloque)} ontouchstart={(e) => onResizeTouchStart(e, bloque.id, 'top', bloque)}></div>
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<div class="absolute inset-x-0 bottom-0 h-3 cursor-s-resize z-10 hover:bg-viking-400/20 rounded-b" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'bottom', bloque)}></div>
+							<div class="absolute inset-x-0 bottom-0 h-3 cursor-s-resize z-10 hover:bg-viking-400/20 rounded-b" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'bottom', bloque)} ontouchstart={(e) => onResizeTouchStart(e, bloque.id, 'bottom', bloque)}></div>
 
 							<div class="px-2 py-1.5 h-full flex items-center justify-between overflow-hidden pointer-events-none">
 								<div>
 									<p class="text-xs font-semibold text-viking-800 dark:text-viking-200">{lb.s}–{lb.e}</p>
-									<p class="text-[10px] text-viking-600 dark:text-viking-400">{lb.n} slots · {bloque.duracion_slot}min</p>
+									<p class="text-xs text-viking-600 dark:text-viking-400">{lb.n} slots · {bloque.duracion_slot}min</p>
 								</div>
-								<form method="POST" action="?/eliminar" use:enhance class="pointer-events-auto">
+								<form method="POST" action="?/eliminar" use:enhance={() => { return async ({ result, update }) => { await update(); if (result.type === 'success') { toastWarning('Bloque eliminado', 'El bloque de disponibilidad fue eliminado.'); } else { toastError('Error', 'No se pudo eliminar el bloque.'); } }; }} class="pointer-events-auto">
 									<input type="hidden" name="bloqueId" value={bloque.id} />
 									<button type="submit" class="p-1 rounded text-viking-400 hover:text-red-500 transition-colors" title="Eliminar">
 										<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
@@ -235,8 +275,8 @@
 				<div></div>
 				{#each [1, 2, 3, 4, 5] as dia}
 					<div class="py-2 text-center border-l border-border/20">
-						<p class="text-[10px] text-ink-muted uppercase">{diasSemana[dia]}</p>
-						<p class="text-[11px] font-semibold text-ink">{diasSemanaFull[dia]}</p>
+						<p class="text-xs text-ink-muted uppercase">{diasSemana[dia]}</p>
+						<p class="text-xs font-semibold text-ink">{diasSemanaFull[dia]}</p>
 					</div>
 				{/each}
 			</div>
@@ -245,13 +285,13 @@
 			<div class="grid grid-cols-[2.5rem_repeat(5,1fr)] h-[420px] lg:h-[520px]">
 				<div class="relative">
 					{#each horasEje as hora}
-						<div class="absolute right-1.5 text-[9px] text-ink-subtle tabular-nums -translate-y-1/2" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%">{String(hora).padStart(2, '0')}</div>
+						<div class="absolute right-1.5 text-xs text-ink-subtle tabular-nums -translate-y-1/2" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%">{String(hora).padStart(2, '0')}</div>
 					{/each}
 				</div>
 
 				{#each [1, 2, 3, 4, 5] as dia}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div class="relative border-l border-border/20 cursor-crosshair" data-day-col={dia} onmousedown={(e) => onGridMouseDown(dia, e)}>
+					<div class="relative border-l border-border/20 cursor-crosshair" data-day-col={dia} onmousedown={(e) => onGridMouseDown(dia, e)} ontouchstart={(e) => onGridTouchStart(dia, e)}>
 						{#each horasEje as hora}
 							<div class="absolute inset-x-0 border-t border-border/15" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%"></div>
 							<div class="absolute inset-x-0 border-t border-border/8 border-dashed" style="top: {((hora - HORA_MIN + 0.5) / (HORA_MAX - HORA_MIN)) * 100}%"></div>
@@ -266,16 +306,16 @@
 								onmousedown={(e) => e.stopPropagation()}
 							>
 								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<div class="absolute inset-x-0 top-0 h-2 cursor-n-resize z-10 hover:bg-viking-400/20 rounded-t" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'top', bloque)}></div>
+								<div class="absolute inset-x-0 top-0 h-2 cursor-n-resize z-10 hover:bg-viking-400/20 rounded-t" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'top', bloque)} ontouchstart={(e) => onResizeTouchStart(e, bloque.id, 'top', bloque)}></div>
 								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<div class="absolute inset-x-0 bottom-0 h-2 cursor-s-resize z-10 hover:bg-viking-400/20 rounded-b" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'bottom', bloque)}></div>
+								<div class="absolute inset-x-0 bottom-0 h-2 cursor-s-resize z-10 hover:bg-viking-400/20 rounded-b" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'bottom', bloque)} ontouchstart={(e) => onResizeTouchStart(e, bloque.id, 'bottom', bloque)}></div>
 
 								<div class="px-1.5 py-1 h-full flex flex-col justify-between overflow-hidden pointer-events-none">
 									<div>
-										<p class="text-[10px] font-semibold text-viking-800 dark:text-viking-200 leading-tight">{lb.s}–{lb.e}</p>
-										<p class="text-[9px] text-viking-600 dark:text-viking-400">{lb.n} slots · {bloque.duracion_slot}min</p>
+										<p class="text-xs font-semibold text-viking-800 dark:text-viking-200 leading-tight">{lb.s}–{lb.e}</p>
+										<p class="text-xs text-viking-600 dark:text-viking-400">{lb.n} slots · {bloque.duracion_slot}min</p>
 									</div>
-									<form method="POST" action="?/eliminar" use:enhance class="self-end pointer-events-auto">
+									<form method="POST" action="?/eliminar" use:enhance={() => { return async ({ result, update }) => { await update(); if (result.type === 'success') { toastWarning('Bloque eliminado', 'El bloque de disponibilidad fue eliminado.'); } else { toastError('Error', 'No se pudo eliminar el bloque.'); } }; }} class="self-end pointer-events-auto">
 										<input type="hidden" name="bloqueId" value={bloque.id} />
 										<button type="submit" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded text-viking-500 hover:text-red-500" title="Eliminar">
 											<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
@@ -287,13 +327,13 @@
 
 						{#if drag && drag.mode === 'create' && drag.dia === dia && previewHeight > 0}
 							<div class="absolute inset-x-0.5 rounded bg-viking-200/60 dark:bg-viking-700/40 border-2 border-dashed border-viking-400 z-20 pointer-events-none" style="top: {previewTop}%; height: {previewHeight}%;">
-								<div class="px-1.5 py-0.5"><p class="text-[10px] font-semibold text-viking-700 dark:text-viking-200">{previewLabel}</p></div>
+								<div class="px-1.5 py-0.5"><p class="text-xs font-semibold text-viking-700 dark:text-viking-200">{previewLabel}</p></div>
 							</div>
 						{/if}
 
 						{#if bloquesPorDia[dia].length === 0 && !(drag && drag.mode === 'create' && drag.dia === dia)}
 							<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-								<p class="text-[9px] text-ink-subtle">Arrastra</p>
+								<p class="text-xs text-ink-subtle">Arrastra</p>
 							</div>
 						{/if}
 					</div>
@@ -303,7 +343,7 @@
 	</div>
 
 	<!-- Legend -->
-	<div class="flex flex-wrap items-center gap-3 sm:gap-4 text-[9px] sm:text-[10px] text-ink-subtle px-1">
+	<div class="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-ink-subtle px-1">
 		<div class="flex items-center gap-1.5">
 			<span class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded bg-viking-100 dark:bg-viking-900/30 border border-viking-300/50"></span>
 			Disponible

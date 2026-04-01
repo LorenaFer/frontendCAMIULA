@@ -146,8 +146,11 @@
 							class="w-full text-left px-3 py-2 text-sm hover:bg-canvas-subtle transition-colors {idx === activeIndex ? 'bg-canvas-subtle' : ''}"
 						>
 							<span class="font-medium text-ink">{med.generic_name}</span>
+							{#if med.concentration}
+								<span class="text-xs text-viking-600 dark:text-viking-400 ml-1 font-medium">{med.concentration}</span>
+							{/if}
 							<span class="text-xs text-ink-muted ml-2">{med.code} · {med.pharmaceutical_form}</span>
-							<span class="text-xs text-ink-subtle ml-2">Stock: {med.current_stock} {med.unit_measure}</span>
+							<span class="text-xs text-ink-subtle ml-2">Stock: {med.current_stock}</span>
 						</button>
 					{/each}
 				{:else if search.trim().length > 0}
