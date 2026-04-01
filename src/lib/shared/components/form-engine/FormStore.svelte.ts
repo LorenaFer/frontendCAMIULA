@@ -12,8 +12,11 @@ export class FormStore {
 	isSaving = $state(false);
 	lastSavedAt = $state<string | null>(null);
 
+	// ─── Tracking de cambios (reemplaza JSON.stringify dirty-check) ──
+	private _changedKeys = $state(new Set<string>());
+
 	// ─── Derivados ───────────────────────────────────────────
-	isDirty = $derived(this._computeIsDirty());
+	isDirty = $derived(this._changedKeys.size > 0);
 	isValid = $derived(Object.keys(this.errors).length === 0);
 	errorCount = $derived(Object.keys(this.errors).length);
 
@@ -38,7 +41,7 @@ export class FormStore {
 
 		// Construir estado inicial: defaults del schema + datos existentes
 		this.data = this._buildInitialState(schema, initialData);
-		this._initialSnapshot = JSON.stringify(this.data);
+		this._initialSnapshot = JSON.stringify(this.data); this._changedKeys = new Set();
 	}
 
 	// ─── Acceso a valores ────────────────────────────────────
@@ -50,6 +53,7 @@ export class FormStore {
 	setValue(path: string, value: unknown, fieldSchema?: FormFieldSchema): void {
 		this.data = setNestedValue(this.data, path, value);
 		this.touched[path] = true;
+		this._changedKeys = new Set([...this._changedKeys, path]);
 
 		// Validar campo si tenemos el schema
 		if (fieldSchema) {
@@ -89,7 +93,7 @@ export class FormStore {
 		this.isSaving = true;
 		try {
 			await callback(this.getSubmitData());
-			this._initialSnapshot = JSON.stringify(this.data);
+			this._initialSnapshot = JSON.stringify(this.data); this._changedKeys = new Set();
 			this.lastSavedAt = new Date().toLocaleTimeString('es-VE', {
 				hour: '2-digit',
 				minute: '2-digit'
@@ -110,12 +114,12 @@ export class FormStore {
 	}
 
 	private async _performAutosave(): Promise<void> {
-		if (!this._autosaveCallback || !this._computeIsDirty()) return;
+		if (!this._autosaveCallback || this._changedKeys.size === 0) return;
 
 		this.isSaving = true;
 		try {
 			await this._autosaveCallback(this.getSubmitData());
-			this._initialSnapshot = JSON.stringify(this.data);
+			this._initialSnapshot = JSON.stringify(this.data); this._changedKeys = new Set();
 			this.lastSavedAt = new Date().toLocaleTimeString('es-VE', {
 				hour: '2-digit',
 				minute: '2-digit'
@@ -139,7 +143,7 @@ export class FormStore {
 	// ─── Helpers internos ────────────────────────────────────
 
 	private _computeIsDirty(): boolean {
-		return JSON.stringify(this.data) !== this._initialSnapshot;
+		return this._changedKeys.size > 0;
 	}
 
 	private _buildInitialState(
