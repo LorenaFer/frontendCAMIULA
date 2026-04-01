@@ -40,23 +40,23 @@
 	<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
 		<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
 			<p class="text-xs text-ink-muted">Total pacientes</p>
-			<p class="text-2xl font-bold text-ink tabular-nums">{data.stats.totalPacientes}</p>
+			<p class="data-value text-2xl font-bold text-ink">{data.stats.totalPacientes}</p>
 		</div>
 		<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
 			<p class="text-xs text-ink-muted">Pacientes nuevos</p>
-			<p class="text-2xl font-bold text-viking-600 tabular-nums">{data.stats.pacientesNuevos}</p>
+			<p class="data-value text-2xl font-bold text-viking-600">{data.stats.pacientesNuevos}</p>
 		</div>
 		<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
 			<p class="text-xs text-ink-muted">Total citas</p>
-			<p class="text-2xl font-bold text-ink tabular-nums">{data.stats.totalCitas}</p>
+			<p class="data-value text-2xl font-bold text-ink">{data.stats.totalCitas}</p>
 		</div>
 		<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
 			<p class="text-xs text-ink-muted">Citas atendidas</p>
-			<p class="text-2xl font-bold text-sage-600 tabular-nums">{data.stats.citasAtendidas}</p>
+			<p class="data-value text-2xl font-bold text-emerald-600">{data.stats.citasAtendidas}</p>
 		</div>
 		<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
 			<p class="text-xs text-ink-muted">Citas pendientes</p>
-			<p class="text-2xl font-bold text-amber-600 tabular-nums">{data.stats.citasPendientes}</p>
+			<p class="data-value text-2xl font-bold text-amber-600">{data.stats.citasPendientes}</p>
 		</div>
 	</div>
 

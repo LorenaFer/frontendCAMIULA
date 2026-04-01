@@ -107,27 +107,27 @@
 			<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
 				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
 					<p class="text-xs text-ink-muted">Total citas</p>
-					<p class="text-2xl font-bold text-ink tabular-nums">{s.totalCitas}</p>
+					<p class="data-value text-2xl font-bold text-ink">{s.totalCitas}</p>
 				</div>
 				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
 					<p class="text-xs text-ink-muted">Atendidas</p>
-					<p class="text-2xl font-bold text-sage-600 tabular-nums">{s.citasAtendidas}</p>
+					<p class="data-value text-2xl font-bold text-emerald-600">{s.citasAtendidas}</p>
 				</div>
 				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
 					<p class="text-xs text-ink-muted">Pendientes</p>
-					<p class="text-2xl font-bold text-amber-600 tabular-nums">{s.citasPendientes}</p>
+					<p class="data-value text-2xl font-bold text-amber-600">{s.citasPendientes}</p>
 				</div>
 				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
 					<p class="text-xs text-ink-muted">No asistió</p>
-					<p class="text-2xl font-bold text-red-600 tabular-nums">{s.noShows}</p>
+					<p class="data-value text-2xl font-bold text-red-600">{s.noShows}</p>
 				</div>
 				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
 					<p class="text-xs text-ink-muted">Despachos</p>
-					<p class="text-2xl font-bold text-viking-600 tabular-nums">{s.totalDespachos}</p>
+					<p class="data-value text-2xl font-bold text-viking-600">{s.totalDespachos}</p>
 				</div>
 				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
 					<p class="text-xs text-ink-muted">Canceladas</p>
-					<p class="text-2xl font-bold text-ink-subtle tabular-nums">{s.citasCanceladas}</p>
+					<p class="data-value text-2xl font-bold text-ink-subtle">{s.citasCanceladas}</p>
 				</div>
 			</div>
 		{/if}
