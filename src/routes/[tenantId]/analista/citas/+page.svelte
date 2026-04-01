@@ -16,6 +16,9 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Sparkline from '$shared/components/sparkline/Sparkline.svelte';
+	import DoctorAvailabilityCalendar from '$shared/components/appointments/DoctorAvailabilityCalendar.svelte';
+	import TimeSlotPicker from '$shared/components/appointments/TimeSlotPicker.svelte';
+	import type { TimeSlot, DoctorOption } from '$shared/types/appointments.js';
 	import { enhance } from '$app/forms';
 
 	let { data }: { data: PageData } = $props();
@@ -88,6 +91,66 @@
 	const tenantId = $derived($page.params.tenantId);
 	let viewingCita = $state<CitaConPaciente | null>(null);
 	let cancellingCita = $state<CitaConPaciente | null>(null);
+
+	// Reagendamiento
+	let reschedulingCita = $state<CitaConPaciente | null>(null);
+	let rescheduleDate = $state('');
+	let rescheduleSlots = $state<TimeSlot[]>([]);
+	let rescheduleSelectedSlot = $state('');
+	let rescheduleSlotDuracion = $state<30 | 60>(30);
+	let rescheduleLoadingSlots = $state(false);
+
+	const rescheduleMinDate = $derived(() => {
+		const d = new Date();
+		d.setDate(d.getDate() + 2);
+		return d.toISOString().slice(0, 10);
+	});
+
+	const rescheduleDoctor = $derived(
+		reschedulingCita ? data.doctores.find((d: DoctorOption) => d.id === reschedulingCita!.doctor_id) ?? null : null
+	);
+
+	const rescheduleAvailableDates = $derived.by(() => {
+		if (!rescheduleDoctor || !rescheduleDoctor.dias_trabajo?.length) return [];
+		const today = new Date();
+		const year = today.getFullYear();
+		const month = today.getMonth() + 1;
+		const daysInMonth = new Date(year, month, 0).getDate();
+		const mo = String(month).padStart(2, '0');
+		const minD = rescheduleMinDate();
+		const dates: string[] = [];
+		for (let d = 1; d <= daysInMonth; d++) {
+			const fecha = `${year}-${mo}-${String(d).padStart(2, '0')}`;
+			if (fecha < minD) continue;
+			const dow = new Date(fecha + 'T12:00:00').getDay();
+			const dayOfWeek = dow === 0 ? 7 : dow;
+			if (rescheduleDoctor.dias_trabajo.includes(dayOfWeek)) dates.push(fecha);
+		}
+		return dates;
+	});
+
+	async function loadRescheduleSlots(date: string) {
+		rescheduleDate = date;
+		rescheduleSelectedSlot = '';
+		rescheduleSlots = [];
+		if (!reschedulingCita) return;
+
+		rescheduleLoadingSlots = true;
+		try {
+			const fd = new FormData();
+			fd.set('doctorId', reschedulingCita.doctor_id);
+			fd.set('fecha', date);
+			fd.set('esNuevo', String(reschedulingCita.es_primera_vez));
+			const res = await fetch('?/obtenerSlots', { method: 'POST', body: fd });
+			const json = await res.json();
+			if (json.type === 'success' && json.data) {
+				rescheduleSlots = (json.data as Record<string, unknown>).slots as TimeSlot[] ?? [];
+				rescheduleSlotDuracion = ((json.data as Record<string, unknown>).duracion as 30 | 60) ?? 30;
+			}
+		} catch { /* ignore */ } finally {
+			rescheduleLoadingSlots = false;
+		}
+	}
 
 	const citaMenu: RowMenuItem<CitaRow>[] = [
 		{ label: 'Ver detalle', icon: 'view', onclick: (row) => { viewingCita = { ...row } as unknown as CitaConPaciente; } },
@@ -433,12 +496,13 @@
 		<DialogFooter>
 			<Button type="button" variant="ghost" size="md" onclick={() => { viewingCita = null; }}>Cerrar</Button>
 			{#if c.estado === 'pendiente' || c.estado === 'confirmada'}
-				<a
-					href="/{tenantId}/agendar"
-					class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-viking-600 hover:bg-viking-50 dark:hover:bg-viking-900/20 transition-colors"
-				>
-					Reagendar
-				</a>
+				<Button type="button" variant="soft" size="md" onclick={() => {
+					reschedulingCita = c;
+					rescheduleDate = '';
+					rescheduleSlots = [];
+					rescheduleSelectedSlot = '';
+					viewingCita = null;
+				}}>Reagendar</Button>
 				<Button type="button" variant="danger" size="md" onclick={() => { cancellingCita = c; viewingCita = null; }}>Cancelar cita</Button>
 			{/if}
 		</DialogFooter>
@@ -478,6 +542,75 @@
 			<DialogFooter>
 				<Button type="button" variant="ghost" size="md" onclick={() => { cancellingCita = null; }}>No cancelar</Button>
 				<Button type="submit" variant="danger" size="md">Sí, cancelar cita</Button>
+			</DialogFooter>
+		</form>
+	</Dialog>
+{/if}
+
+<!-- Modal de reagendamiento -->
+{#if reschedulingCita}
+	{@const c = reschedulingCita}
+	{@const selectedSlotObj = rescheduleSlots.find((s) => s.hora_inicio === rescheduleSelectedSlot)}
+	<Dialog open={true} onClose={() => { reschedulingCita = null; }} size="lg">
+		<DialogHeader>
+			<p class="text-sm text-ink-muted font-normal">{c.paciente.nombre} {c.paciente.apellido} — Dr. {c.doctor.nombre} {c.doctor.apellido}</p>
+			<h2 class="text-base font-semibold text-ink">Reagendar cita</h2>
+		</DialogHeader>
+		<form
+			method="POST"
+			action="?/reagendarCita"
+			use:enhance={() => {
+				return async ({ result, update }) => {
+					await update();
+					if (result.type === 'success') {
+						reschedulingCita = null;
+						await invalidateAll();
+					}
+				};
+			}}
+		>
+			<input type="hidden" name="citaId" value={c.id} />
+			<input type="hidden" name="fecha" value={rescheduleDate} />
+			<input type="hidden" name="hora_inicio" value={rescheduleSelectedSlot} />
+			<input type="hidden" name="hora_fin" value={selectedSlotObj?.hora_fin ?? ''} />
+			<input type="hidden" name="duracion" value={rescheduleSlotDuracion} />
+
+			<DialogBody>
+				<div class="space-y-4">
+					<div class="bg-canvas-subtle rounded-lg border border-border/60 p-3 text-sm">
+						<p class="text-ink-muted">Cita actual: <strong class="text-ink">{formatFecha(c.fecha)} · {c.hora_inicio}–{c.hora_fin}</strong></p>
+					</div>
+
+						<div>
+						<p class="text-sm font-semibold text-ink mb-2">Seleccione nueva fecha</p>
+						<DoctorAvailabilityCalendar
+							year={new Date().getFullYear()}
+							month={new Date().getMonth() + 1}
+							availableDates={rescheduleAvailableDates}
+							minDate={rescheduleMinDate()}
+							selected={rescheduleDate}
+							onSelect={loadRescheduleSlots}
+							onMonthChange={() => {}}
+						/>
+					</div>
+
+					{#if rescheduleDate}
+						<div>
+							<p class="text-sm font-semibold text-ink mb-2">Seleccione horario {rescheduleLoadingSlots ? '(cargando...)' : ''}</p>
+							<TimeSlotPicker
+								slots={rescheduleSlots}
+								selected={rescheduleSelectedSlot}
+								onSelect={(slot: TimeSlot) => { rescheduleSelectedSlot = slot.hora_inicio; }}
+							/>
+						</div>
+					{/if}
+				</div>
+			</DialogBody>
+			<DialogFooter>
+				<Button type="button" variant="ghost" size="md" onclick={() => { reschedulingCita = null; }}>Cancelar</Button>
+				<Button type="submit" variant="primary" size="md" disabled={!rescheduleSelectedSlot}>
+					Confirmar reagendamiento
+				</Button>
 			</DialogFooter>
 		</form>
 	</Dialog>
