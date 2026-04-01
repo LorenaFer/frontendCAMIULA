@@ -8,6 +8,8 @@
 	import FormEngine from '$shared/components/form-engine/FormEngine.svelte';
 	import ObservacionesSection from '$shared/components/form-engine/ObservacionesSection.svelte';
 	import PrescriptionSection from '$shared/components/form-engine/PrescriptionSection.svelte';
+	import ExamenesSection from '$shared/components/form-engine/ExamenesSection.svelte';
+	import type { ExamenSolicitado } from '$shared/components/form-engine/ExamenesSection.svelte';
 	import PatientInsightsPanel from '$shared/components/form-engine/PatientInsightsPanel.svelte';
 	import type { PrescriptionItem } from '$shared/types/prescription.js';
 
@@ -26,6 +28,9 @@
 	// Estado para secciones universales (independientes del schema)
 	const evalData = (data.historia?.evaluacion ?? {}) as Record<string, unknown>;
 	let observaciones = $state<string>((evalData.observaciones as string) ?? '');
+	let examenesSolicitados = $state<ExamenSolicitado[]>(
+		(evalData.examenes_solicitados as ExamenSolicitado[]) ?? []
+	);
 	let recetaItems = $state<PrescriptionItem[]>(
 		((evalData.receta as Record<string, unknown>)?.medicamentos as PrescriptionItem[]) ?? []
 	);
@@ -35,6 +40,7 @@
 		return {
 			...formData,
 			observaciones,
+			examenes_solicitados: examenesSolicitados,
 			receta: { medicamentos: recetaItems }
 		};
 	}
@@ -171,6 +177,12 @@
 				value={observaciones}
 				disabled={isReadonly}
 				onchange={(v) => { observaciones = v; scheduleUniversalAutosave(); }}
+			/>
+
+			<ExamenesSection
+				items={examenesSolicitados}
+				disabled={isReadonly}
+				onchange={(items) => { examenesSolicitados = items; scheduleUniversalAutosave(); }}
 			/>
 
 			<PrescriptionSection
