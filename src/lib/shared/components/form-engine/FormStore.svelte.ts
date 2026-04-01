@@ -107,6 +107,13 @@ export class FormStore {
 		return structuredClone(this.data);
 	}
 
+	/** Marca el formulario como limpio (sin cambios pendientes) */
+	markClean(): void {
+		this._initialSnapshot = JSON.stringify(this.data);
+		this._changedKeys = new Set();
+		this.lastSavedAt = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
+	}
+
 	async save(callback: (data: Record<string, unknown>) => Promise<void>): Promise<boolean> {
 		if (!this.validateAll()) return false;
 

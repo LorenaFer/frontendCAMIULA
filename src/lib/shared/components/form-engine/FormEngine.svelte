@@ -39,7 +39,7 @@
 		e.preventDefault();
 		if (isReadonly) return;
 
-		// Validar antes de guardar — si hay errores, mostrar toast con nombres
+		// Validar — si hay errores, mostrar toast con nombres de campos
 		store.validateAll();
 		if (store.errorCount > 0) {
 			const fieldNames = store.getErrorFieldNames();
@@ -50,7 +50,17 @@
 			return;
 		}
 
-		await store.save(onSave);
+		// Guardar directamente (validación ya pasó)
+		store.isSaving = true;
+		try {
+			await onSave(store.getSubmitData());
+			// Limpiar dirty state
+			store.markClean();
+		} catch {
+			toastError('Error al guardar', 'Ocurrió un error inesperado.');
+		} finally {
+			store.isSaving = false;
+		}
 	}
 </script>
 
