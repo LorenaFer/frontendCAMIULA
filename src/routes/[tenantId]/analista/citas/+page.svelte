@@ -3,7 +3,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import type { AppointmentFilters as AppointmentFiltersType, CitaConPaciente } from '$shared/types/appointments.js';
-	import type { DataTableColumn, RowAction } from '$shared/components/table/types.js';
+	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
 	type CitaRow = CitaConPaciente & Record<string, unknown>;
 	import AppointmentFilters from '$shared/components/appointments/AppointmentFilters.svelte';
 	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
@@ -11,7 +11,12 @@
 	import StatCard from '$shared/components/card/StatCard.svelte';
 	import Card from '$shared/components/card/Card.svelte';
 	import Button from '$shared/components/button/Button.svelte';
+	import Dialog from '$shared/components/dialog/Dialog.svelte';
+	import DialogHeader from '$shared/components/dialog/DialogHeader.svelte';
+	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
+	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Sparkline from '$shared/components/sparkline/Sparkline.svelte';
+	import { enhance } from '$app/forms';
 
 	let { data }: { data: PageData } = $props();
 
@@ -80,13 +85,19 @@
 		return `${d}/${m}/${y}`;
 	}
 
-	async function cancelarCita(cita: CitaConPaciente) {
-		if (!confirm('¿Cancelar esta cita?')) return;
-		const fd = new FormData();
-		fd.set('citaId', String(cita.id));
-		await fetch('?/cancelarCita', { method: 'POST', body: fd });
-		await invalidateAll();
-	}
+	const tenantId = $derived($page.params.tenantId);
+	let viewingCita = $state<CitaConPaciente | null>(null);
+	let cancellingCita = $state<CitaConPaciente | null>(null);
+
+	const citaMenu: RowMenuItem<CitaRow>[] = [
+		{ label: 'Ver detalle', icon: 'view', onclick: (row) => { viewingCita = { ...row } as unknown as CitaConPaciente; } },
+		{ label: 'Cancelar cita', icon: 'delete', variant: 'danger', onclick: (row) => {
+			const cita = row as unknown as CitaConPaciente;
+			if (cita.estado === 'pendiente' || cita.estado === 'confirmada') {
+				cancellingCita = { ...cita };
+			}
+		}}
+	];
 </script>
 
 {#snippet pacienteCell(_v: unknown, row: CitaRow)}
@@ -119,11 +130,6 @@
 	<AppointmentStatusBadge status={row.estado} />
 {/snippet}
 
-{#snippet cancelIcon()}
-	<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-		<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-	</svg>
-{/snippet}
 
 <!-- Sparkline snippets para StatCards -->
 {#snippet trendSparkline()}
@@ -359,20 +365,8 @@
 			] satisfies DataTableColumn<CitaRow>[]}
 			data={data.citas.items as CitaRow[]}
 			rowKey="id"
+			rowMenu={citaMenu}
 			emptyMessage="No hay citas que coincidan con los filtros aplicados."
-			actions={[
-				{
-					icon: cancelIcon,
-					label: 'Cancelar cita',
-					variant: 'danger',
-					hoverOnly: false,
-					onclick: (row) => {
-						if (row.estado === 'pendiente' || row.estado === 'confirmada') {
-							cancelarCita(row as CitaConPaciente);
-						}
-					}
-				}
-			] satisfies RowAction<CitaRow>[]}
 		/>
 
 		<!-- Paginación -->
@@ -393,3 +387,98 @@
 		{/if}
 	</Card>
 </div>
+
+<!-- Modal de detalle de cita -->
+{#if viewingCita}
+	{@const c = viewingCita}
+	<Dialog open={true} onClose={() => { viewingCita = null; }} size="md">
+		<DialogHeader>
+			<p class="text-sm text-ink-muted font-normal">{formatFecha(c.fecha)} · {c.hora_inicio}–{c.hora_fin}</p>
+			<h2 class="text-base font-semibold text-ink">Detalle de cita</h2>
+		</DialogHeader>
+		<DialogBody>
+			<div class="grid grid-cols-2 gap-4 text-sm">
+				<div>
+					<p class="text-ink-muted">Paciente</p>
+					<p class="font-medium text-ink">{c.paciente.nombre} {c.paciente.apellido}</p>
+					<p class="text-xs text-ink-muted">NHM {c.paciente.nhm} · {c.paciente.cedula}</p>
+				</div>
+				<div>
+					<p class="text-ink-muted">Estado</p>
+					<AppointmentStatusBadge status={c.estado} />
+				</div>
+				<div>
+					<p class="text-ink-muted">Doctor</p>
+					<p class="font-medium text-ink">Dr. {c.doctor.nombre} {c.doctor.apellido}</p>
+					<p class="text-xs text-ink-muted">{c.doctor.especialidad?.nombre ?? '—'}</p>
+				</div>
+				<div>
+					<p class="text-ink-muted">Duración</p>
+					<p class="font-medium text-ink">{c.duracion_min} min{c.es_primera_vez ? ' · Primera vez' : ''}</p>
+				</div>
+				{#if c.motivo_consulta}
+					<div class="col-span-2">
+						<p class="text-ink-muted">Motivo</p>
+						<p class="text-ink">{c.motivo_consulta}</p>
+					</div>
+				{/if}
+				{#if c.observaciones}
+					<div class="col-span-2">
+						<p class="text-ink-muted">Observaciones</p>
+						<p class="text-ink">{c.observaciones}</p>
+					</div>
+				{/if}
+			</div>
+		</DialogBody>
+		<DialogFooter>
+			<Button type="button" variant="ghost" size="md" onclick={() => { viewingCita = null; }}>Cerrar</Button>
+			{#if c.estado === 'pendiente' || c.estado === 'confirmada'}
+				<a
+					href="/{tenantId}/agendar"
+					class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-viking-600 hover:bg-viking-50 dark:hover:bg-viking-900/20 transition-colors"
+				>
+					Reagendar
+				</a>
+				<Button type="button" variant="danger" size="md" onclick={() => { cancellingCita = c; viewingCita = null; }}>Cancelar cita</Button>
+			{/if}
+		</DialogFooter>
+	</Dialog>
+{/if}
+
+<!-- Modal de confirmación de cancelación -->
+{#if cancellingCita}
+	{@const c = cancellingCita}
+	<Dialog open={true} onClose={() => { cancellingCita = null; }} size="sm">
+		<DialogHeader>
+			<h2 class="text-base font-semibold text-ink">Cancelar cita</h2>
+		</DialogHeader>
+		<form
+			method="POST"
+			action="?/cancelarCita"
+			use:enhance={() => {
+				return async ({ result, update }) => {
+					await update();
+					if (result.type === 'success') {
+						cancellingCita = null;
+						await invalidateAll();
+					}
+				};
+			}}
+		>
+			<input type="hidden" name="citaId" value={c.id} />
+			<DialogBody>
+				<p class="text-sm text-ink mb-3">¿Está seguro de que desea cancelar esta cita?</p>
+				<div class="bg-canvas-subtle rounded-lg border border-border/60 p-3 space-y-1 text-sm">
+					<p class="font-medium text-ink">{c.paciente.nombre} {c.paciente.apellido}</p>
+					<p class="text-ink-muted">{formatFecha(c.fecha)} · {c.hora_inicio}–{c.hora_fin}</p>
+					<p class="text-ink-muted">Dr. {c.doctor.nombre} {c.doctor.apellido} — {c.doctor.especialidad?.nombre}</p>
+				</div>
+				<p class="text-sm text-honey-700 dark:text-honey-400 mt-3">Esta acción no se puede deshacer.</p>
+			</DialogBody>
+			<DialogFooter>
+				<Button type="button" variant="ghost" size="md" onclick={() => { cancellingCita = null; }}>No cancelar</Button>
+				<Button type="submit" variant="danger" size="md">Sí, cancelar cita</Button>
+			</DialogFooter>
+		</form>
+	</Dialog>
+{/if}
