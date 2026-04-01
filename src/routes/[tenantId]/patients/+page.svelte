@@ -1,391 +1,333 @@
-<svelte:head>
-	<title>Pacientes - Gestión Hospitalaria</title>
-	<meta name="description" content="Gestiona expedientes e información de pacientes" />
-</svelte:head>
-
 <script lang="ts">
-	import EmptyState from '$shared/components/empty-state/EmptyState.svelte';
-	import SearchInput from '$shared/components/input/SearchInput.svelte';
-	import Select from '$shared/components/select/Select.svelte';
+	import type { PageData } from './$types';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import Card from '$shared/components/card/Card.svelte';
-	import CardHeader from '$shared/components/card/CardHeader.svelte';
-	import CardTitle from '$shared/components/card/CardTitle.svelte';
-	import CardDescription from '$shared/components/card/CardDescription.svelte';
-	import CardBody from '$shared/components/card/CardBody.svelte';
 	import Badge from '$shared/components/badge/Badge.svelte';
 	import Button from '$shared/components/button/Button.svelte';
-	import { page } from '$app/stores';
-	import type { PageData } from './$types';
+	import Input from '$shared/components/input/Input.svelte';
+	import EmptyState from '$shared/components/empty-state/EmptyState.svelte';
+	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
+	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
 
 	let { data }: { data: PageData } = $props();
-	let expandedHistoryId = $state<string | null>(null);
+	const tenantId = $derived($page.params.tenantId);
 
-	const searchTypeOptions = [
-		{ value: 'cedula', label: 'Cédula' },
-		{ value: 'nhm', label: 'Número de historia' }
-	];
+	let searchQuery = $state(data.filters.query ?? '');
+	let activeTab = $state<'timeline' | 'citas' | 'despachos'>('timeline');
+
+	function doSearch() {
+		if (!searchQuery.trim()) return;
+		goto(`?query=${encodeURIComponent(searchQuery.trim())}`, { replaceState: true });
+	}
+
+	function formatFecha(fecha: string) {
+		try {
+			return new Date(fecha + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' });
+		} catch { return fecha; }
+	}
 
 	const relationLabels: Record<string, string> = {
-		P: 'Profesor',
-		E: 'Empleado',
-		O: 'Obrero',
-		F: 'Familiar',
-		B: 'Estudiante',
-		C: 'Familiar de Estudiante',
-		R: 'Familiar de Profesor',
-		S: 'Familiar de Empleado',
-		T: 'Familiar de Obrero',
-		X: 'Caso Especial',
+		P: 'Profesor', E: 'Empleado', O: 'Obrero', B: 'Estudiante',
+		F: 'Familiar', C: 'Fam. Estudiante', R: 'Fam. Profesor',
+		S: 'Fam. Empleado', T: 'Fam. Obrero', X: 'Caso Especial',
+		empleado: 'Empleado', estudiante: 'Estudiante', profesor: 'Profesor', tercero: 'Tercero'
 	};
-
-	function relationLabel(value: string) {
-		const mapped = relationLabels[value];
-		if (mapped) return mapped;
-		if (!value) return '';
-		return value.charAt(0).toUpperCase() + value.slice(1);
-	}
-
-	function searchPlaceholder(searchType: string) {
-		return searchType === 'nhm'
-			? 'Ej. 100245'
-			: 'Ingrese la cédula del paciente';
-	}
-
-	function formatDate(date: string) {
-		if (!date) return 'Sin fecha';
-		const normalized = date.length > 10 ? date.slice(0, 10) : date;
-		const parsed = new Date(`${normalized}T00:00:00`);
-		if (Number.isNaN(parsed.getTime())) return normalized;
-		return parsed.toLocaleDateString('es-VE', {
-			day: '2-digit',
-			month: 'long',
-			year: 'numeric'
-		});
-	}
-
-	function formatList(items: string[] | undefined, emptyLabel: string) {
-		if (!items || items.length === 0) return emptyLabel;
-		return items.join(', ');
-	}
-
-	function timelineCategoryLabel(category: string) {
-		if (category === 'laboratorio') return 'Laboratorio';
-		if (category === 'vacunacion') return 'Prevencion';
-		if (category === 'administrativo') return 'Administrativo';
-		return 'Consulta';
-	}
-
-	function timelineCategoryVariant(category: string) {
-		if (category === 'laboratorio') return 'primary';
-		if (category === 'vacunacion') return 'warning';
-		if (category === 'administrativo') return 'default';
-		return 'info';
-	}
-
-	function toggleForm(entryId: string) {
-		expandedHistoryId = expandedHistoryId === entryId ? null : entryId;
-	}
 </script>
 
-{#snippet bloodIcon()}
-	<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-		<path
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			d="M12 3.5c-1.45 2.8-5.5 6.27-5.5 10a5.5 5.5 0 1 0 11 0c0-3.73-4.05-7.2-5.5-10Z"
-		/>
-	</svg>
-{/snippet}
+<svelte:head><title>Pacientes — Vista 360°</title></svelte:head>
 
-{#snippet allergyIcon()}
-	<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-		<path
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			d="M12 9v4m0 4h.01M10.29 3.86l-8.21 14.2A2 2 0 0 0 3.79 21h16.42a2 2 0 0 0 1.71-2.94l-8.21-14.2a2 2 0 0 0-3.42 0Z"
-		/>
-	</svg>
-{/snippet}
-
-{#snippet conditionIcon()}
-	<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-		<path
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			d="M3 12h3l2.5-4 4 8 2.5-4H21"
-		/>
-	</svg>
-{/snippet}
-
-<div class="py-8">
-	<div class="mb-8 flex items-center justify-between">
+<div class="space-y-5 animate-fade-in-up">
+	<!-- Header -->
+	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 		<div>
-			<h1 class="text-3xl font-bold text-ink">Pacientes</h1>
-			<p class="mt-2 text-ink-muted">Gestiona expedientes e historial médico</p>
+			<h1 class="text-xl font-bold text-ink">Pacientes</h1>
+			<p class="text-sm text-ink-muted mt-0.5">Vista 360° del paciente</p>
 		</div>
-		<a
-			href={`/${$page.params.tenantId}/patients/new`}
-			class="inline-block"
-			aria-label="Agregar paciente nuevo"
-		>
-			<Button variant="primary" size="md" class="w-full">
-				Agregar paciente nuevo
-			</Button>
-		</a>
 	</div>
 
-	<div class="space-y-6">
-		<Card variant="elevated" padding="lg">
-			<CardHeader class="mb-5">
-				{#snippet action()}
-					<a href={`/${$page.params.tenantId}/patients`} class="inline-block">
-						<Button variant="ghost" size="sm">Limpiar</Button>
-					</a>
-				{/snippet}
-				<div>
-					<CardTitle class="text-base">Buscar paciente</CardTitle>
-					<CardDescription>
-						Consulta por cédula o por número de historia clínica.
-					</CardDescription>
-				</div>
-			</CardHeader>
-
-			<CardBody>
-				<form method="GET" class="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_auto] lg:items-end">
-					<Select
-						name="searchType"
-						label="Buscar por"
-						options={searchTypeOptions}
-						value={data.filters.searchType}
-						selectSize="lg"
-					/>
-					<SearchInput
-						name="query"
-						label="Valor de búsqueda"
-						value={data.filters.query}
-						placeholder={searchPlaceholder(data.filters.searchType)}
-						hint={data.validationMessage}
-						inputSize="lg"
-						autocomplete="off"
-					/>
-					<Button type="submit" variant="primary" size="lg">Buscar</Button>
-				</form>
-			</CardBody>
-		</Card>
-
-		<Card padding="none" variant="default">
-			<div class="border-b border-border px-6 py-4">
-				<h2 class="text-lg font-medium text-ink">Expedientes de pacientes</h2>
+	<!-- Búsqueda (auto-detect NHM/Cédula) -->
+	<div class="bg-surface-elevated border border-border/60 rounded-xl p-4">
+		<form onsubmit={(e) => { e.preventDefault(); doSearch(); }} class="flex gap-3">
+			<div class="flex-1">
+				<Input
+					label="Buscar paciente"
+					placeholder="Cédula o NHM del paciente..."
+					bind:value={searchQuery}
+					inputSize="lg"
+				/>
 			</div>
-
-			{#if data.patient}
-				<div class="p-6">
-					<div class="flex flex-col gap-4 rounded-xl border border-border bg-canvas-subtle/70 p-5 lg:flex-row lg:items-start lg:justify-between">
-						<div class="space-y-3">
-							<div>
-								<p class="text-xs font-semibold uppercase tracking-[0.16em] text-ink-subtle">
-									Paciente encontrado
-								</p>
-								<h3 class="mt-1 text-2xl font-semibold text-ink">
-									{data.patient.nombre} {data.patient.apellido}
-								</h3>
-								<p class="mt-1 text-sm text-ink-muted">
-									{relationLabel(data.patient.relacion_univ)}
-									{#if data.patient.edad != null}
-										• {data.patient.edad} años
-									{/if}
-								</p>
-							</div>
-						</div>
-
-						<div class="grid min-w-0 gap-3 sm:grid-cols-2 lg:w-[22rem]">
-							<div class="rounded-lg border border-border bg-surface-elevated px-4 py-3">
-								<p class="text-xs uppercase tracking-[0.14em] text-ink-subtle">Número de historia</p>
-								<p class="mt-1 text-sm font-semibold text-ink">{data.patient.nhm}</p>
-							</div>
-							<div class="rounded-lg border border-border bg-surface-elevated px-4 py-3">
-								<p class="text-xs uppercase tracking-[0.14em] text-ink-subtle">Cédula</p>
-								<p class="mt-1 text-sm font-semibold text-ink">{data.patient.cedula}</p>
-							</div>
-						</div>
-					</div>
-				</div>
-			{:else if data.searched}
-				<EmptyState
-					class="px-6"
-					title="No se encontró ningún paciente"
-					description="Verifica el valor ingresado o intenta con el otro criterio de búsqueda."
-				/>
-			{:else}
-				<EmptyState
-					class="px-6"
-					title="Sin búsqueda activa"
-					description="Usa la barra superior para localizar un paciente por cédula o por número de historia."
-				/>
-			{/if}
-		</Card>
-
-		{#if data.patient}
-			<Card variant="default" padding="lg">
-				<CardHeader class="mb-5">
-					<div>
-						<CardTitle class="text-base">Resumen de historial médico</CardTitle>
-						<CardDescription>
-							Vista cronológica y clínica del paciente encontrado.
-						</CardDescription>
-					</div>
-				</CardHeader>
-
-				<CardBody class="space-y-5">
-					<div class="grid gap-4 md:grid-cols-3">
-						<Card variant="ghost" padding="md" class="border border-border/60">
-							<div class="space-y-2">
-								<Badge variant="primary" style="soft" size="sm" icon={bloodIcon}>Tipo de sangre</Badge>
-								<p class="text-2xl font-semibold text-ink">{data.medicalSnapshot?.tipoSangre ?? 'No registrado'}</p>
-								<p class="text-xs text-ink-muted">Tipo sanguíneo registrado en expediente.</p>
-							</div>
-						</Card>
-						<Card variant="ghost" padding="md" class="border border-border/60">
-							<div class="space-y-2">
-								<Badge variant="warning" style="soft" size="sm" icon={allergyIcon}>Alergias</Badge>
-								<p class="text-lg font-semibold leading-tight text-ink">
-									{formatList(data.medicalSnapshot?.alergias, 'No reporta alergias')}
-								</p>
-								<p class="text-xs text-ink-muted">Si presenta alergias, se muestra el detalle.</p>
-							</div>
-						</Card>
-						<Card variant="ghost" padding="md" class="border border-border/60">
-							<div class="space-y-2">
-								<Badge variant="info" style="soft" size="sm" icon={conditionIcon}>Condición existente</Badge>
-								<p class="text-lg font-semibold leading-tight text-ink">
-									{formatList(data.medicalSnapshot?.condiciones, 'Sin condición registrada')}
-								</p>
-								<p class="text-xs text-ink-muted">Condiciones médicas activas registradas.</p>
-							</div>
-						</Card>
-					</div>
-
-					<Card variant="ghost" padding="md">
-						<CardHeader class="mb-3">
-							<div>
-								<CardTitle class="text-sm">Línea de tiempo médica</CardTitle>
-								<CardDescription>Eventos clínicos y administrativos más recientes.</CardDescription>
-							</div>
-						</CardHeader>
-						<CardBody>
-							{#if data.historyTimeline.length > 0}
-								<div class="space-y-3">
-									{#each data.historyTimeline as entry}
-										<Card variant="flat" padding="sm" class="border border-border">
-											<div class="flex flex-col gap-3">
-												<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-												<div class="space-y-1">
-													<p class="text-sm font-semibold text-ink">{entry.titulo}</p>
-													<p class="text-xs text-ink-muted">{entry.detalle}</p>
-												</div>
-												<div class="flex flex-wrap items-center gap-2">
-													<Badge
-														variant={timelineCategoryVariant(entry.categoria)}
-														style="outline"
-														size="sm"
-													>{timelineCategoryLabel(entry.categoria)}</Badge>
-													<Badge variant="info" style="soft" size="sm">{formatDate(entry.fecha)}</Badge>
-													{#if entry.categoria === 'consulta'}
-														<Button
-															variant="ghost"
-															size="sm"
-															onclick={() => toggleForm(entry.id)}
-														>
-															{expandedHistoryId === entry.id ? 'Ocultar formulario' : 'Ver formulario'}
-														</Button>
-													{/if}
-												</div>
-											</div>
-
-											{#if entry.categoria === 'consulta' && expandedHistoryId === entry.id}
-												<Card variant="ghost" padding="sm" class="border border-border/60">
-													<div class="grid gap-3 md:grid-cols-2">
-														<div>
-															<p class="text-[11px] uppercase tracking-[0.14em] text-ink-subtle">Motivo de consulta</p>
-															<p class="mt-1 text-sm text-ink">{entry.formulario?.motivoConsulta || 'No registrado'}</p>
-														</div>
-														<div>
-															<p class="text-[11px] uppercase tracking-[0.14em] text-ink-subtle">Anamnesis</p>
-															<p class="mt-1 text-sm text-ink">{entry.formulario?.anamnesis || 'No registrada'}</p>
-														</div>
-														<div>
-															<p class="text-[11px] uppercase tracking-[0.14em] text-ink-subtle">Diagnóstico</p>
-															<p class="mt-1 text-sm text-ink">{entry.formulario?.diagnostico || 'No registrado'}</p>
-														</div>
-														<div>
-															<p class="text-[11px] uppercase tracking-[0.14em] text-ink-subtle">Tratamiento</p>
-															<p class="mt-1 text-sm text-ink">{entry.formulario?.tratamiento || 'No registrado'}</p>
-														</div>
-													</div>
-													<div class="mt-3">
-														<p class="text-[11px] uppercase tracking-[0.14em] text-ink-subtle">Indicaciones</p>
-														<p class="mt-1 text-sm text-ink">{entry.formulario?.indicaciones || 'No registradas'}</p>
-													</div>
-												</Card>
-											{/if}
-											</div>
-										</Card>
-									{/each}
-								</div>
-							{:else}
-								<EmptyState
-									title="Sin registros clínicos"
-									description="Este paciente aún no tiene eventos en su historial médico."
-								/>
-							{/if}
-						</CardBody>
-					</Card>
-
-					<Card variant="ghost" padding="md">
-						<CardHeader class="mb-3">
-							<div>
-								<CardTitle class="text-sm">Medicamentos entregados por farmacia</CardTitle>
-								<CardDescription>
-									Historial de entregas y dosis registradas para este paciente.
-								</CardDescription>
-							</div>
-						</CardHeader>
-						<CardBody>
-							{#if data.pharmacyDeliveries.length > 0}
-								<div class="space-y-3">
-									{#each data.pharmacyDeliveries as delivery}
-										<Card variant="flat" padding="sm" class="border border-border">
-											<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-												<div class="space-y-1">
-													<p class="text-sm font-semibold text-ink">{delivery.medicamento}</p>
-													<p class="text-xs text-ink-muted">
-														{delivery.dosis} • {delivery.cantidad}
-													</p>
-												</div>
-												<div class="flex flex-wrap items-center gap-2">
-													<Badge
-														variant={delivery.estado === 'entregado' ? 'success' : 'warning'}
-														style="soft"
-														size="sm"
-													>
-														{delivery.estado === 'entregado' ? 'Entregado' : 'Pendiente'}
-													</Badge>
-													<Badge variant="default" style="outline" size="sm">{formatDate(delivery.fecha)}</Badge>
-												</div>
-											</div>
-										</Card>
-									{/each}
-								</div>
-							{:else}
-								<EmptyState
-									title="Sin entregas de farmacia"
-									description="Aún no hay medicamentos registrados como entregados para este paciente."
-								/>
-							{/if}
-						</CardBody>
-					</Card>
-				</CardBody>
-			</Card>
+			<div class="flex items-end">
+				<Button type="submit" variant="primary" size="lg">Buscar</Button>
+			</div>
+		</form>
+		{#if data.validationMessage}
+			<p class="text-sm text-red-600 mt-2">{data.validationMessage}</p>
 		{/if}
 	</div>
+
+	{#if !data.patient && data.searched}
+		<Card padding="lg">
+			<EmptyState
+				title="Paciente no encontrado"
+				description="Verifique el número de cédula o NHM e intente de nuevo."
+			/>
+		</Card>
+	{:else if !data.patient}
+		<Card padding="lg">
+			<EmptyState
+				title="Busque un paciente"
+				description="Ingrese la cédula o el NHM para ver la vista 360° del paciente."
+			/>
+		</Card>
+	{/if}
+
+	{#if data.patient}
+		{@const p = data.patient}
+		{@const s = data.stats}
+
+		<!-- Patient Header Card -->
+		<div class="bg-surface-elevated border border-border/60 rounded-xl p-5">
+			<div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+				<div class="flex items-start gap-4">
+					<!-- Avatar -->
+					<div class="w-14 h-14 rounded-full bg-viking-600 flex items-center justify-center text-lg font-bold text-white shrink-0">
+						{p.nombre[0]}{p.apellido[0]}
+					</div>
+					<div>
+						<h2 class="text-xl font-bold text-ink">{p.nombre} {p.apellido}</h2>
+						<p class="text-sm text-ink-muted mt-0.5">
+							{relationLabels[p.relacion_univ] ?? p.relacion_univ}
+							{#if p.edad} — {p.edad} años{/if}
+							{#if p.sexo} — {p.sexo === 'M' ? 'Masculino' : 'Femenino'}{/if}
+						</p>
+						<div class="flex flex-wrap gap-2 mt-2">
+							<Badge variant="primary" style="outline" size="sm">NHM: {p.nhm}</Badge>
+							<Badge variant="default" style="outline" size="sm">C.I: {p.cedula}</Badge>
+							{#if p.datos_medicos?.tipo_sangre}
+								<Badge variant="danger" style="soft" size="sm">{p.datos_medicos.tipo_sangre}</Badge>
+							{/if}
+							{#if p.es_nuevo}
+								<Badge variant="warning" style="soft" size="sm">Primera vez</Badge>
+							{/if}
+						</div>
+					</div>
+				</div>
+
+				<!-- Quick info -->
+				<div class="grid grid-cols-2 gap-2 text-sm lg:w-64">
+					{#if p.telefono}
+						<div>
+							<p class="text-ink-muted text-xs">Teléfono</p>
+							<p class="text-ink font-medium">{p.telefono}</p>
+						</div>
+					{/if}
+					{#if p.estado_civil}
+						<div>
+							<p class="text-ink-muted text-xs">Estado civil</p>
+							<p class="text-ink font-medium capitalize">{p.estado_civil.replace('_', ' ')}</p>
+						</div>
+					{/if}
+					{#if p.profesion}
+						<div>
+							<p class="text-ink-muted text-xs">Profesión</p>
+							<p class="text-ink font-medium">{p.profesion}</p>
+						</div>
+					{/if}
+					<div>
+						<p class="text-ink-muted text-xs">Registro</p>
+						<p class="text-ink font-medium">{formatFecha(p.created_at)}</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Alergias warning -->
+			{#if data.medicalSnapshot && data.medicalSnapshot.alergias.length > 0}
+				<div class="mt-3 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
+					<svg class="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" /></svg>
+					<span class="text-sm text-red-700 dark:text-red-300 font-medium">Alergias: {data.medicalSnapshot.alergias.join(', ')}</span>
+				</div>
+			{/if}
+		</div>
+
+		<!-- KPI Stats -->
+		{#if s}
+			<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
+					<p class="text-xs text-ink-muted">Total citas</p>
+					<p class="text-2xl font-bold text-ink tabular-nums">{s.totalCitas}</p>
+				</div>
+				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
+					<p class="text-xs text-ink-muted">Atendidas</p>
+					<p class="text-2xl font-bold text-sage-600 tabular-nums">{s.citasAtendidas}</p>
+				</div>
+				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
+					<p class="text-xs text-ink-muted">Pendientes</p>
+					<p class="text-2xl font-bold text-amber-600 tabular-nums">{s.citasPendientes}</p>
+				</div>
+				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
+					<p class="text-xs text-ink-muted">No asistió</p>
+					<p class="text-2xl font-bold text-red-600 tabular-nums">{s.noShows}</p>
+				</div>
+				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
+					<p class="text-xs text-ink-muted">Despachos</p>
+					<p class="text-2xl font-bold text-viking-600 tabular-nums">{s.totalDespachos}</p>
+				</div>
+				<div class="bg-surface-elevated border border-border/60 rounded-xl px-4 py-3">
+					<p class="text-xs text-ink-muted">Canceladas</p>
+					<p class="text-2xl font-bold text-ink-subtle tabular-nums">{s.citasCanceladas}</p>
+				</div>
+			</div>
+		{/if}
+
+		<!-- Tabs -->
+		<div class="flex gap-1 p-1 bg-canvas-subtle rounded-xl border border-border/40">
+			{#each [['timeline', 'Historial'], ['citas', `Citas (${data.patientCitas.length})`], ['despachos', `Despachos (${data.patientDispatches.length})`]] as [key, label]}
+				<button
+					type="button"
+					class="flex-1 py-2.5 text-sm font-medium rounded-lg transition-colors
+						{activeTab === key ? 'bg-surface-elevated text-ink shadow-sm border border-border/60' : 'text-ink-muted hover:text-ink'}"
+					onclick={() => { activeTab = key as typeof activeTab; }}
+				>{label}</button>
+			{/each}
+		</div>
+
+		<!-- Tab: Timeline -->
+		{#if activeTab === 'timeline'}
+			<Card padding="none">
+				<div class="px-4 py-3 border-b border-border/60">
+					<h3 class="text-sm font-semibold text-ink">Línea de tiempo médica</h3>
+				</div>
+				{#if data.historyTimeline.length > 0}
+					<div class="p-4">
+						<div class="relative pl-4 border-l-2 border-border/60 space-y-4">
+							{#each data.historyTimeline as entry, i (entry.id)}
+								{@const dotColor = entry.categoria === 'consulta' ? 'bg-viking-500' : entry.categoria === 'despacho' ? 'bg-sage-500' : 'bg-border'}
+								<div class="relative">
+									<div class="absolute -left-[13px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-surface-elevated {dotColor}"></div>
+									<div class="bg-canvas-subtle/50 rounded-lg border border-border/30 p-3">
+										<div class="flex items-start justify-between gap-2 mb-1">
+											<div>
+												<p class="text-sm font-semibold text-ink">{entry.titulo}</p>
+												<p class="text-xs text-ink-muted">{entry.detalle}</p>
+											</div>
+											<div class="flex items-center gap-2 shrink-0">
+												<Badge variant={entry.categoria === 'consulta' ? 'info' : entry.categoria === 'despacho' ? 'success' : 'default'} style="soft" size="sm">
+													{entry.categoria === 'consulta' ? 'Consulta' : entry.categoria === 'despacho' ? 'Despacho' : 'Admin'}
+												</Badge>
+												<span class="text-xs text-ink-muted">{formatFecha(entry.fecha)}</span>
+											</div>
+										</div>
+										{#if entry.formulario}
+											<div class="mt-2 pt-2 border-t border-border/30 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+												{#if entry.formulario.diagnostico}
+													<div><span class="text-ink-muted">Diagnóstico:</span> <span class="text-ink">{entry.formulario.diagnostico}</span></div>
+												{/if}
+												{#if entry.formulario.tratamiento}
+													<div><span class="text-ink-muted">Tratamiento:</span> <span class="text-ink">{entry.formulario.tratamiento}</span></div>
+												{/if}
+											</div>
+										{/if}
+									</div>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{:else}
+					<div class="p-6">
+						<EmptyState title="Sin registros" description="Este paciente aún no tiene eventos en su historial." />
+					</div>
+				{/if}
+			</Card>
+		{/if}
+
+		<!-- Tab: Citas -->
+		{#if activeTab === 'citas'}
+			<Card padding="none">
+				<div class="px-4 py-3 border-b border-border/60">
+					<h3 class="text-sm font-semibold text-ink">Historial de citas</h3>
+				</div>
+				{#if data.patientCitas.length > 0}
+					<div class="divide-y divide-border/40">
+						{#each data.patientCitas as cita (cita.id)}
+							<div class="px-4 py-3 flex items-center justify-between gap-3">
+								<div class="flex-1 min-w-0">
+									<p class="text-sm font-medium text-ink">{formatFecha(cita.fecha)} · {cita.hora_inicio}–{cita.hora_fin}</p>
+									<p class="text-xs text-ink-muted truncate">
+										{cita.doctor?.especialidad?.nombre ?? '—'} — Dr. {cita.doctor?.nombre} {cita.doctor?.apellido}
+									</p>
+									{#if cita.motivo_consulta}
+										<p class="text-xs text-ink-subtle mt-0.5 truncate">{cita.motivo_consulta}</p>
+									{/if}
+								</div>
+								<div class="flex items-center gap-2 shrink-0">
+									{#if cita.es_primera_vez}
+										<Badge variant="primary" style="soft" size="sm">1ª vez</Badge>
+									{/if}
+									<AppointmentStatusBadge status={cita.estado} />
+								</div>
+							</div>
+						{/each}
+					</div>
+				{:else}
+					<div class="p-6">
+						<EmptyState title="Sin citas" description="Este paciente no tiene citas registradas." />
+					</div>
+				{/if}
+			</Card>
+		{/if}
+
+		<!-- Tab: Despachos -->
+		{#if activeTab === 'despachos'}
+			<Card padding="none">
+				<div class="px-4 py-3 border-b border-border/60">
+					<h3 class="text-sm font-semibold text-ink">Historial de despachos de farmacia</h3>
+				</div>
+				{#if data.patientDispatches.length > 0}
+					<div class="divide-y divide-border/40">
+						{#each data.patientDispatches as dispatch (dispatch.id)}
+							<div class="px-4 py-3">
+								<div class="flex items-start justify-between gap-3 mb-2">
+									<div>
+										<p class="text-sm font-medium text-ink">Receta {dispatch.prescription_number}</p>
+										<p class="text-xs text-ink-muted">{formatFecha(dispatch.dispatch_date)} — {dispatch.pharmacist_name ?? 'Farmacia'}</p>
+									</div>
+									<StatusBadge status={dispatch.dispatch_status} />
+								</div>
+								{#if dispatch.items.length > 0}
+									<div class="flex flex-wrap gap-1.5">
+										{#each dispatch.items as item}
+											<span class="text-xs px-2 py-0.5 bg-canvas-subtle border border-border/40 rounded text-ink">
+												{item.medication.generic_name} × {item.quantity_dispatched}
+											</span>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{:else}
+					<div class="p-6">
+						<EmptyState title="Sin despachos" description="No hay medicamentos despachados para este paciente." />
+					</div>
+				{/if}
+			</Card>
+		{/if}
+
+		<!-- Contacto de emergencia -->
+		{#if p.contacto_emergencia?.nombre}
+			<div class="bg-surface-elevated border border-border/60 rounded-xl p-4">
+				<h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Contacto de emergencia</h3>
+				<div class="flex flex-wrap gap-4 text-sm">
+					<div><span class="text-ink-muted">Nombre:</span> <span class="text-ink font-medium">{p.contacto_emergencia.nombre}</span></div>
+					{#if p.contacto_emergencia.parentesco}
+						<div><span class="text-ink-muted">Parentesco:</span> <span class="text-ink font-medium capitalize">{p.contacto_emergencia.parentesco}</span></div>
+					{/if}
+					{#if p.contacto_emergencia.telefono}
+						<div><span class="text-ink-muted">Teléfono:</span> <a href="tel:{p.contacto_emergencia.telefono}" class="text-viking-600 font-medium hover:underline">{p.contacto_emergencia.telefono}</a></div>
+					{/if}
+				</div>
+			</div>
+		{/if}
+	{/if}
 </div>

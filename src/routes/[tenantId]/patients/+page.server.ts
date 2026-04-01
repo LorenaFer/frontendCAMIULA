@@ -1,17 +1,19 @@
 import type { PageServerLoad } from './$types';
 import { findFullByCedula, findFullByNHM } from '$lib/server/pacientes.service';
 import { findByPaciente, findById as findHistoriaById } from '$lib/server/historias.service';
+import * as citasService from '$lib/server/citas.service';
+import * as dispatchesService from '$lib/server/inventory/dispatches.service';
+import type { CitaConPaciente } from '$shared/types/appointments';
+import type { Dispatch } from '$shared/types/inventory';
 
 type SearchType = 'cedula' | 'nhm';
-
-type TimelineCategory = 'consulta' | 'laboratorio' | 'vacunacion' | 'administrativo';
 
 interface TimelineEntry {
 	id: string;
 	fecha: string;
 	titulo: string;
 	detalle: string;
-	categoria: TimelineCategory;
+	categoria: 'consulta' | 'laboratorio' | 'despacho' | 'administrativo';
 	formulario?: {
 		motivoConsulta?: string;
 		anamnesis?: string;
@@ -21,81 +23,14 @@ interface TimelineEntry {
 	};
 }
 
-interface PharmacyDelivery {
-	id: string;
-	fecha: string;
-	medicamento: string;
-	dosis: string;
-	cantidad: string;
-	estado: 'entregado' | 'pendiente';
-}
-
-function fallbackAdminByPatient(patientId: string): string {
-	const byPatient: Record<string, string> = {
-		'pac-001': 'Ana Torres',
-		'pac-002': 'Carlos Rivas',
-		'pac-003': 'Mariana Perez'
-	};
-
-	return byPatient[patientId] ?? 'Administrativo no especificado';
-}
-
-function adminDisplayName(value: string | undefined, patientId: string): string {
-	const username = value?.trim();
-	if (!username) return fallbackAdminByPatient(patientId);
-
-	const byUsername: Record<string, string> = {
-		portal_publico: 'Portal Publico',
-		analista_01: 'Ana Torres',
-		doctor_emergencia: 'Dr. de Emergencia'
-	};
-
-	return byUsername[username] ?? username;
-}
-
-function pharmacyDeliveriesForPatient(patientId: string): PharmacyDelivery[] {
-	const byPatient: Record<string, PharmacyDelivery[]> = {
-		'pac-001': [
-			{
-				id: 'farm-001',
-				fecha: '2025-03-10',
-				medicamento: 'Losartan 50 mg',
-				dosis: '1 tableta cada 12 horas',
-				cantidad: '30 tabletas',
-				estado: 'entregado'
-			},
-			{
-				id: 'farm-002',
-				fecha: '2025-02-01',
-				medicamento: 'Paracetamol 500 mg',
-				dosis: '1 tableta cada 8 horas por 3 dias',
-				cantidad: '9 tabletas',
-				estado: 'entregado'
-			}
-		],
-		'pac-002': [
-			{
-				id: 'farm-003',
-				fecha: '2025-03-02',
-				medicamento: 'Loratadina 10 mg',
-				dosis: '1 tableta diaria por 7 dias',
-				cantidad: '7 tabletas',
-				estado: 'entregado'
-			}
-		],
-		'pac-003': [
-			{
-				id: 'farm-004',
-				fecha: '2025-01-18',
-				medicamento: 'Diclofenac gel',
-				dosis: 'Aplicar 2 veces al dia',
-				cantidad: '1 tubo',
-				estado: 'entregado'
-			}
-		]
-	};
-
-	return byPatient[patientId] ?? [];
+interface PatientStats {
+	totalCitas: number;
+	citasAtendidas: number;
+	citasPendientes: number;
+	citasCanceladas: number;
+	noShows: number;
+	totalDespachos: number;
+	totalExamenesPendientes: number;
 }
 
 function normalizeSearchType(value: string | null): SearchType {
@@ -104,28 +39,26 @@ function normalizeSearchType(value: string | null): SearchType {
 
 export const load: PageServerLoad = async ({ url }) => {
 	const searchType = normalizeSearchType(url.searchParams.get('searchType'));
-	const query = url.searchParams.get('query')?.trim() ?? '';
+	const rawQuery = url.searchParams.get('query')?.trim() ?? '';
+	// Auto-detect: numérico puro < 100000 → NHM, sino cédula
+	const autoType = /^\d+$/.test(rawQuery) && Number(rawQuery) < 100000 ? 'nhm' : 'cedula';
+	const effectiveType = rawQuery ? autoType : searchType;
+	const query = rawQuery;
 	const searched = query.length > 0;
 
 	let patient = null;
 	let validationMessage: string | undefined;
-	let medicalSnapshot: {
-		tipoSangre: string;
-		alergias: string[];
-		condiciones: string[];
-	} | null = null;
-	let registrationMeta: {
-		administrativo: string;
-	} | null = null;
+	let medicalSnapshot: { tipoSangre: string; alergias: string[]; condiciones: string[] } | null = null;
 	let historyTimeline: TimelineEntry[] = [];
-	let pharmacyDeliveries: PharmacyDelivery[] = [];
+	let patientCitas: CitaConPaciente[] = [];
+	let patientDispatches: Dispatch[] = [];
+	let stats: PatientStats | null = null;
 
 	if (searched) {
 		let fullPatient = null;
 
-		if (searchType === 'nhm') {
+		if (effectiveType === 'nhm') {
 			const nhm = Number(query);
-
 			if (!Number.isInteger(nhm) || nhm <= 0) {
 				validationMessage = 'El número de historia debe ser un entero positivo.';
 			} else {
@@ -136,18 +69,24 @@ export const load: PageServerLoad = async ({ url }) => {
 		}
 
 		if (fullPatient) {
-			const createdBy = (fullPatient as { created_by?: string }).created_by;
-			const administrativo = adminDisplayName(createdBy, fullPatient.id);
-
 			patient = {
 				id: fullPatient.id,
 				nhm: fullPatient.nhm,
 				cedula: fullPatient.cedula,
 				nombre: fullPatient.nombre,
 				apellido: fullPatient.apellido,
+				sexo: fullPatient.sexo,
 				edad: fullPatient.edad,
+				fecha_nacimiento: fullPatient.fecha_nacimiento,
+				estado_civil: fullPatient.estado_civil,
 				relacion_univ: fullPatient.relacion_univ,
-				es_nuevo: fullPatient.es_nuevo
+				telefono: fullPatient.telefono,
+				direccion_habitacion: fullPatient.direccion_habitacion,
+				profesion: fullPatient.profesion,
+				es_nuevo: fullPatient.es_nuevo,
+				datos_medicos: fullPatient.datos_medicos,
+				contacto_emergencia: fullPatient.contacto_emergencia,
+				created_at: fullPatient.created_at
 			};
 
 			medicalSnapshot = {
@@ -156,94 +95,88 @@ export const load: PageServerLoad = async ({ url }) => {
 				condiciones: fullPatient.datos_medicos?.condiciones ?? []
 			};
 
-			registrationMeta = {
-				administrativo
+			// Cargar datos reales en paralelo
+			const [previousHistories, citasResult, dispatches] = await Promise.all([
+				findByPaciente(fullPatient.id, { limit: 10 }),
+				citasService.getCitasByFilters({ search: fullPatient.cedula, page_size: 50 }),
+				dispatchesService.getDispatches({ patient_id: fullPatient.id, page: 1, pageSize: 20 })
+			]);
+
+			// Citas del paciente
+			patientCitas = citasResult.items
+				.filter((c) => c.paciente_id === fullPatient!.id)
+				.sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+			// Despachos del paciente
+			patientDispatches = (dispatches.data as Dispatch[])
+				.filter((d) => d.fk_patient_id === fullPatient!.id)
+				.sort((a, b) => b.dispatch_date.localeCompare(a.dispatch_date));
+
+			// Stats
+			stats = {
+				totalCitas: patientCitas.length,
+				citasAtendidas: patientCitas.filter((c) => c.estado === 'atendida').length,
+				citasPendientes: patientCitas.filter((c) => c.estado === 'pendiente' || c.estado === 'confirmada').length,
+				citasCanceladas: patientCitas.filter((c) => c.estado === 'cancelada').length,
+				noShows: patientCitas.filter((c) => c.estado === 'no_asistio').length,
+				totalDespachos: patientDispatches.length,
+				totalExamenesPendientes: 0 // TODO: connect when exams module exists
 			};
 
-			const condiciones = fullPatient.datos_medicos?.condiciones ?? [];
-			const alergias = fullPatient.datos_medicos?.alergias ?? [];
-
-			const previousHistories = await findByPaciente(fullPatient.id, { limit: 8 });
-
+			// Timeline: historias médicas
 			const historyEvents: TimelineEntry[] = await Promise.all(
 				previousHistories.map(async (entry) => {
-					const titulo = entry.diagnostico_descripcion?.trim()
-						? entry.diagnostico_descripcion
-						: `Consulta de ${entry.especialidad}`;
-					const detalle = `${entry.especialidad} • ${entry.doctor_nombre}`;
 					const historia = await findHistoriaById(entry.id);
 					const evaluacion = historia?.evaluacion;
-
 					return {
 						id: entry.id,
 						fecha: entry.fecha,
-						titulo,
-						detalle,
-						categoria: 'consulta',
-						formulario: evaluacion
-							? {
-								motivoConsulta: evaluacion.motivo_consulta,
-								anamnesis: evaluacion.anamnesis,
-								diagnostico: evaluacion.diagnostico?.descripcion,
-								tratamiento: evaluacion.tratamiento,
-								indicaciones: evaluacion.indicaciones
-							}
-							: undefined
+						titulo: entry.diagnostico_descripcion?.trim() || `Consulta de ${entry.especialidad}`,
+						detalle: `${entry.especialidad} — ${entry.doctor_nombre}`,
+						categoria: 'consulta' as const,
+						formulario: evaluacion ? {
+							motivoConsulta: evaluacion.motivo_consulta,
+							anamnesis: evaluacion.anamnesis,
+							diagnostico: evaluacion.diagnostico?.descripcion,
+							tratamiento: evaluacion.tratamiento,
+							indicaciones: evaluacion.indicaciones
+						} : undefined
 					};
 				})
 			);
 
-			const syntheticEvents: TimelineEntry[] = [
-				{
-					id: `adm-${fullPatient.id}`,
-					fecha: fullPatient.created_at.slice(0, 10),
-					titulo: 'Registro del paciente en sistema',
-					detalle: `Apertura de expediente clinico por ${administrativo}`,
-					categoria: 'administrativo'
-				}
-			];
+			// Timeline: despachos
+			const dispatchEvents: TimelineEntry[] = patientDispatches.map((d) => ({
+				id: `disp-${d.id}`,
+				fecha: d.dispatch_date,
+				titulo: `Despacho de medicamentos`,
+				detalle: `${d.items.length} medicamento(s) — ${d.pharmacist_name ?? 'Farmacia'}`,
+				categoria: 'despacho' as const
+			}));
 
-			if (condiciones.length > 0) {
-				syntheticEvents.push({
-					id: `cond-${fullPatient.id}`,
-					fecha: fullPatient.created_at.slice(0, 10),
-					titulo: 'Condiciones cronicas registradas',
-					detalle: condiciones.join(', '),
-					categoria: 'administrativo'
-				});
-			}
+			// Timeline: registro
+			const adminEvents: TimelineEntry[] = [{
+				id: `reg-${fullPatient.id}`,
+				fecha: fullPatient.created_at.slice(0, 10),
+				titulo: 'Registro del paciente en sistema',
+				detalle: 'Apertura de expediente clínico',
+				categoria: 'administrativo' as const
+			}];
 
-			if (alergias.length > 0) {
-				syntheticEvents.push({
-					id: `aler-${fullPatient.id}`,
-					fecha: fullPatient.created_at.slice(0, 10),
-					titulo: 'Alergias documentadas',
-					detalle: alergias.join(', '),
-					categoria: 'administrativo'
-				});
-			}
-
-			historyTimeline = [...historyEvents, ...syntheticEvents]
+			historyTimeline = [...historyEvents, ...dispatchEvents, ...adminEvents]
 				.sort((a, b) => b.fecha.localeCompare(a.fecha))
-				.slice(0, 10);
-
-			pharmacyDeliveries = pharmacyDeliveriesForPatient(fullPatient.id).sort((a, b) =>
-				b.fecha.localeCompare(a.fecha)
-			);
-
+				.slice(0, 15);
 		}
 	}
 
 	return {
-		filters: {
-			searchType,
-			query
-		},
+		filters: { searchType: effectiveType, query },
 		patient,
 		medicalSnapshot,
-		registrationMeta,
 		historyTimeline,
-		pharmacyDeliveries,
+		patientCitas,
+		patientDispatches,
+		stats,
 		searched,
 		validationMessage
 	};
