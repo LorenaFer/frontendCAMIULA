@@ -3,6 +3,7 @@ import { findFullByCedula, findFullByNHM } from '$lib/server/pacientes.service';
 import { findByPaciente, findById as findHistoriaById } from '$lib/server/historias.service';
 import * as citasService from '$lib/server/citas.service';
 import * as dispatchesService from '$lib/server/inventory/dispatches.service';
+import * as schemasService from '$lib/server/schemas.service';
 import type { CitaConPaciente } from '$shared/types/appointments';
 import type { Dispatch } from '$shared/types/inventory';
 
@@ -14,17 +15,17 @@ interface TimelineEntry {
 	titulo: string;
 	detalle: string;
 	categoria: 'consulta' | 'laboratorio' | 'despacho' | 'administrativo';
-	formulario?: {
-		motivoConsulta?: string;
-		anamnesis?: string;
-		examenFisico?: { ta?: string; fc?: string; fr?: string; temp?: string; peso?: string; talla?: string };
-		diagnostico?: string;
-		diagnosticoCie10?: string;
-		tratamiento?: string;
-		indicaciones?: string;
-		examenesSolicitados?: Array<{ nombre: string; indicaciones?: string }>;
-		receta?: Array<{ medicamento: string; dosis?: string; frecuencia?: string; duracion?: string }>;
-	};
+	/** Especialidad de la consulta */
+	especialidad?: string;
+	/** Secciones del formulario dinámico renderizadas con labels legibles */
+	formSections?: Array<{
+		title: string;
+		fields: Array<{ label: string; value: string }>;
+	}>;
+	/** Datos universales (fuera del schema de especialidad) */
+	observaciones?: string;
+	examenesSolicitados?: Array<{ nombre: string; indicaciones?: string }>;
+	receta?: Array<{ medicamento: string; dosis?: string; frecuencia?: string; duracion?: string }>;
 }
 
 interface PatientStats {
@@ -39,6 +40,48 @@ interface PatientStats {
 
 function normalizeSearchType(value: string | null): SearchType {
 	return value === 'nhm' ? 'nhm' : 'cedula';
+}
+
+/** Extrae valor legible de un campo del formulario dinámico */
+function extractFieldValue(data: Record<string, unknown>, key: string): string {
+	const parts = key.split('.');
+	let val: unknown = data;
+	for (const part of parts) {
+		if (val && typeof val === 'object') val = (val as Record<string, unknown>)[part];
+		else return '';
+	}
+	if (val === null || val === undefined || val === '') return '';
+	if (typeof val === 'boolean') return val ? 'Sí' : 'No';
+	if (Array.isArray(val)) return val.filter(Boolean).join(', ');
+	return String(val);
+}
+
+/** Convierte evaluación dinámica + schema en secciones con labels legibles */
+async function buildFormSections(
+	evaluacion: Record<string, unknown>,
+	especialidad: string
+): Promise<Array<{ title: string; fields: Array<{ label: string; value: string }> }>> {
+	const schema = await schemasService.getFormSchema(especialidad);
+	if (!schema?.sections) return [];
+
+	const sections: Array<{ title: string; fields: Array<{ label: string; value: string }> }> = [];
+
+	for (const section of schema.sections) {
+		const fields: Array<{ label: string; value: string }> = [];
+		for (const group of section.groups) {
+			for (const field of group.fields) {
+				const value = extractFieldValue(evaluacion, field.key);
+				if (value) {
+					fields.push({ label: field.label, value });
+				}
+			}
+		}
+		if (fields.length > 0) {
+			sections.push({ title: section.title, fields });
+		}
+	}
+
+	return sections;
 }
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -132,28 +175,33 @@ export const load: PageServerLoad = async ({ url }) => {
 				previousHistories.map(async (entry) => {
 					const historia = await findHistoriaById(entry.id);
 					const evaluacion = historia?.evaluacion;
+					const evalData = evaluacion as Record<string, unknown> | undefined;
+
+					// Construir secciones dinámicas del formulario de especialidad
+					const formSections = evalData
+						? await buildFormSections(evalData, entry.especialidad)
+						: [];
+
+					// Datos universales (fuera del schema)
+					const examenes = evalData?.examenes_solicitados as Array<{ nombre: string; indicaciones?: string }> | undefined;
+					const recetaData = evalData?.receta as { medicamentos?: Array<Record<string, unknown>> } | undefined;
+
 					return {
 						id: entry.id,
 						fecha: entry.fecha,
 						titulo: entry.diagnostico_descripcion?.trim() || `Consulta de ${entry.especialidad}`,
 						detalle: `${entry.especialidad} — ${entry.doctor_nombre}`,
 						categoria: 'consulta' as const,
-						formulario: evaluacion ? {
-							motivoConsulta: evaluacion.motivo_consulta,
-							anamnesis: evaluacion.anamnesis,
-							examenFisico: evaluacion.examen_fisico,
-							diagnostico: evaluacion.diagnostico?.descripcion,
-							diagnosticoCie10: evaluacion.diagnostico?.cie10,
-							tratamiento: evaluacion.tratamiento,
-							indicaciones: evaluacion.indicaciones,
-							examenesSolicitados: (evaluacion as Record<string, unknown>).examenes_solicitados as Array<{ nombre: string; indicaciones?: string }> | undefined,
-							receta: ((evaluacion as Record<string, unknown>).receta as { medicamentos?: Array<Record<string, unknown>> })?.medicamentos?.map((m) => ({
-								medicamento: String(m.medicamento ?? ''),
-								dosis: String(m.dosis ?? ''),
-								frecuencia: String(m.frecuencia ?? ''),
-								duracion: String(m.duracion ?? '')
-							})) ?? undefined
-						} : undefined
+						especialidad: entry.especialidad,
+						formSections,
+						observaciones: evalData?.observaciones as string | undefined,
+						examenesSolicitados: examenes,
+						receta: recetaData?.medicamentos?.map((m) => ({
+							medicamento: String(m.medicamento ?? ''),
+							dosis: String(m.dosis ?? ''),
+							frecuencia: String(m.frecuencia ?? ''),
+							duracion: String(m.duracion ?? '')
+						}))
 					};
 				})
 			);
