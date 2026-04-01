@@ -17,9 +17,13 @@ interface TimelineEntry {
 	formulario?: {
 		motivoConsulta?: string;
 		anamnesis?: string;
+		examenFisico?: { ta?: string; fc?: string; fr?: string; temp?: string; peso?: string; talla?: string };
 		diagnostico?: string;
+		diagnosticoCie10?: string;
 		tratamiento?: string;
 		indicaciones?: string;
+		examenesSolicitados?: Array<{ nombre: string; indicaciones?: string }>;
+		receta?: Array<{ medicamento: string; dosis?: string; frecuencia?: string; duracion?: string }>;
 	};
 }
 
@@ -137,9 +141,18 @@ export const load: PageServerLoad = async ({ url }) => {
 						formulario: evaluacion ? {
 							motivoConsulta: evaluacion.motivo_consulta,
 							anamnesis: evaluacion.anamnesis,
+							examenFisico: evaluacion.examen_fisico,
 							diagnostico: evaluacion.diagnostico?.descripcion,
+							diagnosticoCie10: evaluacion.diagnostico?.cie10,
 							tratamiento: evaluacion.tratamiento,
-							indicaciones: evaluacion.indicaciones
+							indicaciones: evaluacion.indicaciones,
+							examenesSolicitados: (evaluacion as Record<string, unknown>).examenes_solicitados as Array<{ nombre: string; indicaciones?: string }> | undefined,
+							receta: ((evaluacion as Record<string, unknown>).receta as { medicamentos?: Array<Record<string, unknown>> })?.medicamentos?.map((m) => ({
+								medicamento: String(m.medicamento ?? ''),
+								dosis: String(m.dosis ?? ''),
+								frecuencia: String(m.frecuencia ?? ''),
+								duracion: String(m.duracion ?? '')
+							})) ?? undefined
 						} : undefined
 					};
 				})

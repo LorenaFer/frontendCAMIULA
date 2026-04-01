@@ -15,6 +15,7 @@
 
 	let searchQuery = $state(data.filters.query ?? '');
 	let activeTab = $state<'timeline' | 'citas' | 'despachos'>('timeline');
+	let expandedEntryId = $state<string | null>(null);
 
 	function doSearch() {
 		if (!searchQuery.trim()) return;
@@ -203,10 +204,17 @@
 						<div class="relative pl-4 border-l-2 border-border/60 space-y-4">
 							{#each data.historyTimeline as entry, i (entry.id)}
 								{@const dotColor = entry.categoria === 'consulta' ? 'bg-viking-500' : entry.categoria === 'despacho' ? 'bg-sage-500' : 'bg-border'}
+								{@const isExpanded = expandedEntryId === entry.id}
+								{@const hasDetail = !!entry.formulario}
 								<div class="relative">
 									<div class="absolute -left-[13px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-surface-elevated {dotColor}"></div>
-									<div class="bg-canvas-subtle/50 rounded-lg border border-border/30 p-3">
-										<div class="flex items-start justify-between gap-2 mb-1">
+									<button
+										type="button"
+										class="w-full text-left bg-canvas-subtle/50 rounded-lg border border-border/30 p-3 transition-colors {hasDetail ? 'hover:bg-canvas-subtle cursor-pointer' : ''}"
+										onclick={() => { if (hasDetail) expandedEntryId = isExpanded ? null : entry.id; }}
+										disabled={!hasDetail}
+									>
+										<div class="flex items-start justify-between gap-2">
 											<div>
 												<p class="text-sm font-semibold text-ink">{entry.titulo}</p>
 												<p class="text-xs text-ink-muted">{entry.detalle}</p>
@@ -216,19 +224,121 @@
 													{entry.categoria === 'consulta' ? 'Consulta' : entry.categoria === 'despacho' ? 'Despacho' : 'Admin'}
 												</Badge>
 												<span class="text-xs text-ink-muted">{formatFecha(entry.fecha)}</span>
+												{#if hasDetail}
+													<svg class="w-4 h-4 text-ink-subtle transition-transform duration-200 {isExpanded ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+														<path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+													</svg>
+												{/if}
 											</div>
 										</div>
-										{#if entry.formulario}
-											<div class="mt-2 pt-2 border-t border-border/30 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-												{#if entry.formulario.diagnostico}
-													<div><span class="text-ink-muted">Diagnóstico:</span> <span class="text-ink">{entry.formulario.diagnostico}</span></div>
+
+										<!-- Resumen (siempre visible si tiene diagnóstico) -->
+										{#if entry.formulario?.diagnostico && !isExpanded}
+											<p class="mt-1.5 text-xs text-ink-muted">
+												{#if entry.formulario.diagnosticoCie10}<span class="font-mono text-viking-600 dark:text-viking-400">{entry.formulario.diagnosticoCie10}</span> — {/if}{entry.formulario.diagnostico}
+											</p>
+										{/if}
+									</button>
+
+									<!-- Detalle expandido -->
+									{#if isExpanded && entry.formulario}
+										{@const f = entry.formulario}
+										<div class="mt-1 bg-surface-elevated border border-border/60 rounded-lg p-4 space-y-4 animate-fade-in-up">
+											<!-- Motivo + Anamnesis -->
+											{#if f.motivoConsulta || f.anamnesis}
+												<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+													{#if f.motivoConsulta}
+														<div>
+															<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Motivo de consulta</p>
+															<p class="text-sm text-ink">{f.motivoConsulta}</p>
+														</div>
+													{/if}
+													{#if f.anamnesis}
+														<div>
+															<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Anamnesis</p>
+															<p class="text-sm text-ink">{f.anamnesis}</p>
+														</div>
+													{/if}
+												</div>
+											{/if}
+
+											<!-- Examen físico -->
+											{#if f.examenFisico && (f.examenFisico.ta || f.examenFisico.fc || f.examenFisico.peso)}
+												<div>
+													<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Signos vitales</p>
+													<div class="flex flex-wrap gap-3">
+														{#each [['T.A.', f.examenFisico.ta, 'mmHg'], ['F.C.', f.examenFisico.fc, 'lpm'], ['F.R.', f.examenFisico.fr, 'rpm'], ['Temp', f.examenFisico.temp, '°C'], ['Peso', f.examenFisico.peso, 'kg'], ['Talla', f.examenFisico.talla, 'm']] as [label, val, unit]}
+															{#if val}
+																<div class="bg-canvas-subtle rounded-lg px-3 py-1.5 border border-border/40">
+																	<p class="text-xs text-ink-muted">{label}</p>
+																	<p class="text-sm font-mono font-medium text-ink">{val} <span class="text-xs text-ink-subtle">{unit}</span></p>
+																</div>
+															{/if}
+														{/each}
+													</div>
+												</div>
+											{/if}
+
+											<!-- Diagnóstico -->
+											{#if f.diagnostico}
+												<div>
+													<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Diagnóstico</p>
+													<p class="text-sm text-ink">
+														{#if f.diagnosticoCie10}<span class="font-mono text-viking-600 dark:text-viking-400 font-medium">{f.diagnosticoCie10}</span> — {/if}
+														{f.diagnostico}
+													</p>
+												</div>
+											{/if}
+
+											<!-- Tratamiento + Indicaciones -->
+											<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+												{#if f.tratamiento}
+													<div>
+														<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Tratamiento</p>
+														<p class="text-sm text-ink">{f.tratamiento}</p>
+													</div>
 												{/if}
-												{#if entry.formulario.tratamiento}
-													<div><span class="text-ink-muted">Tratamiento:</span> <span class="text-ink">{entry.formulario.tratamiento}</span></div>
+												{#if f.indicaciones}
+													<div>
+														<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Indicaciones</p>
+														<p class="text-sm text-ink">{f.indicaciones}</p>
+													</div>
 												{/if}
 											</div>
-										{/if}
-									</div>
+
+											<!-- Exámenes solicitados -->
+											{#if f.examenesSolicitados && f.examenesSolicitados.length > 0}
+												<div>
+													<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Exámenes solicitados</p>
+													<div class="flex flex-wrap gap-1.5">
+														{#each f.examenesSolicitados as exam}
+															<span class="text-xs px-2.5 py-1 bg-viking-50 dark:bg-viking-900/20 border border-viking-200 dark:border-viking-800 rounded-lg text-viking-700 dark:text-viking-300">
+																{exam.nombre}
+															</span>
+														{/each}
+													</div>
+												</div>
+											{/if}
+
+											<!-- Receta -->
+											{#if f.receta && f.receta.length > 0}
+												<div>
+													<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Receta médica</p>
+													<div class="space-y-1.5">
+														{#each f.receta as med}
+															<div class="flex items-center gap-2 text-sm">
+																<span class="w-1.5 h-1.5 rounded-full bg-sage-500 shrink-0"></span>
+																<span class="font-medium text-ink">{med.medicamento}</span>
+																{#if med.dosis}<span class="text-ink-muted">{med.dosis}</span>{/if}
+																{#if med.frecuencia}<span class="text-ink-muted">· {med.frecuencia}</span>{/if}
+																{#if med.duracion}<span class="text-ink-muted">· {med.duracion}</span>{/if}
+															</div>
+														{/each}
+													</div>
+												</div>
+											{/if}
+										</div>
+									{/if}
 								</div>
 							{/each}
 						</div>
