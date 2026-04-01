@@ -20,6 +20,7 @@
 	import TimeSlotPicker from '$shared/components/appointments/TimeSlotPicker.svelte';
 	import type { TimeSlot, DoctorOption } from '$shared/types/appointments.js';
 	import { enhance, deserialize } from '$app/forms';
+	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -524,8 +525,12 @@
 				return async ({ result, update }) => {
 					await update();
 					if (result.type === 'success') {
+						const nombre = cancellingCita?.paciente?.nombre ?? '';
 						cancellingCita = null;
 						await invalidateAll();
+						toastSuccess('Cita cancelada', `La cita de ${nombre} fue cancelada correctamente.`);
+					} else {
+						toastError('Error al cancelar', 'No se pudo cancelar la cita. Intente nuevamente.');
 					}
 				};
 			}}
@@ -564,8 +569,13 @@
 				return async ({ result, update }) => {
 					await update();
 					if (result.type === 'success') {
+						const nombre = reschedulingCita?.paciente?.nombre ?? '';
+						const fecha = rescheduleDate;
 						reschedulingCita = null;
 						await invalidateAll();
+						toastSuccess('Cita reagendada', `La cita de ${nombre} fue movida al ${fecha}.`);
+					} else {
+						toastError('Error al reagendar', 'No se pudo reagendar la cita. Intente nuevamente.');
 					}
 				};
 			}}

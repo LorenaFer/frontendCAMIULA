@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import TenantLayout from '$shared/components/layout/TenantLayout.svelte';
+	import ToastContainer from '$shared/components/toast/ToastContainer.svelte';
 	import type { NavItem, UserProfile, Hospital } from '$shared/types/navigation';
 	import type { SearchResult } from '$shared/components/layout/navUtils';
 	import type { AuthUser } from '$shared/types/auth.js';
@@ -221,3 +222,5 @@
 		</TenantLayout>
 	{/if}
 {/if}
+
+<ToastContainer />

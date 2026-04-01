@@ -19,6 +19,7 @@
 	import Textarea from '$shared/components/input/Textarea.svelte';
 	import DoctorAvailabilityCalendar from './DoctorAvailabilityCalendar.svelte';
 	import TimeSlotPicker from './TimeSlotPicker.svelte';
+	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 
 	interface Props {
 		doctores: DoctorOption[];
@@ -194,7 +195,9 @@
 				currentStep = 1;
 			}
 		} catch (e) {
-			formError = e instanceof Error ? e.message : 'Error de conexión. Intente nuevamente.';
+			const msg = e instanceof Error ? e.message : 'Error de conexión. Intente nuevamente.';
+			formError = msg;
+			toastError('No se encontró el paciente', msg);
 		} finally {
 			loading = false;
 		}
@@ -230,8 +233,11 @@
 			paciente = data.paciente;
 			esNuevo = true;
 			currentStep = 2;
+			toastSuccess('Registro exitoso', `Bienvenido/a ${regNombre}. Ahora seleccione su doctor.`);
 		} catch (e) {
-			formError = e instanceof Error ? e.message : 'Error de conexión. Intente nuevamente.';
+			const msg = e instanceof Error ? e.message : 'Error de conexión. Intente nuevamente.';
+			formError = msg;
+			toastError('Error en el registro', msg);
 		} finally {
 			loading = false;
 		}
@@ -309,7 +315,9 @@
 			window.location.href = data.redirectUrl;
 			return;
 		} catch (e) {
-			formError = e instanceof Error ? e.message : 'Error de conexión. Intente nuevamente.';
+			const msg = e instanceof Error ? e.message : 'Error de conexión. Intente nuevamente.';
+			formError = msg;
+			toastError('No se pudo agendar', msg);
 		} finally {
 			loading = false;
 		}
