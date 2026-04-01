@@ -268,6 +268,7 @@
 				<PrescriptionSection
 					items={recetaItems}
 					disabled={isReadonly}
+					medicationOptions={data.medicationOptions}
 					onchange={(items) => { recetaItems = items; recetaTouched = true; scheduleUniversalAutosave(); }}
 					onEmitRecipe={isReadonly ? undefined : handleEmitRecipe}
 					recipeEmitted={recipeEmitted}

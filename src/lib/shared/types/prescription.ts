@@ -6,6 +6,10 @@
 export interface PrescriptionItem extends Record<string, unknown> {
 	id: string;
 	medicamento: string;
+	/** ID del medicamento del inventario (null si es externo) */
+	medication_id?: string;
+	/** 'inventario' = del hospital (genera despacho), 'externo' = farmacia externa */
+	source: 'inventario' | 'externo';
 	presentacion: string;
 	dosis: string;
 	via: string;
@@ -56,6 +60,8 @@ export function createPrescriptionItem(): PrescriptionItem {
 	return {
 		id: 'rx-' + (++_rxCounter).toString(36) + '-' + Math.random().toString(36).slice(2, 8),
 		medicamento: '',
+		medication_id: undefined,
+		source: 'inventario',
 		presentacion: '',
 		dosis: '',
 		via: 'oral',

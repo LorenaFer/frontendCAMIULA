@@ -2,6 +2,7 @@
 	import EditableTable from '$shared/components/table/EditableTable.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import type { EditableColumn } from '$shared/components/table/types';
+	import type { MedicationOption } from '$shared/types/inventory.js';
 	import {
 		type PrescriptionItem,
 		PRESENTACION_OPTIONS,
@@ -13,6 +14,8 @@
 		items: PrescriptionItem[];
 		disabled?: boolean;
 		onchange: (items: PrescriptionItem[]) => void;
+		/** Medicamentos disponibles del inventario del hospital */
+		medicationOptions?: MedicationOption[];
 		/** Callback para emitir receta formal sin navegar */
 		onEmitRecipe?: (items: PrescriptionItem[]) => void;
 		/** Ya se emitió una receta para esta cita */
@@ -21,7 +24,7 @@
 		class?: string;
 	}
 
-	let { items, disabled = false, onchange, onEmitRecipe, recipeEmitted = false, emitting = false, class: className = '' }: Props = $props();
+	let { items, disabled = false, onchange, medicationOptions = [], onEmitRecipe, recipeEmitted = false, emitting = false, class: className = '' }: Props = $props();
 
 	let collapsed = $state(false);
 
@@ -39,15 +42,67 @@
 
 <!-- Snippet renderers for each column -->
 
-{#snippet medicamentoCell(value: PrescriptionItem[keyof PrescriptionItem], _row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
-	<input
-		type="text"
-		value={String(value ?? '')}
-		placeholder="Nombre..."
-		{disabled}
-		oninput={(e) => onChange('medicamento', e.currentTarget.value)}
-		class="w-full px-2 py-1 text-sm bg-transparent border border-transparent hover:border-border focus:border-border-strong focus:ring-1 focus:ring-border-subtle rounded text-ink placeholder:text-ink-subtle outline-none transition-colors"
-	/>
+{#snippet medicamentoCell(value: PrescriptionItem[keyof PrescriptionItem], row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
+	{@const isFromInventory = row.source === 'inventario' && row.medication_id}
+	{@const query = String(value ?? '').toLowerCase()}
+	{@const matches = query.length >= 2 && !row.medication_id && medicationOptions.length > 0
+		? medicationOptions.filter((m) => m.generic_name.toLowerCase().includes(query) || m.code.toLowerCase().includes(query)).slice(0, 5)
+		: []}
+	<div class="relative">
+		{#if isFromInventory}
+			<div class="flex items-center gap-1 px-2 py-1">
+				<span class="text-sm text-viking-700 dark:text-viking-300 truncate font-medium">{String(value ?? '')}</span>
+				{#if !disabled}
+					<button type="button" class="shrink-0 text-ink-subtle hover:text-red-500 transition-colors" onclick={() => {
+						onChange('medicamento', '');
+						onChange('medication_id', '');
+						onChange('source', 'inventario');
+						onChange('presentacion', '');
+					}}>
+						<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+					</button>
+				{/if}
+			</div>
+		{:else}
+			<input
+				type="text"
+				value={String(value ?? '')}
+				placeholder="Buscar medicamento..."
+				{disabled}
+				oninput={(e) => {
+					onChange('medicamento', e.currentTarget.value);
+					onChange('medication_id', '');
+					onChange('source', e.currentTarget.value ? 'externo' : 'inventario');
+				}}
+				class="w-full px-2 py-1 text-sm bg-transparent border border-transparent hover:border-border focus:border-border-strong focus:ring-1 focus:ring-border-subtle rounded text-ink placeholder:text-ink-subtle outline-none transition-colors"
+			/>
+			{#if matches.length > 0}
+				<div class="absolute left-0 right-0 top-full mt-0.5 z-30 bg-surface-elevated border border-border/60 rounded-lg shadow-[var(--shadow-2)] py-1 max-h-40 overflow-y-auto">
+					{#each matches as med (med.id)}
+						<button
+							type="button"
+							class="w-full text-left px-2.5 py-1.5 text-sm hover:bg-canvas-subtle transition-colors"
+							onmousedown={(e: MouseEvent) => e.preventDefault()}
+							onclick={() => {
+								onChange('medicamento', med.generic_name);
+								onChange('medication_id', med.id);
+								onChange('source', 'inventario');
+								onChange('presentacion', med.pharmaceutical_form?.toLowerCase() ?? '');
+							}}
+						>
+							<span class="font-medium text-ink">{med.generic_name}</span>
+							<span class="text-xs text-ink-muted block">{med.pharmaceutical_form} · Stock: {med.current_stock}</span>
+						</button>
+					{/each}
+					{#if query.length >= 2}
+						<div class="px-2.5 py-1.5 text-xs text-ink-subtle border-t border-border/40">
+							Escriba el nombre completo para farmacia externa
+						</div>
+					{/if}
+				</div>
+			{/if}
+		{/if}
+	</div>
 {/snippet}
 
 {#snippet presentacionCell(value: PrescriptionItem[keyof PrescriptionItem], _row: PrescriptionItem, _index: number, onChange: (key: keyof PrescriptionItem, value: PrescriptionItem[keyof PrescriptionItem]) => void)}
