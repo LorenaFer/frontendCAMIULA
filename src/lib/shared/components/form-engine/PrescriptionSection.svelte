@@ -40,12 +40,29 @@
 			.slice(0, 6);
 	});
 
+	// Mapea forma farmacéutica del inventario al value del select de presentación
+	const formToPresentation: Record<string, string> = {
+		'tableta': 'tabletas', 'tabletas': 'tabletas',
+		'cápsula': 'capsulas', 'capsula': 'capsulas', 'cápsulas': 'capsulas',
+		'jarabe': 'jarabe',
+		'inyectable': 'inyectable',
+		'crema': 'crema',
+		'gotas': 'gotas',
+		'suspensión': 'suspension', 'suspension': 'suspension',
+		'solución': 'solucion', 'solucion': 'solucion',
+		'supositorio': 'supositorio',
+		'parche': 'parche',
+		'inhalador': 'inhalador',
+		'polvo': 'polvo',
+		'ampolla': 'ampolla'
+	};
+
 	function addFromInventory(med: MedicationOption) {
 		const newItem = createPrescriptionItem();
 		newItem.medicamento = med.generic_name;
 		newItem.medication_id = med.id;
 		newItem.source = 'inventario';
-		newItem.presentacion = med.pharmaceutical_form?.toLowerCase() ?? '';
+		newItem.presentacion = formToPresentation[med.pharmaceutical_form?.toLowerCase() ?? ''] ?? '';
 		onchange([...items, newItem]);
 		medSearch = '';
 	}
