@@ -20,7 +20,7 @@
 	import TimeSlotPicker from '$shared/components/appointments/TimeSlotPicker.svelte';
 	import type { TimeSlot, DoctorOption } from '$shared/types/appointments.js';
 	import { enhance, deserialize } from '$app/forms';
-	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
+	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -528,7 +528,7 @@
 						const nombre = cancellingCita?.paciente?.nombre ?? '';
 						cancellingCita = null;
 						await invalidateAll();
-						toastSuccess('Cita cancelada', `La cita de ${nombre} fue cancelada correctamente.`);
+						toastWarning('Cita cancelada', `La cita de ${nombre} fue cancelada correctamente.`);
 					} else {
 						toastError('Error al cancelar', 'No se pudo cancelar la cita. Intente nuevamente.');
 					}

@@ -11,7 +11,7 @@
 	import { page } from '$app/stores';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
+	import { toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const tenantId = $derived($page.params.tenantId);
@@ -162,7 +162,7 @@
 					if (result.type === 'success') {
 						cancellingCita = null;
 						await invalidateAll();
-						toastSuccess('Cita cancelada', 'Su cita fue cancelada correctamente. Puede agendar una nueva cuando lo desee.');
+						toastWarning('Cita cancelada', 'Su cita fue cancelada correctamente. Puede agendar una nueva cuando lo desee.');
 					} else {
 						toastError('Error', 'No se pudo cancelar la cita. Intente nuevamente.');
 					}
