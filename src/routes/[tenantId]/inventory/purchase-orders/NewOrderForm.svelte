@@ -4,6 +4,9 @@
 	import type { SupplierOption, MedicationOption } from '$shared/types/inventory.js';
 	import MedicationSelector from '$shared/components/inventory/MedicationSelector.svelte';
 	import Button from '$shared/components/button/Button.svelte';
+	import Select from '$shared/components/select/Select.svelte';
+	import Input from '$shared/components/input/Input.svelte';
+	import Textarea from '$shared/components/input/Textarea.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 
 	let {
@@ -24,7 +27,15 @@
 	}
 
 	let submitting = $state(false);
+	let selectedSupplierId = $state('');
+	let expectedDate = $state('');
+	let notes = $state('');
 	let items = $state<ItemDraft[]>([{ _key: 0, medication: null, quantity_ordered: 1, unit_cost: 0 }]);
+
+	const supplierSelectOptions = $derived([
+		{ value: '', label: 'Seleccionar proveedor...' },
+		...supplierOptions.map((s) => ({ value: s.id, label: s.name }))
+	]);
 	let keyCounter = 1;
 
 	function addItem() {
@@ -86,41 +97,29 @@
 	</div>
 
 	<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-		<div>
-			<label for="po-supplier" class="block text-sm font-medium text-ink mb-1">Proveedor <span class="text-red-500">*</span></label>
-			<select
-				id="po-supplier"
-				name="fk_supplier_id"
-				required
-				class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface-elevated text-ink focus:outline-none focus:ring-2 focus:ring-iris-500/30 focus:border-iris-500"
-			>
-				<option value="">Seleccionar proveedor...</option>
-				{#each supplierOptions as s (s.id)}
-					<option value={s.id}>{s.name}</option>
-				{/each}
-			</select>
-		</div>
-		<div>
-			<label for="po-expected" class="block text-sm font-medium text-ink mb-1">Fecha esperada</label>
-			<input
-				id="po-expected"
-				type="date"
-				name="expected_date"
-				class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface-elevated text-ink focus:outline-none focus:ring-2 focus:ring-iris-500/30 focus:border-iris-500"
-			/>
-		</div>
+		<Select
+			label="Proveedor *"
+			options={supplierSelectOptions}
+			value={selectedSupplierId}
+			onchange={(v) => { if (typeof v === 'string') selectedSupplierId = v; }}
+		/>
+		<Input
+			label="Fecha esperada"
+			type="date"
+			bind:value={expectedDate}
+		/>
 	</div>
+	<input type="hidden" name="fk_supplier_id" value={selectedSupplierId} />
+	<input type="hidden" name="expected_date" value={expectedDate} />
 
-	<div>
-		<label for="po-notes" class="block text-sm font-medium text-ink mb-1">Notas</label>
-		<textarea
-			id="po-notes"
-			name="notes"
-			rows="2"
-			class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface-elevated text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-iris-500/30 focus:border-iris-500 resize-none"
-			placeholder="Observaciones opcionales..."
-		></textarea>
-	</div>
+	<Textarea
+		label="Notas"
+		value={notes}
+		placeholder="Observaciones opcionales..."
+		rows={2}
+		oninput={(e) => { notes = e.currentTarget.value; }}
+	/>
+	<input type="hidden" name="notes" value={notes} />
 
 	<!-- Items -->
 	<div class="space-y-3">
