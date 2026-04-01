@@ -3,6 +3,7 @@ import { error, fail } from '@sveltejs/kit';
 import * as citasService from '$lib/server/citas.service.js';
 import * as historiasService from '$lib/server/historias.service.js';
 import * as schemasService from '$lib/server/schemas.service.js';
+import * as prescriptionsService from '$lib/server/inventory/prescriptions.service.js';
 import type { Evaluacion } from '$shared/types/appointments.js';
 import { assertActionPermission, requireDoctorId } from '$lib/server/rbac.js';
 
@@ -20,15 +21,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	// Cargar schema de la especialidad y historial previo en paralelo
 	const specialtyName = cita.doctor?.especialidad?.nombre ?? 'Medicina General';
-	const [formSchema, previousHistories] = await Promise.all([
+	const [formSchema, previousHistories, existingPrescription] = await Promise.all([
 		schemasService.getFormSchema(specialtyName),
 		historiasService.findByPaciente(cita.paciente_id, {
 			limit: 5,
 			excludeCitaId: citaId
-		})
+		}),
+		prescriptionsService.getPrescriptionByAppointment(citaId).catch(() => null)
 	]);
 
-	return { cita, historia, formSchema, previousHistories };
+	return { cita, historia, formSchema, previousHistories, existingPrescription };
 };
 
 export const actions: Actions = {
@@ -119,5 +121,31 @@ export const actions: Actions = {
 		);
 
 		return { autosaved: true };
+	},
+
+	emitirReceta: async ({ request, params, locals }) => {
+		assertActionPermission(locals.user, 'emitirReceta');
+		const citaId = params.citaId;
+		if (!citaId) return fail(400, { error: 'ID inválido' });
+
+		const fd = await request.formData();
+		const itemsRaw = String(fd.get('items') ?? '[]');
+		let items: Array<Record<string, unknown>>;
+		try { items = JSON.parse(itemsRaw); } catch { return fail(400, { error: 'Datos inválidos' }); }
+		if (!items.length) return fail(400, { error: 'Debe agregar al menos un medicamento' });
+
+		const cita = await citasService.getCitaById(citaId);
+		if (!cita) return fail(404, { error: 'Cita no encontrada' });
+
+		try {
+			await prescriptionsService.createPrescription({
+				fk_appointment_id: citaId,
+				fk_patient_id: cita.paciente_id,
+				items: items as never[]
+			});
+			return { recipeEmitted: true };
+		} catch {
+			return fail(500, { error: 'Error al emitir receta' });
+		}
 	}
 };

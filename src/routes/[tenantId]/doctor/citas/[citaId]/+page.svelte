@@ -54,6 +54,32 @@
 		hiddenForm?.requestSubmit();
 	}
 
+	// Emitir receta formal inline (sin navegar a /prescription)
+	let recipeEmitted = $state(!!data.existingPrescription);
+	let emittingRecipe = $state(false);
+
+	async function handleEmitRecipe(items: PrescriptionItem[]) {
+		if (items.length === 0) return;
+		emittingRecipe = true;
+		try {
+			const body = new FormData();
+			body.set('items', JSON.stringify(items.map((i) => ({
+				medicamento: i.medicamento, presentacion: i.presentacion,
+				dosis: i.dosis, via: i.via, frecuencia: i.frecuencia,
+				duracion: i.duracion, cantidad: i.cantidad, indicaciones: i.indicaciones
+			}))));
+			const res = await fetch(`?/emitirReceta`, { method: 'POST', body });
+			const json = await res.json();
+			if (json.type === 'success') {
+				recipeEmitted = true;
+			}
+		} catch {
+			// Error silencioso — el usuario verá que el botón no cambió
+		} finally {
+			emittingRecipe = false;
+		}
+	}
+
 	// Autosave silencioso via fetch directo (no necesita enhance lifecycle)
 	async function handleAutosave(formData: Record<string, unknown>) {
 		const body = new FormData();
@@ -189,6 +215,9 @@
 				items={recetaItems}
 				disabled={isReadonly}
 				onchange={(items) => { recetaItems = items; recetaTouched = true; scheduleUniversalAutosave(); }}
+				onEmitRecipe={isReadonly ? undefined : handleEmitRecipe}
+				recipeEmitted={recipeEmitted}
+				emitting={emittingRecipe}
 			/>
 		</div>
 	</div>
