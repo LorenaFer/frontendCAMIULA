@@ -4,8 +4,15 @@
 	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import Input from '$shared/components/input/Input.svelte';
+	import Select from '$shared/components/select/Select.svelte';
+	import Dialog from '$shared/components/dialog/Dialog.svelte';
+	import DialogHeader from '$shared/components/dialog/DialogHeader.svelte';
+	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
+	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import { page } from '$app/stores';
-	import { enhance } from '$app/forms';
+	import { enhance, deserialize } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -48,9 +55,61 @@
 			'text-viking-800 dark:text-viking-200';
 	}
 
+	// Emergencia state
 	let showEmergencia = $state(false);
-	let emergPaciente = $state('');
+	let emergQuery = $state('');
+	let emergPaciente = $state<{ id: string; nombre: string; apellido: string; nhm: number } | null>(null);
 	let emergMotivo = $state('');
+	let emergHoraInicio = $state('');
+	let emergDuracion = $state('30');
+	let emergSearching = $state(false);
+	let emergError = $state('');
+
+	// Generar opciones de hora (cada 30 min desde ahora hasta 18:00)
+	const emergHoraOpciones = $derived.by(() => {
+		const now = new Date();
+		const currentMin = now.getHours() * 60 + now.getMinutes();
+		const opts = [{ value: '', label: 'Ahora mismo' }];
+		for (let m = Math.ceil(currentMin / 30) * 30; m < 18 * 60; m += 30) {
+			const h = Math.floor(m / 60);
+			const min = m % 60;
+			const t = `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+			opts.push({ value: t, label: t });
+		}
+		return opts;
+	});
+
+	async function buscarPacienteEmergencia() {
+		if (!emergQuery.trim()) { emergError = 'Ingrese NHM o cédula'; return; }
+		emergError = '';
+		emergSearching = true;
+		try {
+			const fd = new FormData();
+			fd.set('query', emergQuery.trim());
+			const res = await fetch('?/buscarPacienteEmergencia', { method: 'POST', body: fd });
+			const result = deserialize(await res.text());
+			if (result.type === 'success' && result.data?.pacienteFound) {
+				emergPaciente = result.data.paciente as typeof emergPaciente;
+			} else if (result.type === 'failure') {
+				emergError = (result.data as { error?: string })?.error ?? 'Paciente no encontrado';
+				emergPaciente = null;
+			}
+		} catch {
+			emergError = 'Error de conexión';
+		} finally {
+			emergSearching = false;
+		}
+	}
+
+	function resetEmergencia() {
+		showEmergencia = false;
+		emergQuery = '';
+		emergPaciente = null;
+		emergMotivo = '';
+		emergHoraInicio = '';
+		emergDuracion = '30';
+		emergError = '';
+	}
 </script>
 
 <svelte:head><title>Mis Citas — Doctor</title></svelte:head>
@@ -69,7 +128,7 @@
 				{#if stats.pendientes > 0}<span><b class="text-amber-600">{stats.pendientes}</b> pend.</span>{/if}
 				{#if stats.atendidas > 0}<span class="hidden sm:inline"><b class="text-emerald-600">{stats.atendidas}</b> atend.</span>{/if}
 			</div>
-			<Button variant="danger" size="md" onclick={() => { showEmergencia = !showEmergencia; selected = null; }}>
+			<Button variant="danger" size="md" onclick={() => { showEmergencia = true; selected = null; }}>
 				<span class="flex items-center gap-1.5">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
 					Emergencia
@@ -86,19 +145,7 @@
 		<div class="px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs text-emerald-700 dark:text-emerald-300">Cita de emergencia creada.</div>
 	{/if}
 
-	<!-- Emergency form (mobile: full width above calendar, desktop: in sidebar) -->
-	{#if showEmergencia}
-		<div class="lg:hidden bg-surface-elevated border border-border/60 rounded-xl shadow-[var(--shadow-1)] p-4 animate-fade-in-up">
-			<h3 class="text-sm font-semibold text-ink mb-1">Cita de Emergencia</h3>
-			<form method="POST" action="?/citaEmergencia" use:enhance={() => { return async ({ update }) => { await update(); showEmergencia = false; emergPaciente = ''; emergMotivo = ''; }; }}>
-				<div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5">
-					<div class="flex-1"><Input label="ID Paciente" name="pacienteId" bind:value={emergPaciente} placeholder="1" inputSize="sm" /></div>
-					<div class="flex-1"><Input label="Motivo" name="motivo" bind:value={emergMotivo} placeholder="Motivo" inputSize="sm" /></div>
-					<Button type="submit" variant="primary" size="sm">Crear</Button>
-				</div>
-			</form>
-		</div>
-	{/if}
+	<!-- Emergency form is now a Dialog (shared between mobile and desktop) -->
 
 	<!-- Main layout -->
 	<div class="flex gap-4">
@@ -161,19 +208,7 @@
 
 		<!-- Desktop detail panel -->
 		<div class="hidden lg:block w-72 xl:w-80 shrink-0">
-			{#if showEmergencia}
-				<div class="bg-surface-elevated border border-border/60 rounded-xl shadow-[var(--shadow-1)] p-4 animate-fade-in-up">
-					<h3 class="text-sm font-semibold text-ink mb-1">Cita de Emergencia</h3>
-					<p class="text-xs text-ink-muted mb-3">Se creará para ahora mismo (30 min).</p>
-					<form method="POST" action="?/citaEmergencia" use:enhance={() => { return async ({ update }) => { await update(); showEmergencia = false; emergPaciente = ''; emergMotivo = ''; }; }}>
-						<div class="space-y-2.5">
-							<Input label="ID Paciente" name="pacienteId" bind:value={emergPaciente} placeholder="1" inputSize="sm" />
-							<Input label="Motivo" name="motivo" bind:value={emergMotivo} placeholder="Motivo de consulta" inputSize="sm" />
-							<Button type="submit" variant="primary" size="sm" fullWidth>Crear cita</Button>
-						</div>
-					</form>
-				</div>
-			{:else if selected}
+			{#if selected}
 				{@render detailContent(selected)}
 			{:else}
 				<div class="bg-surface-elevated border border-border/60 rounded-xl shadow-[var(--shadow-1)] p-4">
@@ -288,3 +323,85 @@
 		</div>
 	</div>
 {/snippet}
+
+<!-- Dialog de emergencia -->
+{#if showEmergencia}
+	<Dialog open={true} onClose={resetEmergencia} size="sm">
+		<DialogHeader>
+			<h2 class="text-base font-semibold text-ink">Cita de Emergencia</h2>
+		</DialogHeader>
+		<DialogBody>
+			<div class="space-y-4">
+				{#if !emergPaciente}
+					<!-- Paso 1: Buscar paciente -->
+					<p class="text-sm text-ink-muted">Busque al paciente por NHM o cédula.</p>
+					<Input label="NHM o Cédula" bind:value={emergQuery} placeholder="Ej: 1001 o V-12345678" />
+					{#if emergError}
+						<p class="text-sm text-red-600">{emergError}</p>
+					{/if}
+				{:else}
+					<!-- Paso 2: Configurar cita -->
+					<div class="bg-canvas-subtle rounded-lg border border-border/60 p-3">
+						<p class="text-sm font-medium text-ink">{emergPaciente.nombre} {emergPaciente.apellido}</p>
+						<p class="text-sm text-ink-muted">NHM {emergPaciente.nhm}</p>
+						<button type="button" class="text-sm text-viking-600 mt-1 hover:underline" onclick={() => { emergPaciente = null; }}>Cambiar paciente</button>
+					</div>
+
+					<Input label="Motivo de consulta" bind:value={emergMotivo} placeholder="Motivo..." />
+
+					<Select
+						label="Hora de inicio"
+						options={emergHoraOpciones}
+						value={emergHoraInicio}
+						onchange={(v) => { if (typeof v === 'string') emergHoraInicio = v; }}
+					/>
+
+					<fieldset>
+						<legend class="block text-sm font-medium text-ink mb-2">Duración de la consulta</legend>
+						<div class="grid grid-cols-4 gap-2">
+							{#each ['15', '30', '45', '60'] as d}
+								<button
+									type="button"
+									class="py-3 text-sm font-medium rounded-lg border transition-colors
+										{emergDuracion === d ? 'border-viking-400 bg-viking-50 dark:bg-viking-900/20 text-viking-700 dark:text-viking-300' : 'border-border/60 text-ink-muted hover:bg-canvas-subtle'}"
+									onclick={() => { emergDuracion = d; }}
+								>{d} min</button>
+							{/each}
+						</div>
+					</fieldset>
+				{/if}
+			</div>
+		</DialogBody>
+		<DialogFooter>
+			<Button type="button" variant="ghost" size="md" onclick={resetEmergencia}>Cancelar</Button>
+			{#if !emergPaciente}
+				<Button variant="primary" size="md" onclick={buscarPacienteEmergencia} isLoading={emergSearching}>Buscar paciente</Button>
+			{:else}
+				<form
+					method="POST"
+					action="?/citaEmergencia"
+					use:enhance={() => {
+						return async ({ result, update }) => {
+							await update();
+							if (result.type === 'success') {
+								const nombre = emergPaciente?.nombre ?? '';
+								resetEmergencia();
+								await invalidateAll();
+								toastSuccess('Cita de emergencia creada', `Se agendó la cita para ${nombre}.`);
+							} else {
+								toastError('Error', 'No se pudo crear la cita de emergencia.');
+							}
+						};
+					}}
+				>
+					<input type="hidden" name="pacienteId" value={emergPaciente.id} />
+					<input type="hidden" name="especialidadId" value={data.doctorEspecialidadId} />
+					<input type="hidden" name="motivo" value={emergMotivo} />
+					<input type="hidden" name="hora_inicio" value={emergHoraInicio} />
+					<input type="hidden" name="duracion" value={emergDuracion} />
+					<Button type="submit" variant="danger" size="md">Crear cita de emergencia</Button>
+				</form>
+			{/if}
+		</DialogFooter>
+	</Dialog>
+{/if}

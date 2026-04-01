@@ -42,7 +42,9 @@
 
 	// ─── Hidden forms ────────────────────────────────────────
 	let createFormEl: HTMLFormElement | undefined = $state();
-	let createDia = $state(''), createInicio = $state(''), createFin = $state(''), createSlot = $state('30');
+	let createDia = $state(''), createInicio = $state(''), createFin = $state('');
+	let selectedSlotDuration = $state('30');
+	const createSlot = $derived(selectedSlotDuration);
 	let updateFormEl: HTMLFormElement | undefined = $state();
 	let updateId = $state(''), updateInicio = $state(''), updateFin = $state('');
 
@@ -95,7 +97,7 @@
 			const lo = Math.min(drag.startMins, drag.endMins), hi = Math.max(drag.startMins, drag.endMins);
 			if (hi - lo < SNAP) { drag = null; return; }
 			if (drag.mode === 'create') {
-				createDia = String(drag.dia); createInicio = m2t(lo); createFin = m2t(hi); createSlot = '30';
+				createDia = String(drag.dia); createInicio = m2t(lo); createFin = m2t(hi);
 				drag = null; requestAnimationFrame(() => createFormEl?.requestSubmit());
 			} else {
 				const ns = m2t(lo), ne = m2t(hi);
@@ -158,6 +160,21 @@
 		<div class="flex items-center gap-2 sm:gap-4 text-xs text-ink-muted">
 			<span><b class="text-ink">{resumenSemanal.totalSlots}</b> slots</span>
 			<span class="hidden sm:inline"><b class="text-ink">{resumenSemanal.totalHoras}h{resumenSemanal.totalMin > 0 ? `${resumenSemanal.totalMin}m` : ''}</b></span>
+		</div>
+	</div>
+
+	<!-- Selector de duración de slot para nuevos bloques -->
+	<div class="flex items-center gap-3 bg-surface-elevated border border-border/60 rounded-xl px-4 py-2.5">
+		<span class="text-sm text-ink-muted shrink-0">Duración de cita:</span>
+		<div class="flex gap-1">
+			{#each ['15', '30', '45', '60'] as d}
+				<button
+					type="button"
+					class="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
+						{selectedSlotDuration === d ? 'bg-viking-600 text-white shadow-sm' : 'text-ink-muted hover:bg-canvas-subtle border border-border/60'}"
+					onclick={() => { selectedSlotDuration = d; }}
+				>{d} min</button>
+			{/each}
 		</div>
 	</div>
 
