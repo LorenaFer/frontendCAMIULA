@@ -74,10 +74,15 @@
 		attachDragListeners();
 	}
 
+	function getClientY(e: MouseEvent | TouchEvent): number {
+		return 'touches' in e ? e.touches[0]?.clientY ?? e.changedTouches[0]?.clientY ?? 0 : e.clientY;
+	}
+
 	function attachDragListeners() {
-		const onMove = (e: MouseEvent) => {
+		const onMove = (e: MouseEvent | TouchEvent) => {
 			if (!drag) return;
-			const mins = yToMins(drag.colEl, e.clientY);
+			if ('touches' in e) e.preventDefault(); // prevent scroll while dragging
+			const mins = yToMins(drag.colEl, getClientY(e));
 			const clamped = Math.max(HORA_MIN * 60, Math.min(HORA_MAX * 60, mins));
 			if (drag.mode === 'create') drag = { ...drag, endMins: clamped };
 			else if (drag.mode === 'resize-top') { if (clamped < drag.endMins) drag = { ...drag, startMins: clamped }; }
@@ -85,6 +90,7 @@
 		};
 		const onUp = () => {
 			window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp);
+			window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onUp);
 			if (!drag) return;
 			const lo = Math.min(drag.startMins, drag.endMins), hi = Math.max(drag.startMins, drag.endMins);
 			if (hi - lo < SNAP) { drag = null; return; }
@@ -100,6 +106,26 @@
 			}
 		};
 		window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+		window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onUp);
+	}
+
+	function onGridTouchStart(dia: number, e: TouchEvent) {
+		const colEl = e.currentTarget as HTMLElement;
+		const mins = yToMins(colEl, getClientY(e));
+		if (isInsideBlock(dia, mins)) return;
+		e.preventDefault();
+		drag = { mode: 'create', dia, colEl, startMins: mins, endMins: mins + SNAP };
+		attachDragListeners();
+	}
+
+	function onResizeTouchStart(e: TouchEvent, bloqueId: string, edge: 'top' | 'bottom', bloque: DisponibilidadDoctor) {
+		e.preventDefault(); e.stopPropagation();
+		const colEl = (e.target as HTMLElement).closest('[data-day-col]') as HTMLElement;
+		if (!colEl) return;
+		const [sh, sm] = bloque.hora_inicio.split(':').map(Number);
+		const [eh, em] = bloque.hora_fin.split(':').map(Number);
+		drag = { mode: edge === 'top' ? 'resize-top' : 'resize-bottom', dia: bloque.day_of_week, colEl, startMins: sh * 60 + sm, endMins: eh * 60 + em, bloqueId, originalStart: bloque.hora_inicio, originalEnd: bloque.hora_fin };
+		attachDragListeners();
 	}
 
 	function bTop(b: DisponibilidadDoctor) { return drag?.bloqueId === b.id ? t2p(m2t(Math.min(drag.startMins, drag.endMins))) : t2p(b.hora_inicio); }
@@ -177,7 +203,7 @@
 
 				<!-- Day column -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div class="relative cursor-crosshair" data-day-col={mobileDay} onmousedown={(e) => onGridMouseDown(mobileDay, e)}>
+				<div class="relative cursor-crosshair" data-day-col={mobileDay} onmousedown={(e) => onGridMouseDown(mobileDay, e)} ontouchstart={(e) => onGridTouchStart(mobileDay, e)}>
 					{#each horasEje as hora}
 						<div class="absolute inset-x-0 border-t border-border/15" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%"></div>
 						<div class="absolute inset-x-0 border-t border-border/8 border-dashed" style="top: {((hora - HORA_MIN + 0.5) / (HORA_MAX - HORA_MIN)) * 100}%"></div>
@@ -192,9 +218,9 @@
 							onmousedown={(e) => e.stopPropagation()}
 						>
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<div class="absolute inset-x-0 top-0 h-3 cursor-n-resize z-10 hover:bg-viking-400/20 rounded-t" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'top', bloque)}></div>
+							<div class="absolute inset-x-0 top-0 h-3 cursor-n-resize z-10 hover:bg-viking-400/20 rounded-t" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'top', bloque)} ontouchstart={(e) => onResizeTouchStart(e, bloque.id, 'top', bloque)}></div>
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<div class="absolute inset-x-0 bottom-0 h-3 cursor-s-resize z-10 hover:bg-viking-400/20 rounded-b" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'bottom', bloque)}></div>
+							<div class="absolute inset-x-0 bottom-0 h-3 cursor-s-resize z-10 hover:bg-viking-400/20 rounded-b" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'bottom', bloque)} ontouchstart={(e) => onResizeTouchStart(e, bloque.id, 'bottom', bloque)}></div>
 
 							<div class="px-2 py-1.5 h-full flex items-center justify-between overflow-hidden pointer-events-none">
 								<div>
@@ -251,7 +277,7 @@
 
 				{#each [1, 2, 3, 4, 5] as dia}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div class="relative border-l border-border/20 cursor-crosshair" data-day-col={dia} onmousedown={(e) => onGridMouseDown(dia, e)}>
+					<div class="relative border-l border-border/20 cursor-crosshair" data-day-col={dia} onmousedown={(e) => onGridMouseDown(dia, e)} ontouchstart={(e) => onGridTouchStart(dia, e)}>
 						{#each horasEje as hora}
 							<div class="absolute inset-x-0 border-t border-border/15" style="top: {((hora - HORA_MIN) / (HORA_MAX - HORA_MIN)) * 100}%"></div>
 							<div class="absolute inset-x-0 border-t border-border/8 border-dashed" style="top: {((hora - HORA_MIN + 0.5) / (HORA_MAX - HORA_MIN)) * 100}%"></div>
@@ -266,9 +292,9 @@
 								onmousedown={(e) => e.stopPropagation()}
 							>
 								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<div class="absolute inset-x-0 top-0 h-2 cursor-n-resize z-10 hover:bg-viking-400/20 rounded-t" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'top', bloque)}></div>
+								<div class="absolute inset-x-0 top-0 h-2 cursor-n-resize z-10 hover:bg-viking-400/20 rounded-t" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'top', bloque)} ontouchstart={(e) => onResizeTouchStart(e, bloque.id, 'top', bloque)}></div>
 								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<div class="absolute inset-x-0 bottom-0 h-2 cursor-s-resize z-10 hover:bg-viking-400/20 rounded-b" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'bottom', bloque)}></div>
+								<div class="absolute inset-x-0 bottom-0 h-2 cursor-s-resize z-10 hover:bg-viking-400/20 rounded-b" onmousedown={(e) => onResizeMouseDown(e, bloque.id, 'bottom', bloque)} ontouchstart={(e) => onResizeTouchStart(e, bloque.id, 'bottom', bloque)}></div>
 
 								<div class="px-1.5 py-1 h-full flex flex-col justify-between overflow-hidden pointer-events-none">
 									<div>
