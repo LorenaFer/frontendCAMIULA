@@ -58,6 +58,7 @@ export interface MedicationOption {
 	code: string;
 	generic_name: string;
 	pharmaceutical_form: string;
+	concentration?: string;
 	unit_measure: string;
 	current_stock: number;
 }

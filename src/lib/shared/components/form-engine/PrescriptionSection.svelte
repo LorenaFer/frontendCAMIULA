@@ -63,6 +63,7 @@
 		newItem.medication_id = med.id;
 		newItem.source = 'inventario';
 		newItem.presentacion = formToPresentation[med.pharmaceutical_form?.toLowerCase() ?? ''] ?? '';
+		newItem.dosis = med.concentration ?? '';
 		onchange([...items, newItem]);
 		medSearch = '';
 	}
