@@ -5,6 +5,7 @@
 	import { beforeNavigate } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
+	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 	import FormEngine from '$shared/components/form-engine/FormEngine.svelte';
 	import ObservacionesSection from '$shared/components/form-engine/ObservacionesSection.svelte';
 	import PrescriptionSection from '$shared/components/form-engine/PrescriptionSection.svelte';
@@ -72,9 +73,10 @@
 			const json = await res.json();
 			if (json.type === 'success') {
 				recipeEmitted = true;
+				toastSuccess('Receta emitida', 'La receta médica fue generada correctamente.');
 			}
 		} catch {
-			// Error silencioso — el usuario verá que el botón no cambió
+			toastError('Error', 'No se pudo emitir la receta.');
 		} finally {
 			emittingRecipe = false;
 		}
@@ -168,14 +170,7 @@
 		</div>
 	</div>
 
-	<!-- Mensaje de guardado exitoso -->
-	{#if form?.success || saved}
-		<div
-			class="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-300"
-		>
-			Evaluación guardada correctamente.
-		</div>
-	{/if}
+	<!-- Feedback via Toast -->
 
 	<!-- Dashboard Split-Screen -->
 	<div class="consultation-dashboard">
@@ -188,7 +183,8 @@
 		/>
 
 		<!-- RIGHT: Dynamic Form + Universal Sections -->
-		<div class="min-w-0 space-y-4">
+		<div class="min-w-0 space-y-5">
+			<!-- ═══ SECCIÓN 1: Formulario de Evaluación (por especialidad) ═══ -->
 			<FormEngine
 				bind:this={formEngineRef}
 				schema={data.formSchema}
@@ -198,27 +194,36 @@
 				onAutosave={isReadonly ? undefined : handleAutosave}
 			/>
 
-			<!-- Secciones universales (independientes del schema de especialidad) -->
+			<!-- ═══ SECCIÓN 2: Notas y Observaciones ═══ -->
 			<ObservacionesSection
 				value={observaciones}
 				disabled={isReadonly}
 				onchange={(v) => { observaciones = v; scheduleUniversalAutosave(); }}
 			/>
 
-			<ExamenesSection
-				items={examenesSolicitados}
-				disabled={isReadonly}
-				onchange={(items) => { examenesSolicitados = items; scheduleUniversalAutosave(); }}
-			/>
+			<!-- ═══ SECCIÓN 3: Órdenes médicas ═══ -->
+			<div class="space-y-4">
+				<div class="flex items-center gap-2 px-1">
+					<div class="h-px flex-1 bg-border/40"></div>
+					<span class="text-xs font-semibold text-ink-muted uppercase tracking-wider shrink-0">Órdenes Médicas</span>
+					<div class="h-px flex-1 bg-border/40"></div>
+				</div>
 
-			<PrescriptionSection
-				items={recetaItems}
-				disabled={isReadonly}
-				onchange={(items) => { recetaItems = items; recetaTouched = true; scheduleUniversalAutosave(); }}
-				onEmitRecipe={isReadonly ? undefined : handleEmitRecipe}
-				recipeEmitted={recipeEmitted}
-				emitting={emittingRecipe}
-			/>
+				<ExamenesSection
+					items={examenesSolicitados}
+					disabled={isReadonly}
+					onchange={(items) => { examenesSolicitados = items; scheduleUniversalAutosave(); }}
+				/>
+
+				<PrescriptionSection
+					items={recetaItems}
+					disabled={isReadonly}
+					onchange={(items) => { recetaItems = items; recetaTouched = true; scheduleUniversalAutosave(); }}
+					onEmitRecipe={isReadonly ? undefined : handleEmitRecipe}
+					recipeEmitted={recipeEmitted}
+					emitting={emittingRecipe}
+				/>
+			</div>
 		</div>
 	</div>
 
@@ -230,7 +235,12 @@
 		class="hidden"
 		use:enhance={() => {
 			return ({ result }) => {
-				if (result.type === 'success') saved = true;
+				if (result.type === 'success') {
+					saved = true;
+					toastSuccess('Evaluación guardada', `Evaluación de ${data.cita.paciente.nombre} ${data.cita.paciente.apellido} guardada correctamente.`);
+				} else {
+					toastError('Error al guardar', 'No se pudo guardar la evaluación. Intente nuevamente.');
+				}
 			};
 		}}
 	>

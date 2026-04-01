@@ -18,7 +18,7 @@
 	);
 
 	let showDemographics = $state(false);
-	let showHistory = $state(false);
+	let showHistory = $state(true); // Abierto por defecto — el doctor necesita ver contexto
 
 	const alertColorMap: Record<PatientAlert['type'], { bg: string; border: string; text: string }> =
 		{
@@ -211,27 +211,32 @@
 			</button>
 
 			{#if showHistory}
-				<div class="px-4 pb-4 space-y-2.5 border-t border-border/50 pt-3">
-					{#each previousHistories as entry (entry.id)}
-						<div class="p-2.5 rounded-lg bg-canvas-subtle/50 border border-border/30">
-							<div class="flex items-center justify-between mb-1">
-								<span class="text-xs font-medium text-ink">{entry.fecha}</span>
-								<span class="text-[10px] text-ink-subtle">{entry.especialidad}</span>
-							</div>
-							<p class="text-xs text-ink-muted">{entry.doctor_nombre}</p>
-							{#if entry.diagnostico_descripcion}
-								<p class="text-xs text-ink mt-1">
-									{#if entry.diagnostico_cie10}
-										<span class="font-mono text-viking-600 dark:text-viking-400"
-											>{entry.diagnostico_cie10}</span
-										>
-										—
+				<div class="px-4 pb-4 border-t border-border/50 pt-3">
+					<div class="relative pl-4 border-l-2 border-border/60 space-y-3">
+						{#each previousHistories as entry, i (entry.id)}
+							<div class="relative">
+								<div class="absolute -left-[13px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-surface-elevated
+									{i === 0 ? 'bg-viking-500' : 'bg-border'}"></div>
+								<div class="bg-canvas-subtle/50 rounded-lg border border-border/30 p-3">
+									<div class="flex items-center justify-between mb-1">
+										<span class="text-xs font-semibold text-ink">{entry.fecha}</span>
+										<span class="text-xs text-ink-muted bg-canvas-subtle px-1.5 py-0.5 rounded">{entry.especialidad}</span>
+									</div>
+									<p class="text-xs text-ink-muted">Dr. {entry.doctor_nombre}</p>
+									{#if entry.diagnostico_descripcion}
+										<div class="mt-1.5 pt-1.5 border-t border-border/30">
+											<p class="text-xs text-ink">
+												{#if entry.diagnostico_cie10}
+													<span class="font-mono text-viking-600 dark:text-viking-400 font-medium">{entry.diagnostico_cie10}</span> —
+												{/if}
+												{entry.diagnostico_descripcion}
+											</p>
+										</div>
 									{/if}
-									{entry.diagnostico_descripcion}
-								</p>
-							{/if}
-						</div>
-					{/each}
+								</div>
+							</div>
+						{/each}
+					</div>
 				</div>
 			{/if}
 		</div>
