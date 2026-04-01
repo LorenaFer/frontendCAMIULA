@@ -15,6 +15,7 @@
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
 	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
+	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -102,17 +103,6 @@
 		<Card padding="md">
 			<h2 class="text-sm font-semibold text-ink mb-4">Nuevo proveedor</h2>
 
-			{#if form?.error}
-				<p class="mb-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
-					{form.error}
-				</p>
-			{/if}
-			{#if form?.success}
-				<p class="mb-3 text-sm text-sage-700 bg-sage-50 dark:bg-sage-900/20 border border-sage-200 dark:border-sage-800 rounded-lg px-3 py-2">
-					Proveedor creado correctamente.
-				</p>
-			{/if}
-
 			<form
 				method="POST"
 				action="?/crearProveedor"
@@ -122,8 +112,11 @@
 						creating = false;
 						await update();
 						if (result.type === 'success') {
+							toastSuccess('Proveedor creado', 'El proveedor fue registrado correctamente.');
 							showCreateForm = false;
 							await invalidateAll();
+						} else if (result.type === 'failure') {
+							toastError('Error al crear', (result.data as { error?: string })?.error ?? 'No se pudo crear el proveedor.');
 						}
 					};
 				}}
@@ -244,8 +237,11 @@
 					saving = false;
 					await update();
 					if (result.type === 'success') {
+						toastSuccess('Proveedor actualizado', 'Los cambios fueron guardados correctamente.');
 						editingSupplier = null;
 						await invalidateAll();
+					} else if (result.type === 'failure') {
+						toastError('Error al editar', (result.data as { error?: string })?.error ?? 'No se pudo actualizar el proveedor.');
 					}
 				};
 			}}
@@ -253,12 +249,6 @@
 			<input type="hidden" name="id" value={editingSupplier.id} />
 			<DialogBody>
 				<div class="space-y-4">
-					{#if form?.error}
-						<p class="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
-							{form.error}
-						</p>
-					{/if}
-
 					<div>
 						<label class="block text-sm font-medium text-ink-muted mb-1" for="edit-name">Nombre *</label>
 						<input id="edit-name" name="name" type="text" required value={editingSupplier.name}
@@ -360,8 +350,11 @@
 				return async ({ result, update }) => {
 					await update();
 					if (result.type === 'success') {
+						toastWarning('Proveedor desactivado', `${deletingSupplier!.name} (${deletingSupplier!.rif}) fue desactivado.`);
 						deletingSupplier = null;
 						await invalidateAll();
+					} else if (result.type === 'failure') {
+						toastError('Error al desactivar', (result.data as { error?: string })?.error ?? 'No se pudo desactivar el proveedor.');
 					}
 				};
 			}}

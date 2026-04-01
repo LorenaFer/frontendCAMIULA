@@ -17,6 +17,7 @@
 	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
 	import StockIndicator from '$shared/components/inventory/StockIndicator.svelte';
 	import InventoryFilters from '$shared/components/inventory/InventoryFilters.svelte';
+	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const tenantId = $derived($page.params.tenantId);
@@ -127,17 +128,6 @@
 		<Card padding="md">
 			<h2 class="text-sm font-semibold text-ink mb-4">Nuevo medicamento</h2>
 
-			{#if form?.error}
-				<p class="mb-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
-					{form.error}
-				</p>
-			{/if}
-			{#if form?.success}
-				<p class="mb-3 text-sm text-sage-700 bg-sage-50 dark:bg-sage-900/20 border border-sage-200 dark:border-sage-800 rounded-lg px-3 py-2">
-					Medicamento creado correctamente.
-				</p>
-			{/if}
-
 			<form
 				method="POST"
 				action="?/crearMedicamento"
@@ -147,8 +137,11 @@
 						creating = false;
 						await update();
 						if (result.type === 'success') {
+							toastSuccess('Medicamento creado', 'El medicamento fue registrado correctamente.');
 							showCreateForm = false;
 							await invalidateAll();
+						} else if (result.type === 'failure') {
+							toastError('Error al crear', (result.data as { error?: string })?.error ?? 'No se pudo crear el medicamento.');
 						}
 					};
 				}}
@@ -314,8 +307,11 @@
 					saving = false;
 					await update();
 					if (result.type === 'success') {
+						toastSuccess('Medicamento actualizado', 'Los cambios fueron guardados correctamente.');
 						editingMed = null;
 						await invalidateAll();
+					} else if (result.type === 'failure') {
+						toastError('Error al editar', (result.data as { error?: string })?.error ?? 'No se pudo actualizar el medicamento.');
 					}
 				};
 			}}
@@ -323,12 +319,6 @@
 			<input type="hidden" name="id" value={editingMed.id} />
 			<DialogBody>
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-					{#if form?.error}
-						<p class="sm:col-span-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
-							{form.error}
-						</p>
-					{/if}
-
 					<div>
 						<label class="block text-sm font-medium text-ink-muted mb-1" for="edit-code">Código</label>
 						<input
@@ -493,8 +483,11 @@
 				return async ({ result, update }) => {
 					await update();
 					if (result.type === 'success') {
+						toastWarning('Medicamento desactivado', `${deletingMed!.generic_name} (${deletingMed!.code}) fue desactivado.`);
 						deletingMed = null;
 						await invalidateAll();
+					} else if (result.type === 'failure') {
+						toastError('Error al desactivar', (result.data as { error?: string })?.error ?? 'No se pudo desactivar el medicamento.');
 					}
 				};
 			}}

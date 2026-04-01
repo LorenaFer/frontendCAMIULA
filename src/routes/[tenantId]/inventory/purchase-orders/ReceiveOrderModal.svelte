@@ -7,6 +7,7 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Button from '$shared/components/button/Button.svelte';
+	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 
 	let {
 		order,
@@ -79,8 +80,11 @@
 				submitting = false;
 				await update();
 				if (result.type === 'success') {
+					toastSuccess('Recepción registrada', `La recepción de la orden ${order.order_number} fue registrada correctamente.`);
 					await invalidateAll();
 					onClose();
+				} else if (result.type === 'failure') {
+					toastError('Error al registrar', (result.data as { error?: string })?.error ?? 'No se pudo registrar la recepción.');
 				}
 			};
 		}}

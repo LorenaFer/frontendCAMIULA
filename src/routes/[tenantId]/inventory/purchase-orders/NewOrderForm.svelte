@@ -4,6 +4,7 @@
 	import type { SupplierOption, MedicationOption } from '$shared/types/inventory.js';
 	import MedicationSelector from '$shared/components/inventory/MedicationSelector.svelte';
 	import Button from '$shared/components/button/Button.svelte';
+	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 
 	let {
 		supplierOptions,
@@ -56,9 +57,15 @@
 	action="?/crearOrden"
 	use:enhance={() => {
 		submitting = true;
-		return async ({ update }) => {
+		return async ({ result, update }) => {
 			submitting = false;
 			await update();
+			if (result.type === 'success') {
+				toastSuccess('Orden creada', 'La orden de compra fue creada correctamente.');
+				onCancel();
+			} else if (result.type === 'failure') {
+				toastError('Error al crear orden', (result.data as { error?: string })?.error ?? 'No se pudo crear la orden de compra.');
+			}
 			await invalidateAll();
 		};
 	}}

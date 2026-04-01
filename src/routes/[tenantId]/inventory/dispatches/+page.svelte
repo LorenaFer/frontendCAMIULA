@@ -17,6 +17,7 @@
 	import LimitProgressBar from '$shared/components/inventory/LimitProgressBar.svelte';
 	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
+	import { toastSuccess, toastError, toastWarning, toastInfo } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -106,9 +107,14 @@
 			action="?/validarDespacho"
 			use:enhance={() => {
 				validating = true;
-				return async ({ update }) => {
+				return async ({ result, update }) => {
 					validating = false;
 					await update({ reset: false });
+					if (result.type === 'success') {
+						toastInfo('Receta validada', 'La receta fue validada correctamente.');
+					} else if (result.type === 'failure') {
+						toastError('Error de validación', (result.data as { error?: string })?.error ?? 'No se pudo validar la receta.');
+					}
 				};
 			}}
 			class="flex gap-2"
@@ -126,18 +132,6 @@
 				Validar
 			</Button>
 		</form>
-
-		<!-- Error / aviso de la Action -->
-		{#if (form as { error?: string })?.error}
-			{@const errMsg = (form as { error: string }).error}
-			{@const isWarning = errMsg.includes('backend')}
-			<p class="mt-3 text-sm rounded-lg px-3 py-2
-				{isWarning
-					? 'text-honey-700 bg-honey-50 dark:bg-honey-900/20 border border-honey-200 dark:border-honey-800'
-					: 'text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}">
-				{errMsg}
-			</p>
-		{/if}
 
 		<!-- Resultado de validación -->
 		{#if activeValidation && activePrescription}
@@ -197,10 +191,15 @@
 						action="?/ejecutarDespacho"
 						use:enhance={() => {
 							dispatching = true;
-							return async ({ update }) => {
+							return async ({ result, update }) => {
 								dispatching = false;
 								showConfirmDialog = false;
 								await update();
+								if (result.type === 'success') {
+									toastSuccess('Despacho realizado', `Se despacharon los medicamentos de la receta ${activePrescription?.prescription_number ?? ''}.`);
+								} else if (result.type === 'failure') {
+									toastError('Error al despachar', (result.data as { error?: string })?.error ?? 'No se pudo ejecutar el despacho.');
+								}
 								await invalidateAll();
 							};
 						}}
@@ -212,16 +211,6 @@
 					</form>
 				{/if}
 
-				<!-- Confirmación de despacho -->
-				{#if (form as { dispatched?: boolean })?.dispatched}
-					<p class="text-sm text-sage-700 bg-sage-50 dark:bg-sage-900/20 border border-sage-200 dark:border-sage-800 rounded-lg px-3 py-2">
-						Se despacharon {activeValidation.items.length} medicamento(s)
-						{#if activePrescription?.patient_name}
-							para {activePrescription.patient_name}
-						{/if}
-						(Receta {activePrescription?.prescription_number}).
-					</p>
-				{/if}
 			</div>
 		{/if}
 	</Card>
@@ -400,8 +389,11 @@
 				return async ({ result, update }) => {
 					await update();
 					if (result.type === 'success') {
+						toastWarning('Despacho cancelado', `El despacho de la receta ${cancellingDispatch!.prescription_number} fue cancelado.`);
 						cancellingDispatch = null;
 						await invalidateAll();
+					} else if (result.type === 'failure') {
+						toastError('Error al cancelar', (result.data as { error?: string })?.error ?? 'No se pudo cancelar el despacho.');
 					}
 				};
 			}}

@@ -17,6 +17,7 @@
 	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
 	import NewOrderForm from './NewOrderForm.svelte';
 	import ReceiveOrderModal from './ReceiveOrderModal.svelte';
+	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -71,10 +72,7 @@
 		cancelled: { label: 'Cancelada', classes: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' }
 	};
 
-	const formError = $derived(form && 'error' in form ? (form as Record<string, unknown>).error as string | undefined : undefined);
-	const formSuccess = $derived(form && 'success' in form ? true : false);
-	const formAction = $derived(form && 'action' in form ? (form as Record<string, unknown>).action as string | undefined : undefined);
-	const isMockError = $derived(typeof formError === 'string' && formError.includes('backend'));
+
 </script>
 
 <svelte:head>
@@ -142,25 +140,6 @@
 			</Button>
 		{/if}
 	</div>
-
-	{#if formError}
-		<p class="text-sm rounded-lg px-3 py-2 border {isMockError
-			? 'text-honey-800 bg-honey-50 dark:bg-honey-900/20 border-honey-200 dark:border-honey-800'
-			: 'text-red-600 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'}">
-			{formError}
-		</p>
-	{/if}
-	{#if formSuccess}
-		<p class="text-sm text-sage-700 bg-sage-50 dark:bg-sage-900/20 border border-sage-200 dark:border-sage-800 rounded-lg px-3 py-2">
-			{#if formAction === 'created'}
-				Orden de compra creada correctamente.
-			{:else if formAction === 'sent'}
-				Orden enviada al proveedor correctamente.
-			{:else}
-				Recepción registrada correctamente.
-			{/if}
-		</p>
-	{/if}
 
 	{#if showNewOrderForm}
 		<NewOrderForm
@@ -348,8 +327,13 @@
 					method="POST"
 					action="?/enviarOrden"
 					use:enhance={() => {
-						return async ({ update }) => {
+						return async ({ result, update }) => {
 							await update();
+							if (result.type === 'success') {
+								toastSuccess('Orden enviada', `La orden ${order.order_number} fue enviada al proveedor.`);
+							} else if (result.type === 'failure') {
+								toastError('Error al enviar', (result.data as { error?: string })?.error ?? 'No se pudo enviar la orden.');
+							}
 							orderDetail = null;
 							await invalidateAll();
 						};
