@@ -26,32 +26,40 @@
 </script>
 
 {#if getToasts().length > 0}
-	<div class="fixed top-4 right-4 z-[10000] flex flex-col gap-3 max-w-sm w-full pointer-events-none" role="status" aria-live="polite">
+	<!-- Mobile: centered top, full-width with padding -->
+	<!-- Desktop: top-right corner, max-w-sm -->
+	<div
+		class="fixed z-[10000] flex flex-col gap-2.5 pointer-events-none
+			inset-x-0 top-3 px-3
+			sm:inset-x-auto sm:top-4 sm:right-4 sm:px-0 sm:max-w-sm sm:w-full"
+		role="status"
+		aria-live="polite"
+	>
 		{#each getToasts() as toast (toast.id)}
 			{@const icon = iconMap[toast.variant]}
 			<div
-				class="pointer-events-auto bg-surface-elevated border border-border/60 rounded-xl shadow-[var(--shadow-3)] p-4 flex gap-3 items-start animate-slide-in-toast"
+				class="pointer-events-auto bg-surface-elevated border border-border/60 rounded-xl shadow-[var(--shadow-3)] p-3 sm:p-4 flex gap-3 items-start toast-enter"
 				role="alert"
 			>
 				<!-- Icon circle -->
-				<div class="shrink-0 w-10 h-10 rounded-full {icon.bg} flex items-center justify-center">
-					<svg class="w-5 h-5 {icon.color}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+				<div class="shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full {icon.bg} flex items-center justify-center">
+					<svg class="w-4.5 h-4.5 sm:w-5 sm:h-5 {icon.color}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
 						<path stroke-linecap="round" stroke-linejoin="round" d={icon.path} />
 					</svg>
 				</div>
 
 				<!-- Content -->
 				<div class="flex-1 min-w-0">
-					<p class="text-sm font-semibold text-ink">{toast.title}</p>
+					<p class="text-sm font-semibold text-ink leading-snug">{toast.title}</p>
 					{#if toast.message}
-						<p class="text-sm text-ink-muted mt-0.5">{toast.message}</p>
+						<p class="text-xs sm:text-sm text-ink-muted mt-0.5 leading-snug">{toast.message}</p>
 					{/if}
 				</div>
 
 				<!-- Close -->
 				<button
 					type="button"
-					class="shrink-0 p-1 text-ink-subtle hover:text-ink rounded-lg transition-colors"
+					class="shrink-0 p-1.5 -m-1 text-ink-subtle hover:text-ink rounded-lg transition-colors"
 					onclick={() => dismissToast(toast.id)}
 					aria-label="Cerrar"
 				>
@@ -65,11 +73,11 @@
 {/if}
 
 <style>
-	@keyframes slide-in-toast {
-		from { opacity: 0; transform: translateX(1rem); }
-		to { opacity: 1; transform: translateX(0); }
+	@keyframes toast-slide-down {
+		from { opacity: 0; transform: translateY(-0.75rem); }
+		to { opacity: 1; transform: translateY(0); }
 	}
-	.animate-slide-in-toast {
-		animation: slide-in-toast 0.25s ease-out;
+	.toast-enter {
+		animation: toast-slide-down 0.2s ease-out;
 	}
 </style>
