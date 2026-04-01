@@ -19,7 +19,7 @@
 	import DoctorAvailabilityCalendar from '$shared/components/appointments/DoctorAvailabilityCalendar.svelte';
 	import TimeSlotPicker from '$shared/components/appointments/TimeSlotPicker.svelte';
 	import type { TimeSlot, DoctorOption } from '$shared/types/appointments.js';
-	import { enhance } from '$app/forms';
+	import { enhance, deserialize } from '$app/forms';
 
 	let { data }: { data: PageData } = $props();
 
@@ -142,10 +142,11 @@
 			fd.set('fecha', date);
 			fd.set('esNuevo', String(reschedulingCita.es_primera_vez));
 			const res = await fetch('?/obtenerSlots', { method: 'POST', body: fd });
-			const json = await res.json();
-			if (json.type === 'success' && json.data) {
-				rescheduleSlots = (json.data as Record<string, unknown>).slots as TimeSlot[] ?? [];
-				rescheduleSlotDuracion = ((json.data as Record<string, unknown>).duracion as 30 | 60) ?? 30;
+			const result = deserialize(await res.text());
+			if (result.type === 'success' && result.data) {
+				const d = result.data as Record<string, unknown>;
+				rescheduleSlots = (d.slots as TimeSlot[]) ?? [];
+				rescheduleSlotDuracion = (d.duracion as 30 | 60) ?? 30;
 			}
 		} catch { /* ignore */ } finally {
 			rescheduleLoadingSlots = false;
