@@ -13,6 +13,8 @@
 	import type { ExamenSolicitado } from '$shared/components/form-engine/ExamenesSection.svelte';
 	import PatientInsightsPanel from '$shared/components/form-engine/PatientInsightsPanel.svelte';
 	import type { PrescriptionItem } from '$shared/types/prescription.js';
+	import { goto } from '$app/navigation';
+	import Button from '$shared/components/button/Button.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -79,6 +81,39 @@
 			toastError('Error', 'No se pudo emitir la receta.');
 		} finally {
 			emittingRecipe = false;
+		}
+	}
+
+	// Finalizar cita: guardar evaluación + marcar como atendida
+	let finalizing = $state(false);
+
+	async function handleFinalize() {
+		if (!formEngineRef?.store) return;
+		finalizing = true;
+		try {
+			const formData = formEngineRef.store.getSubmitData();
+			const merged = mergeAllData(formData);
+
+			const body = new FormData();
+			body.set('evaluacion', JSON.stringify(merged));
+			body.set('schema_id', schemaId);
+			body.set('schema_version', schemaVersion);
+
+			const res = await fetch('?/finalizarCita', { method: 'POST', body });
+			const text = await res.text();
+
+			if (text.includes('"finalized":true') || text.includes('"type":"success"')) {
+				toastSuccess('Cita finalizada', `La evaluación de ${data.cita.paciente.nombre} ${data.cita.paciente.apellido} fue guardada y la cita marcada como atendida.`);
+				// Resetear dirty state para no bloquear navegación
+				saved = true;
+				setTimeout(() => goto(`/${tenantId}/doctor/citas`), 1500);
+			} else {
+				toastError('Error', 'No se pudo finalizar la cita. Intente nuevamente.');
+			}
+		} catch {
+			toastError('Error de conexión', 'Verifique su conexión e intente nuevamente.');
+		} finally {
+			finalizing = false;
 		}
 	}
 
@@ -224,6 +259,24 @@
 					emitting={emittingRecipe}
 				/>
 			</div>
+
+			<!-- Botón finalizar cita (guardar + marcar atendida) -->
+			{#if !isReadonly && data.cita.estado !== 'atendida'}
+				<div class="bg-surface-elevated border border-border/60 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+					<div>
+						<p class="text-sm font-semibold text-ink">¿Terminó la consulta?</p>
+						<p class="text-xs text-ink-muted mt-0.5">Guarda la evaluación y marca la cita como atendida.</p>
+					</div>
+					<Button
+						variant="primary"
+						size="md"
+						isLoading={finalizing}
+						onclick={handleFinalize}
+					>
+						Guardar y finalizar cita
+					</Button>
+				</div>
+			{/if}
 		</div>
 	</div>
 

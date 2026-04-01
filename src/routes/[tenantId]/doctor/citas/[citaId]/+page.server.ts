@@ -147,5 +147,35 @@ export const actions: Actions = {
 		} catch {
 			return fail(500, { error: 'Error al emitir receta' });
 		}
+	},
+
+	finalizarCita: async ({ request, params, locals }) => {
+		assertActionPermission(locals.user, 'guardarEvaluacion');
+		const citaId = params.citaId;
+		if (!citaId) return fail(400, { error: 'ID inválido' });
+
+		const fd = await request.formData();
+		const cita = await citasService.getCitaById(citaId);
+		if (!cita) return fail(404, { error: 'Cita no encontrada' });
+
+		// 1. Guardar evaluación
+		const schemaId = String(fd.get('schema_id') ?? '');
+		const schemaVersion = String(fd.get('schema_version') ?? '');
+		const evaluacionJson = String(fd.get('evaluacion') ?? '{}');
+
+		if (schemaId) {
+			let evaluacion: Record<string, unknown>;
+			try { evaluacion = JSON.parse(evaluacionJson); } catch { return fail(400, { error: 'Datos inválidos' }); }
+
+			await historiasService.upsertHistoriaDynamic(
+				citaId, cita.paciente_id, cita.doctor_id,
+				evaluacion, schemaId, schemaVersion
+			);
+		}
+
+		// 2. Marcar como atendida
+		await citasService.updateEstadoCita(citaId, 'atendida');
+
+		return { finalized: true };
 	}
 };
