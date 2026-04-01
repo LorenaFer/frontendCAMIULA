@@ -234,7 +234,8 @@
 		action="?/guardarEvaluacion"
 		class="hidden"
 		use:enhance={() => {
-			return ({ result }) => {
+			return async ({ result, update }) => {
+				await update();
 				if (result.type === 'success') {
 					saved = true;
 					toastSuccess('Evaluación guardada', `Evaluación de ${data.cita.paciente.nombre} ${data.cita.paciente.apellido} guardada correctamente.`);
