@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
 	import { page } from '$app/stores';
-	import { enhance } from '$app/forms';
+	import { enhance, deserialize } from '$app/forms';
 	import { beforeNavigate } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
@@ -21,8 +21,6 @@
 	const tenantId = $derived($page.params.tenantId);
 	const isReadonly = $derived(data.cita.estado === 'cancelada');
 
-	// Estado para el form oculto de guardado
-	let evaluacionJson = $state('{}');
 	const schemaId = data.formSchema.id;
 	const schemaVersion = data.formSchema.version;
 	let saved = $state(false);
@@ -48,13 +46,27 @@
 		};
 	}
 
-	// Guardar evaluación (submit del FormEngine → serializa al hidden form)
+	// Guardar evaluación via fetch directo (más confiable que requestSubmit en hidden form)
 	async function handleSave(formData: Record<string, unknown>) {
-		evaluacionJson = JSON.stringify(mergeAllData(formData));
-		// Pequeño tick para que Svelte actualice los bindings del hidden form
-		await new Promise((r) => setTimeout(r, 0));
-		const hiddenForm = document.getElementById('eval-form') as HTMLFormElement;
-		hiddenForm?.requestSubmit();
+		try {
+			const merged = mergeAllData(formData);
+			const body = new FormData();
+			body.set('evaluacion', JSON.stringify(merged));
+			body.set('schema_id', schemaId);
+			body.set('schema_version', schemaVersion);
+
+			const res = await fetch('?/guardarEvaluacion', { method: 'POST', body });
+			const result = deserialize(await res.text());
+
+			if (result.type === 'success') {
+				saved = true;
+				toastSuccess('Evaluación guardada', `Evaluación de ${data.cita.paciente.nombre} ${data.cita.paciente.apellido} guardada correctamente.`);
+			} else {
+				toastError('Error al guardar', 'No se pudo guardar la evaluación. Intente nuevamente.');
+			}
+		} catch {
+			toastError('Error de conexión', 'Verifique su conexión e intente nuevamente.');
+		}
 	}
 
 	// Emitir receta formal inline (sin navegar a /prescription)
@@ -100,15 +112,15 @@
 			body.set('schema_version', schemaVersion);
 
 			const res = await fetch('?/finalizarCita', { method: 'POST', body });
-			const text = await res.text();
+			const result = deserialize(await res.text());
 
-			if (text.includes('"finalized":true') || text.includes('"type":"success"')) {
+			if (result.type === 'success') {
 				toastSuccess('Cita finalizada', `La evaluación de ${data.cita.paciente.nombre} ${data.cita.paciente.apellido} fue guardada y la cita marcada como atendida.`);
-				// Resetear dirty state para no bloquear navegación
 				saved = true;
 				setTimeout(() => goto(`/${tenantId}/doctor/citas`), 1500);
 			} else {
-				toastError('Error', 'No se pudo finalizar la cita. Intente nuevamente.');
+				const errMsg = result.type === 'failure' ? ((result.data as Record<string, string>)?.error ?? 'Error desconocido') : 'No se pudo finalizar la cita.';
+				toastError('Error', errMsg);
 			}
 		} catch {
 			toastError('Error de conexión', 'Verifique su conexión e intente nuevamente.');
@@ -280,28 +292,7 @@
 		</div>
 	</div>
 
-	<!-- Hidden form for SvelteKit action submission -->
-	<form
-		id="eval-form"
-		method="POST"
-		action="?/guardarEvaluacion"
-		class="hidden"
-		use:enhance={() => {
-			return async ({ result, update }) => {
-				await update();
-				if (result.type === 'success') {
-					saved = true;
-					toastSuccess('Evaluación guardada', `Evaluación de ${data.cita.paciente.nombre} ${data.cita.paciente.apellido} guardada correctamente.`);
-				} else {
-					toastError('Error al guardar', 'No se pudo guardar la evaluación. Intente nuevamente.');
-				}
-			};
-		}}
-	>
-		<input type="hidden" name="evaluacion" value={evaluacionJson} />
-		<input type="hidden" name="schema_id" value={schemaId} />
-		<input type="hidden" name="schema_version" value={schemaVersion} />
-	</form>
+	<!-- Guardado ahora es via fetch directo, no hidden form -->
 </div>
 
 <style>
