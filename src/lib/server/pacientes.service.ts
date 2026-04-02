@@ -70,7 +70,7 @@ export interface CreatePacienteInput {
 	relacion_univ: RelacionUniversidad;
 	parentesco?: Parentesco;
 	titular_nhm?: number;
-	datos_medicos: DatosMedicos;
+	datos_medicos?: DatosMedicos;
 	contacto_emergencia?: ContactoEmergencia;
 }
 
@@ -99,7 +99,7 @@ export async function createPaciente(input: CreatePacienteInput): Promise<Pacien
 			relacion_univ: input.relacion_univ,
 			parentesco: input.parentesco,
 			titular_nhm: input.titular_nhm,
-			datos_medicos: input.datos_medicos,
+			datos_medicos: input.datos_medicos ?? {},
 			contacto_emergencia: input.contacto_emergencia,
 			es_nuevo: true,
 			created_at: new Date().toISOString()

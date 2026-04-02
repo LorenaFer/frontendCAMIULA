@@ -5,7 +5,7 @@ import { getRequiredPermission } from '$lib/server/rbac.js';
 import { hasPermission } from '$shared/rbac-config.js';
 
 const AUTH_COOKIE = 'mock_auth';
-const PUBLIC_ROUTES = ['/login', '/logout'];
+const PUBLIC_ROUTES = ['/login', '/logout', '/portal'];
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// 1. Parse auth cookie
@@ -24,14 +24,20 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	const { pathname } = event.url;
 
-	// 2. Public routes
-	if (PUBLIC_ROUTES.some((r) => pathname === r)) {
-		if (user && pathname === '/login') throw redirect(303, '/');
+	// 2. Public routes (portal/*, login, logout)
+	if (PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'))) {
+		// Logged-in staff accessing /login → redirect to dashboard
+		if (user && user.role !== 'paciente' && pathname === '/login') throw redirect(303, '/');
+		// Logged-in paciente accessing /portal → redirect to mis-citas
+		if (user && user.role === 'paciente' && pathname.startsWith('/portal')) throw redirect(303, '/mis-citas');
 		return resolve(event);
 	}
 
-	// 3. Must be logged in
-	if (!user) throw redirect(303, '/login');
+	// 3. Root redirect for unauthenticated users
+	if (!user) {
+		// No session → send to portal (patients) or login (staff)
+		throw redirect(303, '/portal');
+	}
 
 	// 4. Extract route path (strip leading slash)
 	const routePath = pathname.replace(/^\//, '');
