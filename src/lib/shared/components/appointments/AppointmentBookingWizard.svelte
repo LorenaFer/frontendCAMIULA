@@ -24,12 +24,11 @@
 	interface Props {
 		doctores: DoctorOption[];
 		especialidades: Especialidad[];
-		tenantId: string;
 		minDate: string;
 		class?: string;
 	}
 
-	let { doctores, especialidades, tenantId, minDate, class: className = '' }: Props = $props();
+	let { doctores, especialidades, minDate, class: className = '' }: Props = $props();
 
 	// ─── Estado del wizard ────────────────────────────────────
 
@@ -167,7 +166,7 @@
 	// ─── Helper: POST JSON al endpoint REST ──────────────────
 
 	async function api<T = unknown>(action: string, body: Record<string, unknown>): Promise<{ ok: boolean; data: T; message: string }> {
-		const res = await fetch(`/${tenantId}/agendar`, {
+		const res = await fetch('/agendar', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ action, ...body })
