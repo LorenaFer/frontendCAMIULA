@@ -1,2 +1,2 @@
-export type { NavItem, UserProfile, Hospital, NavigationConfig } from './navigation';
+export type { NavItem, UserProfile, NavigationConfig } from './navigation';
 export * from './inventory.js';

@@ -21,15 +21,8 @@ export interface UserProfile {
 	initials: string;
 }
 
-export interface Hospital {
-	id: string;
-	name: string;
-	logo?: string;
-}
-
 export interface NavigationConfig {
 	items: NavItem[];
 	user: UserProfile;
-	tenantId: string;
 	tenantName?: string;
 }

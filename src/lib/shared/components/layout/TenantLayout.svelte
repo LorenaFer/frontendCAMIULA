@@ -4,16 +4,14 @@
 	import Sidebar from './Sidebar.svelte';
 	import Header from './Header.svelte';
 	import SearchDialog from '$shared/components/search-dialog/SearchDialog.svelte';
-	import type { NavItem, UserProfile, Hospital } from '$shared/types/navigation';
+	import type { NavItem, UserProfile } from '$shared/types/navigation';
 	import type { SearchResult, SearchCategory } from './navUtils';
 	import { filterNavItemsByPermissions } from './navUtils';
 
 	let {
 		children,
-		tenantId,
 		tenantName,
 		user,
-		hospitals,
 		navItems,
 		permissions,
 		notificationCount,
@@ -27,10 +25,8 @@
 		onLogout
 	}: {
 		children: Snippet;
-		tenantId: string;
 		tenantName?: string;
 		user: UserProfile;
-		hospitals?: Hospital[];
 		navItems: NavItem[];
 		permissions?: string[];
 		notificationCount?: number;
@@ -66,9 +62,7 @@
 	<Sidebar
 		{user}
 		navItems={filteredNavItems}
-		{tenantId}
 		{tenantName}
-		{hospitals}
 		isOpen={sidebarOpen}
 		onClose={() => (sidebarOpen = false)}
 		{onSettingsClick}

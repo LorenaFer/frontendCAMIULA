@@ -53,6 +53,7 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
 	'agendar': P.CITAS_CREATE,
 	'mis-citas': P.CITAS_READ,
 	'analista/citas': P.CITAS_CANCEL,
+	'analista/horarios': P.DISPONIBILIDAD_READ,
 	'doctor/citas': P.CITAS_MARK_ATTENDED,
 	'doctor/disponibilidad': P.DISPONIBILIDAD_READ,
 	'appointments': P.CITAS_READ,
