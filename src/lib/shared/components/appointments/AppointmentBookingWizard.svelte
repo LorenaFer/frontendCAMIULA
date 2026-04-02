@@ -25,14 +25,17 @@
 		doctores: DoctorOption[];
 		especialidades: Especialidad[];
 		minDate: string;
+		/** Paciente ya logueado — salta el step de identificación */
+		loggedPatient?: PacientePublic | null;
 		class?: string;
 	}
 
-	let { doctores, especialidades, minDate, class: className = '' }: Props = $props();
+	let { doctores, especialidades, minDate, loggedPatient = null, class: className = '' }: Props = $props();
 
 	// ─── Estado del wizard ────────────────────────────────────
 
-	let currentStep = $state(0);
+	// Si hay paciente logueado, saltar step 0 (identificación) e ir directo a step 2 (doctor)
+	let currentStep = $state(loggedPatient ? 2 : 0);
 	let loading = $state(false);
 	let formError = $state('');
 
@@ -42,8 +45,8 @@
 		const trimmed = query.trim().replace(/[^0-9]/g, '');
 		return trimmed.length > 0 && Number(trimmed) < 100000 && query.trim() === trimmed ? 'nhm' : 'cedula';
 	});
-	let paciente = $state<PacientePublic | null>(null);
-	let esNuevo = $state(false);
+	let paciente = $state<PacientePublic | null>(loggedPatient ?? null);
+	let esNuevo = $state(loggedPatient?.es_nuevo ?? false);
 
 	// Paso 2 — Registro (campos planilla ULA, dividido en 3 sub-pasos)
 	let regSubStep = $state(0); // 0=básicos, 1=universidad, 2=opcional

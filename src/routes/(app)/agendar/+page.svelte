@@ -13,4 +13,5 @@
 	doctores={data.doctores}
 	especialidades={data.especialidades}
 	minDate={data.minDate}
+	loggedPatient={data.loggedPatient}
 />

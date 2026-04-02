@@ -5,16 +5,29 @@ import * as doctoresService from '$lib/server/doctores.service.js';
 import * as citasService from '$lib/server/citas.service.js';
 import { computeAvailableSlots, getMinBookingDate, isDateAllowed } from '$lib/server/slots.service.js';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const [doctores, especialidades] = await Promise.all([
 		doctoresService.getDoctorOptions(),
 		doctoresService.getEspecialidades()
 	]);
 
+	// Si el usuario es paciente logueado, buscar sus datos para saltar step 1
+	let loggedPatient = null;
+	if (locals.user?.role === 'paciente' && locals.user.id) {
+		const found = await pacientesService.findByNHM(0).catch(() => null); // dummy
+		// Search by user ID in mock
+		const { mockPacientes } = await import('$lib/server/mock/data.js');
+		const pac = mockPacientes.find((p: { id: string }) => p.id === locals.user!.id);
+		if (pac) {
+			loggedPatient = { id: pac.id, nhm: pac.nhm, nombre: pac.nombre, apellido: pac.apellido, relacion_univ: pac.relacion_univ, es_nuevo: pac.es_nuevo };
+		}
+	}
+
 	return {
 		doctores,
 		especialidades,
-		minDate: getMinBookingDate()
+		minDate: getMinBookingDate(),
+		loggedPatient
 	};
 };
 
