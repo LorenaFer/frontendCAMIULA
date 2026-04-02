@@ -174,23 +174,8 @@
 						</button>
 					</div>
 				</div>
-				<!-- Nav tabs para paciente -->
-				<nav class="px-4 flex gap-1">
-					<a
-						href="/agendar"
-						class="px-3 py-2 text-xs font-medium rounded-t-lg transition-colors {currentPath.includes('/agendar') ? 'bg-canvas text-viking-600 border-b-2 border-viking-600' : 'text-ink-muted hover:text-ink'}"
-					>
-						Agendar Cita
-					</a>
-					<a
-						href="/mis-citas"
-						class="px-3 py-2 text-xs font-medium rounded-t-lg transition-colors {currentPath.includes('/mis-citas') ? 'bg-canvas text-viking-600 border-b-2 border-viking-600' : 'text-ink-muted hover:text-ink'}"
-					>
-						Mis Citas
-					</a>
-				</nav>
 			</header>
-			<main class="p-4 lg:p-8">
+			<main class="p-4 max-w-3xl mx-auto">
 				{@render children()}
 			</main>
 		</div>

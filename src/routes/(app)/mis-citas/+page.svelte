@@ -33,19 +33,16 @@
 
 <svelte:head><title>Mis Citas</title></svelte:head>
 
-<div class="max-w-2xl mx-auto space-y-6 animate-fade-in-up">
-	<!-- Header -->
+<div class="space-y-4 animate-fade-in-up">
+	<!-- Header compacto -->
 	<div class="flex items-center justify-between">
-		<div>
-			<h1 class="text-xl font-bold text-ink">Mis Citas</h1>
-			<p class="text-xs text-ink-muted mt-0.5">Historial de citas médicas</p>
-		</div>
+		<h1 class="text-xl font-bold text-ink">Mis Citas</h1>
 		<a
 			href="/agendar"
-			class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-viking-600 text-white hover:bg-viking-700 transition-colors"
+			class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium bg-viking-600 text-white hover:bg-viking-700 transition-colors shadow-sm"
 		>
-			<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-			Nueva cita
+			<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+			Agendar nueva cita
 		</a>
 	</div>
 

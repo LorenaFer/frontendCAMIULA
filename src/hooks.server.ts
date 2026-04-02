@@ -44,7 +44,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// Paciente: solo agendar/* y mis-citas/*
 	if (user.role === 'paciente' && !routePath.startsWith('agendar') && !routePath.startsWith('mis-citas')) {
-		throw redirect(303, '/agendar');
+		throw redirect(303, '/mis-citas');
 	}
 
 	// Route-level permission check
