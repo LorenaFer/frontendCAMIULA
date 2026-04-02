@@ -138,12 +138,14 @@ El frontend opera en modo mock por defecto para cada modulo. Cuando un endpoint 
 
 ## Indice de Documentacion por Modulo
 
-| # | Documento | Modulo |
-|---|-----------|--------|
-| 1 | [01-auth.md](./01-auth.md) | Autenticacion y Autorizacion (RBAC) |
-| 2 | [02-pacientes.md](./02-pacientes.md) | Gestion de Pacientes |
-| 3 | [03-doctores.md](./03-doctores.md) | Doctores y Especialidades |
-| 4 | [04-citas.md](./04-citas.md) | Citas Medicas |
-| 5 | [05-historias.md](./05-historias.md) | Historias Clinicas y Evaluaciones |
-| 6 | [06-inventario.md](./06-inventario.md) | Inventario de Farmacia |
-| 7 | [07-configuracion.md](./07-configuracion.md) | Configuracion del Sistema |
+| # | Documento | Módulo | Endpoints |
+|---|-----------|--------|-----------|
+| 1 | [01-auth.md](./01-auth.md) | Autenticación y Autorización (RBAC) | 4 |
+| 2 | [02-patients.md](./02-patients.md) | Gestión de Pacientes | 7 |
+| 3 | [03-appointments.md](./03-appointments.md) | Citas Médicas y Agendamiento | 9 |
+| 4 | [04-doctors.md](./04-doctors.md) | Doctores, Especialidades y Disponibilidad | 12 |
+| 5 | [05-medical-records.md](./05-medical-records.md) | Historias Médicas y Schemas Dinámicos | 10 |
+| 6 | [06-inventory.md](./06-inventory.md) | Inventario: Medicamentos, Proveedores, Órdenes, Lotes | 18 |
+| 7 | [07-pharmacy.md](./07-pharmacy.md) | Farmacia: Recetas, Despachos, Límites, Reportes | 17 |
+| 8 | [08-dashboard.md](./08-dashboard.md) | Dashboard BI: Métricas Consolidadas | 1–5 |
+| 9 | [09-patient-portal.md](./09-patient-portal.md) | Portal del Paciente: Registro, Login, Hub, Wizard | 10 |
