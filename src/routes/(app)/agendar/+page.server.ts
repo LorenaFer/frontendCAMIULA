@@ -231,7 +231,6 @@ export const actions: Actions = {
 			created_by: 'portal_publico'
 		});
 
-		const confirmationCode = `CITA-${String(cita.id).padStart(6, '0')}`;
-		redirect(303, `/agendar/confirmacion?citaId=${cita.id}&code=${confirmationCode}`);
+		redirect(303, '/mis-citas?agendada=1');
 	}
 };

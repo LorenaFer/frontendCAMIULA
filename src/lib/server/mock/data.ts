@@ -656,13 +656,13 @@ export const mockPrescriptions: Prescription[] = [
 	{
 		id: 'presc-1',
 		prescription_number: 'RX-2026-001',
-		fk_appointment_id: '1',
-		fk_patient_id: '1',
-		fk_doctor_id: 'doc-1',
+		fk_appointment_id: CITA_IDS[2],
+		fk_patient_id: PAC_IDS[0],
+		fk_doctor_id: DOC_IDS[0],
 		patient_name: 'Pedro González',
 		doctor_name: 'Dr. Carlos Mendoza',
 		prescription_date: '2026-03-20',
-		prescription_status: 'issued',
+		prescription_status: 'dispensed',
 		items: [
 			{
 				id: 'pi-1',
@@ -681,6 +681,58 @@ export const mockPrescriptions: Prescription[] = [
 			}
 		],
 		created_at: '2026-03-20T10:00:00Z'
+	},
+	{
+		id: 'presc-2',
+		prescription_number: 'RX-2026-002',
+		fk_appointment_id: CITA_IDS[4],
+		fk_patient_id: PAC_IDS[0],
+		fk_doctor_id: DOC_IDS[0],
+		patient_name: 'Pedro González',
+		doctor_name: 'Dr. Carlos Mendoza',
+		prescription_date: '2026-03-28',
+		prescription_status: 'issued',
+		items: [
+			{
+				id: 'pi-2',
+				fk_medication_id: 'med-2',
+				medication: { id: 'med-2', code: 'MED-002', generic_name: 'Ibuprofeno', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 200 },
+				quantity_prescribed: 30,
+				dosage_instructions: '1 tableta cada 8 horas con alimentos',
+				duration_days: 10
+			},
+			{
+				id: 'pi-3',
+				fk_medication_id: 'med-5',
+				medication: { id: 'med-5', code: 'MED-005', generic_name: 'Omeprazol', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 120 },
+				quantity_prescribed: 14,
+				dosage_instructions: '1 cápsula en ayunas',
+				duration_days: 14
+			}
+		],
+		created_at: '2026-03-28T09:00:00Z'
+	},
+	{
+		id: 'presc-3',
+		prescription_number: 'RX-2026-003',
+		fk_appointment_id: CITA_IDS[3],
+		fk_patient_id: PAC_IDS[1],
+		fk_doctor_id: DOC_IDS[2],
+		patient_name: 'Laura Martínez',
+		doctor_name: 'Dr. Ana Rodríguez',
+		prescription_date: '2026-03-25',
+		prescription_status: 'issued',
+		items: [
+			{
+				id: 'pi-4',
+				fk_medication_id: 'med-4',
+				medication: { id: 'med-4', code: 'MED-004', generic_name: 'Losartán', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 180 },
+				quantity_prescribed: 30,
+				dosage_instructions: '1 tableta cada 24 horas en la mañana',
+				duration_days: 30
+			}
+		],
+		created_at: '2026-03-25T14:00:00Z'
 	}
 ];
 
@@ -691,7 +743,7 @@ export const mockDispatches: Dispatch[] = [
 		id: 'disp-1',
 		fk_prescription_id: 'presc-1',
 		prescription_number: 'RX-2026-001',
-		fk_patient_id: '1',
+		fk_patient_id: PAC_IDS[0],
 		patient_name: 'Pedro González',
 		fk_pharmacist_id: 'pharm-1',
 		pharmacist_name: 'Farm. María López',
@@ -706,31 +758,30 @@ export const mockDispatches: Dispatch[] = [
 		id: 'disp-2',
 		fk_prescription_id: 'presc-2',
 		prescription_number: 'RX-2026-002',
-		fk_patient_id: '2',
-		patient_name: 'Ana Martínez',
+		fk_patient_id: PAC_IDS[0],
+		patient_name: 'Pedro González',
 		fk_pharmacist_id: 'pharm-1',
 		pharmacist_name: 'Farm. María López',
-		dispatch_date: '2026-03-22',
-		dispatch_status: 'completed',
+		dispatch_date: '2026-03-28',
+		dispatch_status: 'pending',
 		items: [
 			{ id: 'di-2', fk_batch_id: 'batch-2', lot_number: 'L2026-B003', expiration_date: '2027-03-01', fk_medication_id: 'med-2', medication: { id: 'med-2', code: 'MED-002', generic_name: 'Ibuprofeno', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 200 }, quantity_dispatched: 30 },
 			{ id: 'di-3', fk_batch_id: 'batch-3', lot_number: 'L2026-C001', expiration_date: '2027-09-20', fk_medication_id: 'med-5', medication: { id: 'med-5', code: 'MED-005', generic_name: 'Omeprazol', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 120 }, quantity_dispatched: 14 }
 		],
-		created_at: '2026-03-22T09:15:00Z'
+		created_at: '2026-03-28T09:15:00Z'
 	},
 	{
 		id: 'disp-3',
 		fk_prescription_id: 'presc-3',
 		prescription_number: 'RX-2026-003',
-		fk_patient_id: '3',
-		patient_name: 'Carlos Rodríguez',
+		fk_patient_id: PAC_IDS[1],
+		patient_name: 'Laura Martínez',
 		fk_pharmacist_id: 'pharm-1',
 		pharmacist_name: 'Farm. María López',
 		dispatch_date: '2026-03-25',
-		notes: 'Paciente alérgico a penicilina — verificado',
-		dispatch_status: 'cancelled',
+		dispatch_status: 'completed',
 		items: [
-			{ id: 'di-4', fk_batch_id: 'batch-1', lot_number: 'L2026-A001', expiration_date: '2027-06-15', fk_medication_id: 'med-1', medication: { id: 'med-1', code: 'MED-001', generic_name: 'Amoxicilina', pharmaceutical_form: 'Cápsula', unit_measure: 'cápsulas', current_stock: 350 }, quantity_dispatched: 21 }
+			{ id: 'di-4', fk_batch_id: 'batch-4', lot_number: 'L2026-D001', expiration_date: '2027-12-01', fk_medication_id: 'med-4', medication: { id: 'med-4', code: 'MED-004', generic_name: 'Losartán', pharmaceutical_form: 'Tableta', unit_measure: 'tabletas', current_stock: 180 }, quantity_dispatched: 30 }
 		],
 		created_at: '2026-03-25T14:00:00Z'
 	}

@@ -141,9 +141,12 @@
 		{ id: 'patients', label: 'Pacientes', href: 'patients', icon: patientsIcon, permission: P.PACIENTES_READ, group: 'Clínica' },
 		{ id: 'agendar', label: 'Agendar Cita', href: 'agendar', icon: appointmentsIcon, permission: P.CITAS_CREATE, group: 'Citas' },
 		{ id: 'analista-citas', label: 'Gestión Citas', href: 'analista/citas', icon: appointmentsIcon, permission: P.CITAS_CANCEL, group: 'Citas' },
-		{ id: 'doctor-citas', label: 'Mis Citas', href: 'doctor/citas', icon: appointmentsIcon, permission: P.CITAS_MARK_ATTENDED, group: 'Doctor' },
-		{ id: 'doctor-disponibilidad', label: 'Mi Disponibilidad', href: 'doctor/disponibilidad', icon: appointmentsIcon, permission: P.DISPONIBILIDAD_READ, group: 'Doctor' },
-		{ id: 'form-preview', label: 'Form Preview', href: 'doctor/form-preview', icon: formPreviewIcon, permission: P.EVALUACIONES_WRITE, group: 'Doctor' },
+		{ id: 'analista-horarios', label: 'Horarios Doctores', href: 'analista/horarios', icon: appointmentsIcon, permission: P.CITAS_CANCEL, group: 'Citas' },
+		...(authUser.role === 'doctor' ? [
+			{ id: 'doctor-citas', label: 'Mis Citas', href: 'doctor/citas', icon: appointmentsIcon, permission: P.CITAS_MARK_ATTENDED, group: 'Doctor' },
+			{ id: 'doctor-disponibilidad', label: 'Mi Disponibilidad', href: 'doctor/disponibilidad', icon: appointmentsIcon, permission: P.DISPONIBILIDAD_READ, group: 'Doctor' },
+			{ id: 'form-preview', label: 'Form Preview', href: 'doctor/form-preview', icon: formPreviewIcon, permission: P.EVALUACIONES_WRITE, group: 'Doctor' },
+		] satisfies NavItem[] : []),
 		{ id: 'inventory',         label: 'Resumen',         href: 'inventory',                  icon: inventoryIcon,   permission: P.INVENTORY_READ,     group: 'Farmacia' },
 		{ id: 'inv-medications',   label: 'Medicamentos',   href: 'inventory/medications',       icon: medicationsIcon, permission: P.INVENTORY_READ,     group: 'Farmacia' },
 		{ id: 'inv-batches',       label: 'Stock y Lotes',  href: 'inventory/batches',           icon: stockIcon,       permission: P.INVENTORY_READ,     group: 'Farmacia' },
@@ -167,15 +170,27 @@
 						</div>
 						<span class="text-sm font-semibold text-ink">{appName}</span>
 					</div>
-					<div class="flex items-center gap-3">
-						<span class="text-xs text-ink-muted">{authUser.name}</span>
-						<button onclick={handleLogout} class="text-xs text-ink-subtle hover:text-ink-muted transition-colors">
-							Cerrar sesión
+					<div class="flex items-center gap-2">
+						<div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-canvas-subtle">
+							<svg class="w-3.5 h-3.5 text-ink-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+							</svg>
+							<span class="text-xs font-medium text-ink hidden sm:inline">{authUser.name}</span>
+						</div>
+						<button
+							onclick={handleLogout}
+							class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-ink-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+							title="Cerrar sesión"
+						>
+							<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+							</svg>
+							<span class="hidden sm:inline">Salir</span>
 						</button>
 					</div>
 				</div>
 			</header>
-			<main class="p-4 max-w-3xl mx-auto">
+			<main class="p-4 max-w-5xl mx-auto">
 				{@render children()}
 			</main>
 		</div>

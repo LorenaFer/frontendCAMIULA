@@ -209,10 +209,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				motivo_consulta, observaciones, created_by: 'portal_publico'
 			});
 
-			const confirmationCode = `CITA-${String(cita.id).padStart(6, '0')}`;
-			const redirectUrl = `/agendar/confirmacion?citaId=${cita.id}&code=${confirmationCode}`;
-
-			return ok({ citaId: cita.id, confirmationCode, redirectUrl }, 'Cita confirmada exitosamente');
+			return ok({ citaId: cita.id, redirectUrl: '/mis-citas?agendada=1' }, 'Cita confirmada exitosamente');
 		}
 
 		default:
