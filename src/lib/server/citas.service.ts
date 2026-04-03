@@ -108,9 +108,9 @@ export async function getCitasHoy(doctorId?: string): Promise<CitaConPaciente[]>
 	}
 	const qs = new URLSearchParams({ fecha: today });
 	if (doctorId) qs.set('doctor_id', doctorId);
-	const raw = await apiFetch<R>(`/appointments?${qs}`);
-	const page = mapPagination(raw);
-	return (page.items as R[]).map(mapAppointment);
+	const raw = await apiFetch<R | R[]>(`/appointments?${qs}`);
+	const items = Array.isArray(raw) ? raw : (raw.items as R[] ?? []);
+	return items.map(mapAppointment);
 }
 
 export async function getCitasByDoctorMes(doctorId: string, year: number, month: number): Promise<Cita[]> {
@@ -120,9 +120,10 @@ export async function getCitasByDoctorMes(doctorId: string, year: number, month:
 			(c) => c.doctor_id === doctorId && c.fecha.startsWith(prefix) && c.estado !== 'cancelada'
 		);
 	}
-	const raw = await apiFetch<R>(`/appointments?doctor_id=${doctorId}&mes=${prefix}&excluir_canceladas=true`);
-	const page = mapPagination(raw);
-	return (page.items as R[]).map((r) => mapAppointment(r) as Cita);
+	const raw = await apiFetch<R | R[]>(`/appointments?doctor_id=${doctorId}&mes=${prefix}&excluir_canceladas=true`);
+	// Backend puede devolver array directo o paginado
+	const items = Array.isArray(raw) ? raw : (raw.items as R[] ?? []);
+	return items.map((r) => mapAppointment(r) as Cita);
 }
 
 export async function getCitasByDoctorFecha(doctorId: string, fecha: string): Promise<Cita[]> {
@@ -131,9 +132,9 @@ export async function getCitasByDoctorFecha(doctorId: string, fecha: string): Pr
 			(c) => c.doctor_id === doctorId && c.fecha === fecha && c.estado !== 'cancelada'
 		);
 	}
-	const raw = await apiFetch<R>(`/appointments?doctor_id=${doctorId}&fecha=${fecha}&excluir_canceladas=true`);
-	const page = mapPagination(raw);
-	return (page.items as R[]).map((r) => mapAppointment(r) as Cita);
+	const raw = await apiFetch<R | R[]>(`/appointments?doctor_id=${doctorId}&fecha=${fecha}&excluir_canceladas=true`);
+	const items = Array.isArray(raw) ? raw : (raw.items as R[] ?? []);
+	return items.map((r) => mapAppointment(r) as Cita);
 }
 
 export async function getCitaById(id: string): Promise<CitaConPaciente | null> {
