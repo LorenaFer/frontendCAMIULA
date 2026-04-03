@@ -99,6 +99,20 @@ export async function getCitasByFilters(
 	};
 }
 
+export async function getCitasByPatientId(patientId: string): Promise<{ items: CitaConPaciente[]; pagination: { total: number; page: number; page_size: number; pages: number; has_next: boolean } }> {
+	if (mockFlags.citas) {
+		const citas = mockCitasConPaciente.filter((c) => c.paciente_id === patientId);
+		return { items: citas, pagination: { total: citas.length, page: 1, page_size: 100, pages: 1, has_next: false } };
+	}
+	const raw = await apiFetch<R>(`/appointments?fk_patient_id=${patientId}&page_size=100`);
+	if (Array.isArray(raw)) {
+		const items = (raw as R[]).map(mapAppointment);
+		return { items, pagination: { total: items.length, page: 1, page_size: 100, pages: 1, has_next: false } };
+	}
+	const page = mapPagination(raw);
+	return { items: (page.items as R[]).map(mapAppointment), pagination: page.pagination };
+}
+
 export async function getCitasHoy(doctorId?: string): Promise<CitaConPaciente[]> {
 	const today = new Date().toISOString().slice(0, 10);
 	if (mockFlags.citas) {
