@@ -180,13 +180,14 @@ export function mapAvailabilityToBackend(d: { day_of_week: number; hora_inicio: 
 
 // ─── Citas ──────────────────────────────────────────────────
 
+// El backend usa estados en español — mapeo identidad + fallback para inglés legacy
 const statusBackendToFrontend: Record<string, CitaEstado> = {
+	// Español (backend real)
+	pendiente: 'pendiente', confirmada: 'confirmada', atendida: 'atendida',
+	cancelada: 'cancelada', no_asistio: 'no_asistio',
+	// Inglés (fallback por si acaso)
 	pending: 'pendiente', confirmed: 'confirmada', completed: 'atendida',
 	cancelled: 'cancelada', no_show: 'no_asistio', in_progress: 'confirmada'
-};
-const statusFrontendToBackend: Record<string, string> = {
-	pendiente: 'pending', confirmada: 'confirmed', atendida: 'completed',
-	cancelada: 'cancelled', no_asistio: 'no_show'
 };
 
 export function mapAppointment(b: AnyRecord): CitaConPaciente {
@@ -248,7 +249,8 @@ export function mapAppointmentToBackend(c: { paciente_id: string; doctor_id: str
 }
 
 export function mapStatusToBackend(estado: CitaEstado): string {
-	return statusFrontendToBackend[estado] ?? 'pending';
+	// Backend usa estados en español — pasar tal cual
+	return estado;
 }
 
 export function mapSlot(b: AnyRecord): TimeSlot {
