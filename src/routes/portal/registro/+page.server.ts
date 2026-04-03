@@ -1,7 +1,9 @@
 import type { Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { registerPaciente } from '$lib/server/pacientes.service';
-import { ApiError } from '$lib/server/api';
+import { apiFetch, ApiError } from '$lib/server/api';
+import { setToken, setUserSession } from '$lib/server/auth';
+import { mockFlags } from '$lib/server/mock-flags';
 import type { AuthUser } from '$shared/types/auth';
 
 export const actions: Actions = {
@@ -79,12 +81,27 @@ export const actions: Actions = {
 				role: 'paciente',
 				initials: `${paciente.nombre[0]}${paciente.apellido[0]}`
 			};
+			setUserSession(cookies, authUser);
 
-			cookies.set('mock_auth', JSON.stringify(authUser), {
-				path: '/',
-				httpOnly: false,
-				maxAge: 60 * 60 * 24 * 7
-			});
+			// Auto-login: obtener JWT para que las páginas siguientes funcionen
+			if (!mockFlags.auth) {
+				try {
+					const loginRes = await apiFetch<{
+						found: boolean;
+						patient: unknown;
+						access_token?: string;
+						expires_in?: number;
+					}>('/auth/patient/login', {
+						method: 'POST',
+						body: JSON.stringify({ query: cedula, query_type: 'cedula' })
+					});
+					if (loginRes.access_token) {
+						setToken(cookies, loginRes.access_token, loginRes.expires_in ?? 86400);
+					}
+				} catch {
+					// Si el auto-login falla, el paciente irá al portal login
+				}
+			}
 
 			redirect(303, '/agendar');
 		} catch (e: unknown) {
