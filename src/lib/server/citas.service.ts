@@ -280,13 +280,32 @@ export async function getStats(filters: AppointmentFilters): Promise<CitasStats>
 		};
 	}
 
-	// API real — el backend debería tener un endpoint /appointments/stats
+	// API real — mapear snake_case → camelCase
 	const qs = new URLSearchParams();
 	if (filters.fecha) qs.set('fecha', filters.fecha);
 	if (filters.doctor_id) qs.set('doctor_id', filters.doctor_id);
 	if (filters.especialidad_id) qs.set('especialidad_id', filters.especialidad_id);
 	if (filters.estado) qs.set('estado', filters.estado);
-	return apiFetch<CitasStats>(`/appointments/stats?${qs}`);
+	const raw = await apiFetch<R>(`/appointments/stats?${qs}`);
+	return {
+		total: Number(raw.total ?? 0),
+		byStatus: (raw.by_status as Record<string, number>) ?? {},
+		bySpecialty: (raw.by_specialty as { name: string; count: number }[]) ?? [],
+		byDoctor: ((raw.by_doctor as R[]) ?? []).map((d) => ({
+			name: String(d.name ?? ''),
+			specialty: String(d.specialty ?? ''),
+			count: Number(d.count ?? 0),
+			atendidas: Number(d.attended ?? d.atendidas ?? 0)
+		})),
+		firstTimeCount: Number(raw.first_time_count ?? 0),
+		returningCount: Number(raw.returning_count ?? 0),
+		byPatientType: (raw.by_patient_type as Record<string, number>) ?? {},
+		dailyTrend: (raw.daily_trend as number[]) ?? [],
+		peakHours: ((raw.peak_hours as R[]) ?? []).map((h) => ({
+			hour: String(h.hour ?? ''),
+			count: Number(h.count ?? 0)
+		}))
+	};
 }
 
 export async function isSlotOccupied(doctorId: string, fecha: string, horaInicio: string): Promise<boolean> {

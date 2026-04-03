@@ -12,8 +12,10 @@ export async function getAllPacientes(): Promise<Paciente[]> {
 	if (mockFlags.pacientes) {
 		return [...mockPacientes].sort((a, b) => a.apellido.localeCompare(b.apellido));
 	}
-	const raw = await apiFetch<Record<string, unknown>[]>('/patients');
-	return raw.map(mapPatient);
+	const raw = await apiFetch<Record<string, unknown>>('/patients?page_size=1000');
+	// Backend devuelve paginado { items, pagination }
+	const items = Array.isArray(raw) ? raw : ((raw.items as Record<string, unknown>[]) ?? []);
+	return items.map(mapPatient);
 }
 
 export async function findByNHM(nhm: number): Promise<PacientePublic | null> {
