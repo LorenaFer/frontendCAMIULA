@@ -2,6 +2,9 @@ import { mockFlags } from './mock-flags.js';
 import { apiFetch } from './api.js';
 import { mockCitas, mockCitasConPaciente } from './mock/data.js';
 import type { Cita, CitaConPaciente, CitaEstado, AppointmentFilters, PaginatedResponse } from '$shared/types/appointments.js';
+import { mapAppointment, mapAppointmentToBackend, mapStatusToBackend, mapPagination } from './mappers.js';
+
+type R = Record<string, unknown>;
 
 export interface CreateCitaInput {
 	paciente_id: string;
@@ -38,7 +41,9 @@ export async function createCita(input: CreateCitaInput): Promise<Cita> {
 		mockCitas.push(nueva);
 		return nueva;
 	}
-	return apiFetch<Cita>('/appointments', { method: 'POST', body: JSON.stringify(input) });
+	const backendData = mapAppointmentToBackend(input);
+	const raw = await apiFetch<R>('/appointments', { method: 'POST', body: JSON.stringify(backendData) });
+	return mapAppointment(raw) as Cita;
 }
 
 export async function getCitasByFilters(
@@ -86,7 +91,12 @@ export async function getCitasByFilters(
 	qs.set('page', String(filters.page ?? 1));
 	qs.set('page_size', String(filters.page_size ?? 25));
 
-	return apiFetch<PaginatedResponse<CitaConPaciente>>(`/appointments?${qs}`);
+	const raw = await apiFetch<R>(`/appointments?${qs}`);
+	const page = mapPagination(raw);
+	return {
+		items: (page.items as R[]).map(mapAppointment),
+		pagination: page.pagination
+	};
 }
 
 export async function getCitasHoy(doctorId?: string): Promise<CitaConPaciente[]> {
@@ -98,7 +108,9 @@ export async function getCitasHoy(doctorId?: string): Promise<CitaConPaciente[]>
 	}
 	const qs = new URLSearchParams({ fecha: today });
 	if (doctorId) qs.set('doctor_id', doctorId);
-	return apiFetch<CitaConPaciente[]>(`/appointments?${qs}`);
+	const raw = await apiFetch<R>(`/appointments?${qs}`);
+	const page = mapPagination(raw);
+	return (page.items as R[]).map(mapAppointment);
 }
 
 export async function getCitasByDoctorMes(doctorId: string, year: number, month: number): Promise<Cita[]> {
@@ -108,7 +120,9 @@ export async function getCitasByDoctorMes(doctorId: string, year: number, month:
 			(c) => c.doctor_id === doctorId && c.fecha.startsWith(prefix) && c.estado !== 'cancelada'
 		);
 	}
-	return apiFetch<Cita[]>(`/appointments?doctor_id=${doctorId}&mes=${prefix}&excluir_canceladas=true`);
+	const raw = await apiFetch<R>(`/appointments?doctor_id=${doctorId}&mes=${prefix}&excluir_canceladas=true`);
+	const page = mapPagination(raw);
+	return (page.items as R[]).map((r) => mapAppointment(r) as Cita);
 }
 
 export async function getCitasByDoctorFecha(doctorId: string, fecha: string): Promise<Cita[]> {
@@ -117,14 +131,17 @@ export async function getCitasByDoctorFecha(doctorId: string, fecha: string): Pr
 			(c) => c.doctor_id === doctorId && c.fecha === fecha && c.estado !== 'cancelada'
 		);
 	}
-	return apiFetch<Cita[]>(`/appointments?doctor_id=${doctorId}&fecha=${fecha}&excluir_canceladas=true`);
+	const raw = await apiFetch<R>(`/appointments?doctor_id=${doctorId}&fecha=${fecha}&excluir_canceladas=true`);
+	const page = mapPagination(raw);
+	return (page.items as R[]).map((r) => mapAppointment(r) as Cita);
 }
 
 export async function getCitaById(id: string): Promise<CitaConPaciente | null> {
 	if (mockFlags.citas) {
 		return mockCitasConPaciente.find((c) => c.id === id) ?? null;
 	}
-	return apiFetch<CitaConPaciente>(`/appointments/${id}`);
+	const raw = await apiFetch<R>(`/appointments/${id}`);
+	return mapAppointment(raw);
 }
 
 export async function updateEstadoCita(id: string, estado: CitaEstado): Promise<void> {
@@ -133,7 +150,7 @@ export async function updateEstadoCita(id: string, estado: CitaEstado): Promise<
 		if (c) c.estado = estado;
 		return;
 	}
-	await apiFetch(`/appointments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ estado }) });
+	await apiFetch(`/appointments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ new_status: mapStatusToBackend(estado) }) });
 }
 
 // ─── Estadísticas para dashboard del analista ────────────────

@@ -2,10 +2,14 @@ import { mockFlags } from './mock-flags.js';
 import { apiFetch } from './api.js';
 import { mockDoctores, mockDoctorOptions, mockEspecialidades, mockDisponibilidad } from './mock/data.js';
 import type { DoctorConEspecialidad, DoctorOption, Especialidad, DisponibilidadDoctor } from '$shared/types/appointments.js';
+import { mapDoctor, mapDoctorOption, mapSpecialty, mapAvailability, mapAvailabilityToBackend } from './mappers.js';
+
+type R = Record<string, unknown>;
 
 export async function getActiveDoctores(): Promise<DoctorConEspecialidad[]> {
 	if (mockFlags.doctores) return mockDoctores.filter((d) => d.activo);
-	return apiFetch<DoctorConEspecialidad[]>('/doctors?active=true');
+	const raw = await apiFetch<R[]>('/doctors?active=true');
+	return raw.map(mapDoctor);
 }
 
 export async function getDoctorOptions(): Promise<DoctorOption[]> {
@@ -22,44 +26,40 @@ export async function getDoctorOptions(): Promise<DoctorOption[]> {
 			)]
 		}));
 	}
-	return apiFetch<DoctorOption[]>('/doctors/options');
+	const raw = await apiFetch<R[]>('/doctors/options');
+	return raw.map(mapDoctorOption);
 }
 
 export async function getEspecialidades(): Promise<Especialidad[]> {
 	if (mockFlags.doctores) return mockEspecialidades.filter((e) => e.activo);
-	return apiFetch<Especialidad[]>('/specialties');
+	const raw = await apiFetch<R[]>('/specialties');
+	return raw.map(mapSpecialty);
 }
 
-/**
- * Devuelve todos los bloques de disponibilidad del doctor.
- */
 export async function getAllDisponibilidad(doctorId: string): Promise<DisponibilidadDoctor[]> {
 	if (mockFlags.doctores) {
 		return mockDisponibilidad.filter((d) => d.doctor_id === doctorId);
 	}
-	return apiFetch<DisponibilidadDoctor[]>(`/doctors/${doctorId}/availability`);
+	const raw = await apiFetch<R[]>(`/doctors/${doctorId}/availability`);
+	return raw.map(mapAvailability);
 }
 
-/**
- * Devuelve los bloques de disponibilidad del doctor para un día de la semana.
- * @param dayOfWeek  1=Lunes … 5=Viernes
- */
 export async function getDisponibilidad(doctorId: string, dayOfWeek: number): Promise<DisponibilidadDoctor[]> {
 	if (mockFlags.doctores) {
 		return mockDisponibilidad.filter(
 			(d) => d.doctor_id === doctorId && d.day_of_week === dayOfWeek
 		);
 	}
-	return apiFetch<DisponibilidadDoctor[]>(`/doctors/${doctorId}/availability?dow=${dayOfWeek}`);
+	// Backend usa 0-based (0=Lun), frontend usa 1-based (1=Lun)
+	const raw = await apiFetch<R[]>(`/doctors/${doctorId}/availability?dow=${dayOfWeek - 1}`);
+	return raw.map(mapAvailability);
 }
 
-/**
- * Verifica si hay una excepción (día libre/feriado) para el doctor en esa fecha.
- */
 export async function hasExcepcion(doctorId: string, fecha: string): Promise<boolean> {
-	if (mockFlags.doctores) return false; // mock: nunca hay excepciones
-	const res = await apiFetch<{ excepcion: boolean }>(`/doctors/${doctorId}/exceptions?date=${fecha}`);
-	return res.excepcion;
+	if (mockFlags.doctores) return false;
+	const res = await apiFetch<R[]>(`/doctors/${doctorId}/exceptions?date=${fecha}`);
+	// Backend devuelve ExceptionResponse[] — si hay alguna, hay excepción
+	return Array.isArray(res) && res.length > 0;
 }
 
 // ─── CRUD de disponibilidad ──────────────────────────────────
@@ -85,10 +85,12 @@ export async function createDisponibilidad(input: CreateDisponibilidadInput): Pr
 		mockDisponibilidad.push(nuevo);
 		return nuevo;
 	}
-	return apiFetch<DisponibilidadDoctor>(`/doctors/${input.doctor_id}/availability`, {
+	const backendData = mapAvailabilityToBackend(input);
+	const raw = await apiFetch<R>(`/doctors/${input.doctor_id}/availability`, {
 		method: 'POST',
-		body: JSON.stringify(input)
+		body: JSON.stringify(backendData)
 	});
+	return mapAvailability(raw);
 }
 
 export async function deleteDisponibilidad(doctorId: string, bloqueId: string): Promise<void> {
@@ -115,6 +117,9 @@ export async function updateDisponibilidad(
 	}
 	await apiFetch(`/doctors/${doctorId}/availability/${bloqueId}`, {
 		method: 'PATCH',
-		body: JSON.stringify(updates)
+		body: JSON.stringify({
+			start_time: updates.hora_inicio,
+			end_time: updates.hora_fin
+		})
 	});
 }
