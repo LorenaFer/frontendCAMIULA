@@ -50,8 +50,8 @@ export async function getDisponibilidad(doctorId: string, dayOfWeek: number): Pr
 			(d) => d.doctor_id === doctorId && d.day_of_week === dayOfWeek
 		);
 	}
-	// Backend usa 0-based (0=Lun), frontend usa 1-based (1=Lun)
-	const raw = await apiFetch<R[]>(`/doctors/${doctorId}/availability?dow=${dayOfWeek - 1}`);
+	// Backend y frontend ambos usan 1=Lun ... 5=Vie
+	const raw = await apiFetch<R[]>(`/doctors/${doctorId}/availability?dow=${dayOfWeek}`);
 	return raw.map(mapAvailability);
 }
 

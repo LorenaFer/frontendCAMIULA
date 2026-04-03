@@ -162,7 +162,7 @@ export function mapAvailability(b: AnyRecord): DisponibilidadDoctor {
 	return {
 		id: String(b.id),
 		doctor_id: String(b.fk_doctor_id),
-		day_of_week: (Number(b.day_of_week) + 1) as DisponibilidadDoctor['day_of_week'], // backend 0-based → frontend 1-based
+		day_of_week: Number(b.day_of_week) as DisponibilidadDoctor['day_of_week'], // ambos usan 1=Lun...5=Vie
 		hora_inicio: String(b.start_time),
 		hora_fin: String(b.end_time),
 		duracion_slot: Number(b.slot_duration ?? 30)
@@ -171,7 +171,7 @@ export function mapAvailability(b: AnyRecord): DisponibilidadDoctor {
 
 export function mapAvailabilityToBackend(d: { day_of_week: number; hora_inicio: string; hora_fin: string; duracion_slot?: number }): AnyRecord {
 	return {
-		day_of_week: d.day_of_week - 1, // frontend 1-based → backend 0-based
+		day_of_week: d.day_of_week, // ambos usan 1=Lun...5=Vie
 		start_time: d.hora_inicio,
 		end_time: d.hora_fin,
 		slot_duration: d.duracion_slot ?? 30
