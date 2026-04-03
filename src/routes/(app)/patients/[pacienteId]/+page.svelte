@@ -16,7 +16,10 @@
 
 	function formatFecha(fecha: string) {
 		try {
-			return new Date(fecha + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' });
+			// Si es solo fecha (YYYY-MM-DD), agregar hora para evitar desfase UTC
+			const d = fecha.includes('T') ? new Date(fecha) : new Date(fecha + 'T12:00:00');
+			if (isNaN(d.getTime())) return fecha;
+			return d.toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' });
 		} catch { return fecha; }
 	}
 

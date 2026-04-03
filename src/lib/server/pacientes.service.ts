@@ -4,6 +4,19 @@ import { mockPacientes, getNextNHM } from './mock/data.js';
 import type { Paciente, PacientePublic, DatosMedicos, RelacionUniversidad, Parentesco, Sexo, EstadoCivil, ContactoEmergencia } from '$shared/types/appointments.js';
 import { mapPatient, mapPatientPublic, mapPatientToBackend } from './mappers.js';
 
+// ─── Tipos de paginación ────────────────────────────────────
+
+export interface PacientesPaginatedResult {
+	items: Paciente[];
+	pagination: {
+		total: number;
+		page: number;
+		page_size: number;
+		pages: number;
+		has_next: boolean;
+	};
+}
+
 function toPublic(p: Paciente): PacientePublic {
 	return { id: p.id, nhm: p.nhm, nombre: p.nombre, apellido: p.apellido, relacion_univ: p.relacion_univ, es_nuevo: p.es_nuevo };
 }
@@ -16,6 +29,82 @@ export async function getAllPacientes(): Promise<Paciente[]> {
 	// Backend devuelve paginado { items, pagination }
 	const items = Array.isArray(raw) ? raw : ((raw.items as Record<string, unknown>[]) ?? []);
 	return items.map(mapPatient);
+}
+
+/**
+ * Búsqueda y paginación server-side.
+ * El backend soporta `search` (busca en cédula, nombre, apellido, NHM).
+ */
+export async function getPacientesPaginated(params: {
+	search?: string;
+	page?: number;
+	page_size?: number;
+}): Promise<PacientesPaginatedResult> {
+	const page = params.page ?? 1;
+	const pageSize = params.page_size ?? 25;
+
+	if (mockFlags.pacientes) {
+		const all = [...mockPacientes].sort((a, b) => a.apellido.localeCompare(b.apellido));
+		const searchTerm = params.search?.toLowerCase();
+		const filtered = searchTerm
+			? all.filter((p) =>
+					`${p.nombre} ${p.apellido}`.toLowerCase().includes(searchTerm) ||
+					p.cedula.toLowerCase().includes(searchTerm) ||
+					String(p.nhm).includes(params.search!)
+				)
+			: all;
+
+		const total = filtered.length;
+		const pages = Math.ceil(total / pageSize);
+		const start = (page - 1) * pageSize;
+		return {
+			items: filtered.slice(start, start + pageSize),
+			pagination: { total, page, page_size: pageSize, pages, has_next: page < pages }
+		};
+	}
+
+	const qs = new URLSearchParams();
+	if (params.search) qs.set('search', params.search);
+	qs.set('page', String(page));
+	qs.set('page_size', String(pageSize));
+
+	const raw = await apiFetch<Record<string, unknown>>(`/patients?${qs}`);
+	const items = (raw.items as Record<string, unknown>[]) ?? [];
+	const pagination = raw.pagination as Record<string, unknown>;
+
+	return {
+		items: items.map(mapPatient),
+		pagination: {
+			total: Number(pagination.total),
+			page: Number(pagination.page),
+			page_size: Number(pagination.page_size),
+			pages: Number(pagination.pages),
+			has_next: Number(pagination.page) < Number(pagination.pages)
+		}
+	};
+}
+
+/** Retorna solo el total de pacientes (llamada liviana con page_size=1). */
+export async function getPacientesTotal(): Promise<number> {
+	if (mockFlags.pacientes) {
+		return mockPacientes.length;
+	}
+	const raw = await apiFetch<Record<string, unknown>>('/patients?page=1&page_size=1');
+	const pagination = raw.pagination as Record<string, unknown>;
+	return Number(pagination.total);
+}
+
+/** Obtiene un paciente completo por su ID (UUID). */
+export async function getById(id: string): Promise<Paciente | null> {
+	if (mockFlags.pacientes) {
+		return mockPacientes.find((x) => x.id === id) ?? null;
+	}
+	try {
+		const raw = await apiFetch<Record<string, unknown>>(`/patients/full?id=${encodeURIComponent(id)}`);
+		return raw ? mapPatient(raw) : null;
+	} catch {
+		return null;
+	}
 }
 
 export async function findByNHM(nhm: number): Promise<PacientePublic | null> {

@@ -24,7 +24,7 @@ export const load: PageServerLoad = async () => {
 		citasHoy,
 		doctores,
 		especialidades,
-		pacientes,
+		totalPacientes,
 		stockReport,
 		expirationReport,
 		consumptionReport
@@ -33,20 +33,18 @@ export const load: PageServerLoad = async () => {
 		citasService.getCitasHoy().catch(() => []),
 		doctoresService.getActiveDoctores().catch(() => []),
 		doctoresService.getEspecialidades().catch(() => []),
-		pacientesService.getAllPacientes().catch(() => []),
+		pacientesService.getPacientesTotal().catch(() => 0),
 		reportsService.getStockReport().catch(() => emptyStockReport),
 		reportsService.getExpirationReport(90).catch(() => emptyExpReport),
 		reportsService.getConsumptionReport(mesActual).catch(() => emptyConsumption)
 	]);
 
 	// ── Métricas de pacientes ──
-	const pacientesPorTipo: Record<string, number> = {};
+	// Nota: porTipo y porSexo requieren un endpoint de stats en el backend
+	// para funcionar con 105k+ registros. Por ahora se usan los datos de byPatientType del stats de citas.
+	const pacientesPorTipo: Record<string, number> = statsGlobal.byPatientType ?? {};
 	const pacientesPorSexo: Record<string, number> = { M: 0, F: 0 };
-	for (const p of pacientes) {
-		pacientesPorTipo[p.relacion_univ] = (pacientesPorTipo[p.relacion_univ] ?? 0) + 1;
-		if (p.sexo) pacientesPorSexo[p.sexo]++;
-	}
-	const pacientesNuevos = pacientes.filter((p) => p.es_nuevo).length;
+	const pacientesNuevos = statsGlobal.firstTimeCount ?? 0;
 
 	// ── Diagnósticos más frecuentes ──
 	const dxMap = new Map<string, { cie10: string; descripcion: string; count: number }>();
@@ -121,7 +119,7 @@ export const load: PageServerLoad = async () => {
 		statsGlobal,
 		citasHoy: citasHoy.length,
 		totalDoctores: doctores.length,
-		totalPacientes: pacientes.length,
+		totalPacientes,
 		pacientesNuevos,
 		pacientesPorTipo,
 		pacientesPorSexo,

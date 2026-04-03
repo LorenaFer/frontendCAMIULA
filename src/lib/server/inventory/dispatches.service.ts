@@ -65,7 +65,16 @@ export async function getDispatches(
 	qs.set('page', String(filters.page ?? 1));
 	qs.set('page_size', String(filters.pageSize ?? 25));
 
-	return apiFetch<InventoryPaginatedResponse<Dispatch>>(`/inventory/dispatches?${qs}`);
+	const raw = await apiFetch<Record<string, unknown>>(`/inventory/dispatches?${qs}`);
+	const items = (raw.items as Dispatch[]) ?? [];
+	const pagination = raw.pagination as Record<string, number>;
+	return {
+		data: items,
+		total: pagination.total,
+		page: pagination.page,
+		pageSize: pagination.page_size,
+		hasNext: pagination.page < pagination.pages
+	};
 }
 
 /**

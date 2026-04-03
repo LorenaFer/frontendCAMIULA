@@ -2,10 +2,10 @@ import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { findByPaciente, findById as findHistoriaById } from '$lib/server/historias.service';
 import * as citasService from '$lib/server/citas.service';
+import * as pacientesService from '$lib/server/pacientes.service';
 import * as dispatchesService from '$lib/server/inventory/dispatches.service';
 import * as schemasService from '$lib/server/schemas.service';
 import type { Dispatch } from '$shared/types/inventory';
-import { mockPacientes } from '$lib/server/mock/data';
 
 interface TimelineEntry {
 	id: string;
@@ -55,7 +55,7 @@ async function buildFormSections(
 
 export const load: PageServerLoad = async ({ params }) => {
 	const pacienteId = params.pacienteId;
-	const fullPatient = mockPacientes.find((p) => p.id === pacienteId);
+	const fullPatient = await pacientesService.getById(pacienteId);
 	if (!fullPatient) error(404, 'Paciente no encontrado');
 
 	const patient = {
@@ -77,12 +77,11 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const [previousHistories, citasResult, dispatches] = await Promise.all([
 		findByPaciente(fullPatient.id, { limit: 15 }),
-		citasService.getCitasByFilters({ search: fullPatient.cedula, page_size: 50 }),
+		citasService.getCitasByPatientId(fullPatient.id),
 		dispatchesService.getDispatches({ patient_id: fullPatient.id, page: 1, pageSize: 20 })
 	]);
 
 	const patientCitas = citasResult.items
-		.filter((c) => c.paciente_id === fullPatient.id)
 		.sort((a, b) => b.fecha.localeCompare(a.fecha));
 
 	const patientDispatches = (dispatches.data as Dispatch[])
