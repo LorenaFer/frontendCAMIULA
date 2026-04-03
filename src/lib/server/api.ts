@@ -17,6 +17,24 @@ import { env } from '$env/dynamic/private';
 const API_URL = env.API_URL ?? 'http://localhost:8000';
 const API_TIMEOUT = Number(env.API_TIMEOUT ?? '15000');
 
+// ─── Token global por request ────────────────────────────────
+// El hook de auth setea el token al inicio de cada request.
+// Todos los apiFetch dentro de ese request lo usan automáticamente.
+// En Node single-threaded esto funciona porque cada request es secuencial
+// dentro de su async context.
+
+let _currentToken: string | null = null;
+
+/** Llamar desde hooks.server.ts al inicio de cada request */
+export function setRequestToken(token: string | null): void {
+	_currentToken = token;
+}
+
+/** Obtener el token actual (usado internamente por _fetch) */
+export function getRequestToken(): string | null {
+	return _currentToken;
+}
+
 // ─── Tipos ───────────────────────────────────────────────────
 
 /** Envelope estándar del backend */
@@ -77,13 +95,16 @@ const STATUS_MESSAGES: Record<number, string> = {
 async function _fetch(path: string, options: ApiFetchOptions = {}): Promise<Response> {
 	const { token, timeout = API_TIMEOUT, body, headers: customHeaders, ...restInit } = options;
 
+	// Usar token explícito, o el token global del request actual
+	const effectiveToken = token ?? _currentToken;
+
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), timeout);
 
 	const headers: Record<string, string> = {
 		'Content-Type': 'application/json',
 		'Accept': 'application/json',
-		...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+		...(effectiveToken ? { 'Authorization': `Bearer ${effectiveToken}` } : {}),
 		...(customHeaders as Record<string, string> ?? {})
 	};
 

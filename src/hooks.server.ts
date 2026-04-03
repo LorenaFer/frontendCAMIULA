@@ -3,11 +3,17 @@ import { redirect } from '@sveltejs/kit';
 import type { AuthUser } from '$shared/types/auth.js';
 import { getRequiredPermission } from '$lib/server/rbac.js';
 import { hasPermission } from '$shared/rbac-config.js';
+import { setRequestToken } from '$lib/server/api.js';
 
 const AUTH_COOKIE = 'mock_auth';
+const TOKEN_COOKIE = 'auth_token';
 const PUBLIC_ROUTES = ['/login', '/logout', '/portal'];
 
 export const handle: Handle = async ({ event, resolve }) => {
+	// 0. Set JWT token for all API calls in this request
+	const token = event.cookies.get(TOKEN_COOKIE) ?? null;
+	setRequestToken(token);
+
 	// 1. Parse auth cookie
 	const raw = event.cookies.get(AUTH_COOKIE);
 	let user: AuthUser | null = null;
