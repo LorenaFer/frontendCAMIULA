@@ -77,7 +77,15 @@ export const actions: Actions = {
 			});
 
 			// Mapear rol del backend al frontend
-			const role = profile.roles[0] ?? 'analista';
+			const roleMap: Record<string, string> = {
+				administrador: 'admin', admin: 'admin',
+				doctor: 'doctor', medico: 'doctor',
+				analista: 'analista',
+				farmaceutico: 'farmaceutico', farmacéutico: 'farmaceutico',
+				paciente: 'paciente'
+			};
+			const backendRole = profile.roles[0] ?? 'analista';
+			const role = roleMap[backendRole.toLowerCase()] ?? 'analista';
 			const initials = profile.full_name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
 			const user: AuthUser = {

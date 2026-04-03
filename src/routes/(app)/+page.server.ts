@@ -8,10 +8,17 @@ import * as reportsService from '$lib/server/inventory/reports.service.js';
 import { mockHistorias } from '$lib/server/mock/data.js';
 import { mockDisponibilidad } from '$lib/server/mock/data.js';
 
+// Defaults seguros para cuando un servicio falla
+const emptyStats = { total: 0, byStatus: {} as Record<string, number>, bySpecialty: [] as { name: string; count: number }[], byDoctor: [] as { name: string; specialty: string; count: number; atendidas: number }[], firstTimeCount: 0, returningCount: 0, byPatientType: {} as Record<string, number>, dailyTrend: [] as number[], peakHours: [] as { hour: string; count: number }[] };
+const emptyStockReport = { generated_at: '', items: [], total_medications: 0, critical_count: 0, expired_count: 0 };
+const emptyExpReport = { generated_at: '', threshold_days: 90, batches: [] };
+const emptyConsumption = { period: '', items: [] };
+
 export const load: PageServerLoad = async () => {
 	const hoy = new Date().toISOString().slice(0, 10);
 	const mesActual = hoy.slice(0, 7);
 
+	// Cada llamada es independiente — si una falla, las demás siguen
 	const [
 		statsGlobal,
 		citasHoy,
@@ -22,14 +29,14 @@ export const load: PageServerLoad = async () => {
 		expirationReport,
 		consumptionReport
 	] = await Promise.all([
-		citasService.getStats({ page_size: 10_000 }),
-		citasService.getCitasHoy(),
-		doctoresService.getActiveDoctores(),
-		doctoresService.getEspecialidades(),
-		pacientesService.getAllPacientes(),
-		reportsService.getStockReport(),
-		reportsService.getExpirationReport(90),
-		reportsService.getConsumptionReport(mesActual)
+		citasService.getStats({ page_size: 10_000 }).catch(() => emptyStats),
+		citasService.getCitasHoy().catch(() => []),
+		doctoresService.getActiveDoctores().catch(() => []),
+		doctoresService.getEspecialidades().catch(() => []),
+		pacientesService.getAllPacientes().catch(() => []),
+		reportsService.getStockReport().catch(() => emptyStockReport),
+		reportsService.getExpirationReport(90).catch(() => emptyExpReport),
+		reportsService.getConsumptionReport(mesActual).catch(() => emptyConsumption)
 	]);
 
 	// ── Métricas de pacientes ──
@@ -76,7 +83,7 @@ export const load: PageServerLoad = async () => {
 	}
 
 	// ── Heatmap citas por día×hora ──
-	const { items: todasCitas } = await citasService.getCitasByFilters({ page_size: 10_000 });
+	const { items: todasCitas } = await citasService.getCitasByFilters({ page_size: 10_000 }).catch(() => ({ items: [], pagination: { total: 0, page: 1, page_size: 100, pages: 0, has_next: false } }));
 	const heatmap: number[][] = Array.from({ length: 5 }, () => Array(12).fill(0));
 	for (const c of todasCitas) {
 		const d = new Date(c.fecha + 'T12:00:00');

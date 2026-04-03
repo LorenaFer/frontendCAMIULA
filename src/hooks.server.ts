@@ -56,8 +56,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// Route-level permission check
 	const required = getRequiredPermission(routePath);
 	if (required && !hasPermission(user.role, required)) {
-		const home = user.role === 'paciente' ? 'agendar' : '';
-		throw redirect(303, `/${home}`);
+		// Evitar loop: no redirigir a la misma ruta
+		const home = user.role === 'paciente' ? '/mis-citas' : '/login';
+		if (pathname !== home) throw redirect(303, home);
 	}
 
 	return resolve(event);
