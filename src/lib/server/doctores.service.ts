@@ -1,6 +1,6 @@
 import { mockFlags } from './mock-flags.js';
 import { apiFetch } from './api.js';
-import { mockDoctores, mockDoctorOptions, mockEspecialidades, mockDisponibilidad } from './mock/data.js';
+import { mockDoctores, mockEspecialidades, mockDisponibilidad } from './mock/data.js';
 import type { DoctorConEspecialidad, DoctorOption, Especialidad, DisponibilidadDoctor } from '$shared/types/appointments.js';
 import { mapDoctor, mapDoctorOption, mapSpecialty, mapAvailability, mapAvailabilityToBackend } from './mappers.js';
 
