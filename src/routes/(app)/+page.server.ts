@@ -83,7 +83,7 @@ export const load: PageServerLoad = async () => {
 	}
 
 	// ── Heatmap citas por día×hora ──
-	const { items: todasCitas } = await citasService.getCitasByFilters({ page_size: 10_000 }).catch(() => ({ items: [], pagination: { total: 0, page: 1, page_size: 100, pages: 0, has_next: false } }));
+	const { items: todasCitas } = await citasService.getCitasByFilters({ page_size: 10_000 }).catch(() => ({ items: [] as import('$shared/types/appointments.js').CitaConPaciente[], pagination: { total: 0, page: 1, page_size: 10000, pages: 0, has_next: false } }));
 	const heatmap: number[][] = Array.from({ length: 5 }, () => Array(12).fill(0));
 	for (const c of todasCitas) {
 		const d = new Date(c.fecha + 'T12:00:00');

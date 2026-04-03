@@ -55,11 +55,32 @@
 	};
 
 	const statusColors: Record<string, string> = {
-		pendiente: 'bg-honey-400', confirmada: 'bg-viking-400', atendida: 'bg-sage-400', cancelada: 'bg-red-400', no_asistio: 'bg-iris-400'
+		pendiente: 'bg-honey-400', confirmada: 'bg-viking-400', atendida: 'bg-sage-400', cancelada: 'bg-red-400', no_asistio: 'bg-iris-400',
+		CONFIRMED: 'bg-viking-400'
 	};
 	const statusLabels: Record<string, string> = {
-		pendiente: 'Pendientes', confirmada: 'Confirmadas', atendida: 'Atendidas', cancelada: 'Canceladas', no_asistio: 'No asistió'
+		pendiente: 'Pendientes', confirmada: 'Confirmadas', atendida: 'Atendidas', cancelada: 'Canceladas', no_asistio: 'No asistió',
+		CONFIRMED: 'Confirmadas'
 	};
+
+	// Agrupar peakHours por hora (no por minuto)
+	const peakHoursByHour = $derived.by(() => {
+		const map = new Map<string, number>();
+		for (const ph of stats.peakHours) {
+			const hour = ph.hour.split(':')[0] + ':00';
+			map.set(hour, (map.get(hour) ?? 0) + ph.count);
+		}
+		return [...map.entries()].map(([hour, count]) => ({ hour, count })).sort((a, b) => a.hour.localeCompare(b.hour));
+	});
+
+	// Filtrar stock: solo mostrar los que tienen stock > 0 o alerta, max 10
+	const stockFiltered = $derived.by(() => {
+		const items = stockReport.items ?? [];
+		const withStock = items.filter((i: { total_available: number }) => i.total_available > 0);
+		const critical = items.filter((i: { stock_alert: string; total_available: number }) => (i.stock_alert === 'critical' || i.stock_alert === 'low') && i.total_available > 0);
+		// Mostrar críticos primero, luego los demás con stock, máximo 8
+		return [...critical, ...withStock.filter((i: { stock_alert: string }) => i.stock_alert !== 'critical' && i.stock_alert !== 'low')].slice(0, 8);
+	});
 </script>
 
 {#snippet trendSpark()}
@@ -201,15 +222,15 @@
 
 			<Card padding="lg">
 				<h3 class="text-sm font-semibold text-ink mb-3">Distribución Horaria</h3>
-				{@const maxH = Math.max(1, ...stats.peakHours.map((h) => h.count))}
-				<div class="space-y-1">
-					{#each stats.peakHours as ph}
+				{@const maxH = Math.max(1, ...peakHoursByHour.map((h) => h.count))}
+				<div class="space-y-1.5">
+					{#each peakHoursByHour as ph}
 						<div class="flex items-center gap-2">
-							<span class="text-[10px] font-mono text-ink-muted w-10 shrink-0">{ph.hour}</span>
-							<div class="flex-1 h-4 bg-canvas-subtle rounded-md overflow-hidden">
+							<span class="text-xs font-mono text-ink-muted w-12 shrink-0">{ph.hour}</span>
+							<div class="flex-1 h-5 bg-canvas-subtle rounded-md overflow-hidden">
 								<div class="h-full rounded-md bg-iris-400 dark:bg-iris-500/60" style="width: {(ph.count / maxH) * 100}%"></div>
 							</div>
-							<span class="text-[10px] font-mono font-semibold text-ink w-4 text-right">{ph.count}</span>
+							<span class="text-xs font-mono font-semibold text-ink w-6 text-right">{ph.count}</span>
 						</div>
 					{/each}
 				</div>
@@ -301,21 +322,25 @@
 			<!-- Estado del stock -->
 			<Card padding="lg">
 				<h3 class="text-sm font-semibold text-ink mb-3">Estado del Stock</h3>
-				<div class="space-y-2.5">
-					{#each stockReport.items as item}
-						{@const variant = item.stock_alert === 'critical' ? 'danger' : item.stock_alert === 'low' ? 'warning' : item.stock_alert === 'expired' ? 'danger' : 'success'}
-						<div>
-							<div class="flex items-center justify-between mb-1">
-								<span class="text-xs font-medium text-ink">{item.generic_name}</span>
-								<div class="flex items-center gap-1.5">
-									<span class="text-xs font-mono text-ink-muted">{item.total_available} {item.unit_measure}</span>
-									<Badge variant={variant} style="soft" size="xs">{item.stock_alert}</Badge>
+				{#if stockFiltered.length === 0}
+					<p class="text-xs text-ink-subtle text-center py-4">Sin medicamentos con stock activo</p>
+				{:else}
+					<div class="space-y-2.5">
+						{#each stockFiltered as item}
+							{@const variant = item.stock_alert === 'critical' ? 'danger' : item.stock_alert === 'low' ? 'warning' : item.stock_alert === 'expired' ? 'danger' : 'success'}
+							<div>
+								<div class="flex items-center justify-between mb-1">
+									<span class="text-xs font-medium text-ink truncate">{item.generic_name}</span>
+									<div class="flex items-center gap-1.5 shrink-0">
+										<span class="text-xs font-mono text-ink-muted">{item.total_available} {item.unit_measure}</span>
+										<Badge variant={variant} style="soft" size="xs">{item.stock_alert}</Badge>
+									</div>
 								</div>
+								<Progress value={item.total_available} max={Math.max(item.total_available * 2, 100)} {variant} size="sm" />
 							</div>
-							<Progress value={item.total_available} max={Math.max(item.total_available * 2, 100)} {variant} size="sm" />
-						</div>
-					{/each}
-				</div>
+						{/each}
+					</div>
+				{/if}
 			</Card>
 
 			<!-- Medicamentos más despachados -->
