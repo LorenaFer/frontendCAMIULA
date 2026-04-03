@@ -134,9 +134,26 @@
 							<Button type="button" variant="ghost" size="md" onclick={() => { cancellingCita = cita; }}>
 								Cancelar cita
 							</Button>
-							<a href="/agendar" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-viking-600 hover:bg-viking-50 dark:hover:bg-viking-900/20 transition-colors">
+							<Button
+								type="button"
+								variant="ghost"
+								size="md"
+								onclick={async () => {
+									// Cancelar la cita actual y redirigir a agendar
+									const fd = new FormData();
+									fd.set('citaId', cita.id);
+									const res = await fetch('?/cancelarCita', { method: 'POST', body: fd });
+									if (res.ok) {
+										await invalidateAll();
+										toastWarning('Cita cancelada', 'Seleccione un nuevo horario para reagendar.');
+										window.location.href = '/agendar';
+									} else {
+										toastError('Error', 'No se pudo cancelar la cita para reagendar.');
+									}
+								}}
+							>
 								Reagendar
-							</a>
+							</Button>
 						</div>
 					</div>
 				{/each}
