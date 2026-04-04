@@ -51,7 +51,7 @@ export async function getUserById(id: string): Promise<User> {
 	return apiFetch<User>(`/users/${id}`);
 }
 
-export async function createUser(input: CreateUserInput & { roles?: string[] }): Promise<User> {
+export async function createUser(input: CreateUserInput & { roles?: string[]; specialty_id?: string }): Promise<User> {
 	return apiFetch<User>('/users', {
 		method: 'POST',
 		body: JSON.stringify(input)

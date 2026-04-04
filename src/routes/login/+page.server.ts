@@ -95,7 +95,9 @@ export const actions: Actions = {
 				farmaceutico: 'farmaceutico', farmacéutico: 'farmaceutico',
 				paciente: 'paciente'
 			};
-			const backendRole = profile.roles[0] ?? 'analista';
+			// Tomar el rol más privilegiado (no 'paciente' si hay otro)
+			const rolePriority = ['administrador', 'admin', 'doctor', 'medico', 'farmaceutico', 'farmacéutico', 'analista', 'paciente'];
+			const backendRole = rolePriority.find(r => profile.roles.map(x => x.toLowerCase()).includes(r)) ?? profile.roles[0] ?? 'analista';
 			const role = roleMap[backendRole.toLowerCase()] ?? 'analista';
 			const initials = profile.full_name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
@@ -106,7 +108,18 @@ export const actions: Actions = {
 				initials
 			};
 
-			// Guardar sesión para la UI
+			// Si es doctor, buscar su doctor_id vinculado
+			if (role === 'doctor') {
+				try {
+					const doctors = await apiFetch<Array<{ id: string; fk_user_id: string }>>('/doctors?active=true', {
+						headers: { 'Authorization': `Bearer ${tokenRes.access_token}` }
+					});
+					const doctorsList = Array.isArray(doctors) ? doctors : (doctors as Record<string, unknown>).items as Array<{ id: string; fk_user_id: string }> ?? [];
+					const match = doctorsList.find(d => d.fk_user_id === profile.id);
+					if (match) user.doctor_id = match.id;
+				} catch { /* si falla, el doctor_id queda undefined */ }
+			}
+
 			setUserSession(cookies, user);
 
 			const home = user.role === 'doctor' ? '/doctor/citas' : '/';

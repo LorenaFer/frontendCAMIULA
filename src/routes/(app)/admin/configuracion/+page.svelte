@@ -63,6 +63,13 @@
 	let newUserName = $state('');
 	let newUserPassword = $state('');
 	let newUserRole = $state('analista');
+	let newUserSpecialtyId = $state('');
+
+	const isDoctor = $derived(newUserRole === 'doctor');
+	const specialtyOptions = $derived([
+		{ value: '', label: 'Seleccionar especialidad...' },
+		...realEspecialidades.filter((e: Especialidad) => e.activo).map((e: Especialidad) => ({ value: e.id, label: e.nombre }))
+	]);
 
 	type UserRow = User & Record<string, unknown>;
 
@@ -110,16 +117,21 @@
 			toastError('Campos requeridos', 'Email, nombre y contraseña son obligatorios.');
 			return;
 		}
+		if (isDoctor && !newUserSpecialtyId) {
+			toastError('Especialidad requerida', 'Debe seleccionar una especialidad para el doctor.');
+			return;
+		}
 		userSubmitting = true;
 		try {
 			const result = await callAction('crearUsuario', {
 				email: newUserEmail, full_name: newUserName,
-				password: newUserPassword, role: newUserRole
+				password: newUserPassword, role: newUserRole,
+				specialty_id: isDoctor ? newUserSpecialtyId : undefined
 			});
 			if (result.status === 'success') {
 				toastSuccess('Usuario creado', `${newUserName} fue registrado como ${newUserRole}.`);
 				showUserDialog = false;
-				newUserEmail = ''; newUserName = ''; newUserPassword = ''; newUserRole = 'analista';
+				newUserEmail = ''; newUserName = ''; newUserPassword = ''; newUserRole = 'analista'; newUserSpecialtyId = '';
 				await invalidateAll();
 			} else {
 				toastError('Error', result.message);
@@ -414,8 +426,16 @@
 				label="Rol"
 				options={[{ value: '', label: 'Seleccionar rol...' }, ...roleOptions]}
 				value={newUserRole}
-				onchange={(v) => { if (typeof v === 'string') newUserRole = v; }}
+				onchange={(v) => { if (typeof v === 'string') { newUserRole = v; newUserSpecialtyId = ''; } }}
 			/>
+			{#if isDoctor}
+				<Select
+					label="Especialidad *"
+					options={specialtyOptions}
+					value={newUserSpecialtyId}
+					onchange={(v) => { if (typeof v === 'string') newUserSpecialtyId = v; }}
+				/>
+			{/if}
 		</div>
 	</DialogBody>
 	<DialogFooter>
@@ -425,7 +445,7 @@
 			variant="primary"
 			size="md"
 			isLoading={userSubmitting}
-			disabled={!newUserEmail || !newUserName || !newUserPassword}
+			disabled={!newUserEmail || !newUserName || !newUserPassword || (isDoctor && !newUserSpecialtyId)}
 			onclick={handleCreateUser}
 		>
 			Crear usuario

@@ -202,7 +202,17 @@ export const actions: Actions = {
 		}
 
 		// 2. Marcar como atendida
-		await citasService.updateEstadoCita(citaId, 'atendida');
+		try {
+			await citasService.updateEstadoCita(citaId, 'atendida');
+		} catch (e: unknown) {
+			const err = e as { status?: number; userMessage?: string; message?: string };
+			// Si ya está atendida, no es error grave
+			if (err.status === 400) {
+				console.warn('[finalizarCita] Estado no actualizado:', err.userMessage ?? err.message);
+			} else {
+				return fail(err.status ?? 500, { error: err.userMessage ?? err.message ?? 'Error al actualizar estado de la cita' });
+			}
+		}
 
 		return { finalized: true };
 	}

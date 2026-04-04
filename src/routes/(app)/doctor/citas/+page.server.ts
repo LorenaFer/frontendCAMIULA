@@ -34,8 +34,13 @@ export const actions: Actions = {
 		const citaId = String(fd.get('citaId') ?? '').trim();
 		if (!citaId) return fail(400, { error: 'ID de cita inválido' });
 
-		await citasService.updateEstadoCita(citaId, 'atendida');
-		return { success: true };
+		try {
+			await citasService.updateEstadoCita(citaId, 'atendida');
+			return { success: true };
+		} catch (e: unknown) {
+			const err = e as { status?: number; userMessage?: string; message?: string };
+			return fail(err.status ?? 500, { error: err.userMessage ?? err.message ?? 'Error al marcar como atendida' });
+		}
 	},
 
 	marcarNoAsistio: async ({ request, locals }) => {
@@ -44,8 +49,13 @@ export const actions: Actions = {
 		const citaId = String(fd.get('citaId') ?? '').trim();
 		if (!citaId) return fail(400, { error: 'ID de cita inválido' });
 
-		await citasService.updateEstadoCita(citaId, 'no_asistio');
-		return { success: true, noAsistio: true };
+		try {
+			await citasService.updateEstadoCita(citaId, 'no_asistio');
+			return { success: true, noAsistio: true };
+		} catch (e: unknown) {
+			const err = e as { status?: number; userMessage?: string; message?: string };
+			return fail(err.status ?? 500, { error: err.userMessage ?? err.message ?? 'Error al marcar como no asistió' });
+		}
 	},
 
 	buscarPacienteEmergencia: async ({ request }) => {

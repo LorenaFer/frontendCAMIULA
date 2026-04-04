@@ -14,6 +14,10 @@
 	import type { PrescriptionItem } from '$shared/types/prescription.js';
 	import { goto } from '$app/navigation';
 	import Button from '$shared/components/button/Button.svelte';
+	import Dialog from '$shared/components/dialog/Dialog.svelte';
+	import DialogHeader from '$shared/components/dialog/DialogHeader.svelte';
+	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
+	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -22,6 +26,8 @@
 	const schemaId = data.formSchema.id;
 	const schemaVersion = data.formSchema.version;
 	let saved = $state(false);
+	let showLeaveDialog = $state(false);
+	let pendingNavigation = $state<{ cancel: () => void; url?: URL; to?: { url: URL } } | null>(null);
 	let formEngineRef: { store: import('$shared/components/form-engine/FormStore.svelte.js').FormStore } | undefined;
 
 	// Estado para secciones universales (independientes del schema)
@@ -169,10 +175,10 @@
 		beforeNavigate((navigation) => {
 			const isDirty = formEngineRef?.store?.isDirty || universalDirty;
 			const isSaving = formEngineRef?.store?.isSaving;
-			if (isDirty && !isSaving) {
-				if (!confirm('Hay cambios sin guardar. ¿Desea salir de la evaluación?')) {
-					navigation.cancel();
-				}
+			if (isDirty && !isSaving && !saved) {
+				navigation.cancel();
+				pendingNavigation = navigation as unknown as typeof pendingNavigation;
+				showLeaveDialog = true;
 			}
 		});
 
@@ -296,6 +302,33 @@
 
 	<!-- Guardado ahora es via fetch directo, no hidden form -->
 </div>
+
+<!-- Dialog: Confirmar salida con cambios sin guardar -->
+<Dialog open={showLeaveDialog} onClose={() => { showLeaveDialog = false; pendingNavigation = null; }} size="sm">
+	<DialogHeader>
+		<h2 class="text-base font-semibold text-ink">Cambios sin guardar</h2>
+	</DialogHeader>
+	<DialogBody>
+		<p class="text-sm text-ink">Hay cambios en la evaluación que no se han guardado. ¿Desea salir sin guardar?</p>
+		<p class="text-xs text-ink-muted mt-2">Los cambios no guardados se perderán.</p>
+	</DialogBody>
+	<DialogFooter>
+		<Button type="button" variant="ghost" size="md" onclick={() => { showLeaveDialog = false; pendingNavigation = null; }}>
+			Seguir editando
+		</Button>
+		<Button type="button" variant="danger" size="md" onclick={() => {
+			showLeaveDialog = false;
+			const nav = pendingNavigation;
+			pendingNavigation = null;
+			// Navegar a la URL pendiente
+			const targetUrl = nav?.to?.url?.pathname ?? nav?.url?.pathname ?? '/doctor/citas';
+			saved = true; // Evitar que beforeNavigate bloquee de nuevo
+			goto(targetUrl);
+		}}>
+			Salir sin guardar
+		</Button>
+	</DialogFooter>
+</Dialog>
 
 <style>
 	.consultation-dashboard {

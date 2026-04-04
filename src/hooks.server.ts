@@ -18,16 +18,24 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// 0. Set JWT token for all API calls in this request
 	let token = event.cookies.get(TOKEN_COOKIE) ?? null;
 
-	// Auto-refresh: si hay sesión pero no hay JWT (expiró o nunca se obtuvo), obtener uno
+	// Auto-refresh: si hay sesión mock (no login real) pero no hay JWT, obtener uno del service account
+	// Solo para sesiones mock — el login real guarda su propio JWT
 	if (!token && event.cookies.get(AUTH_COOKIE)) {
+		// Verificar si la sesión fue creada por mock login (tiene IDs tipo staff-00X)
 		try {
-			const tokenRes = await apiFetch<{ access_token: string; expires_in: number }>('/auth/login', {
-				method: 'POST',
-				body: JSON.stringify({ email: SERVICE_EMAIL, password: SERVICE_PASSWORD })
-			});
-			token = tokenRes.access_token;
-			setToken(event.cookies, token, tokenRes.expires_in);
-		} catch { /* silenciar — si falla, continuar sin token */ }
+			const sessionRaw = event.cookies.get(AUTH_COOKIE);
+			const session = sessionRaw ? JSON.parse(sessionRaw) : null;
+			const isMockSession = session?.id?.startsWith('staff-');
+
+			if (isMockSession) {
+				const tokenRes = await apiFetch<{ access_token: string; expires_in: number }>('/auth/login', {
+					method: 'POST',
+					body: JSON.stringify({ email: SERVICE_EMAIL, password: SERVICE_PASSWORD })
+				});
+				token = tokenRes.access_token;
+				setToken(event.cookies, token, tokenRes.expires_in);
+			}
+		} catch { /* silenciar */ }
 	}
 
 	setRequestToken(token);
@@ -47,6 +55,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.user = user;
 
 	const { pathname } = event.url;
+
+	// Debug: verificar qué usuario ve el hook
+	if (pathname.startsWith('/doctor')) {
+		console.log('[HOOK]', pathname, 'user:', user?.name, 'role:', user?.role, 'cookie exists:', !!event.cookies.get(AUTH_COOKIE));
+	}
 
 	// 2. Public routes (portal/*, login, logout)
 	if (PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'))) {

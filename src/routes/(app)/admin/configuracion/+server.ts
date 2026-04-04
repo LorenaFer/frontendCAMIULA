@@ -19,24 +19,19 @@ export const POST: RequestHandler = async ({ request }) => {
 			const password = String(body.password ?? '').trim();
 			const phone = body.phone ? String(body.phone).trim() : undefined;
 			const role = String(body.role ?? '').trim();
+			const specialty_id = body.specialty_id ? String(body.specialty_id).trim() : undefined;
 
 			if (!email || !full_name || !password) {
 				return json({ status: 'error', message: 'Email, nombre y contraseña son requeridos' }, { status: 400 });
 			}
 
 			try {
-				// Crear usuario (el backend ignora roles[] en POST /users, siempre asigna 'paciente')
-				const user = await usersService.createUser({ email, full_name, password, phone, roles: role ? [role] : [] });
-
-				// Asignar rol explícitamente después de crear
-				const targetRole = role || 'analista';
-				if (targetRole !== 'paciente') {
-					try {
-						await usersService.assignRole(user.id, targetRole);
-						user.roles = [...(user.roles ?? []), targetRole];
-					} catch { /* silenciar — se puede asignar después desde la tabla */ }
-				}
-
+				// El backend maneja todo: user + rol + doctor record (si roles incluye 'doctor')
+				const user = await usersService.createUser({
+					email, full_name, password, phone,
+					roles: role ? [role] : ['analista'],
+					...(role === 'doctor' && specialty_id ? { specialty_id } : {})
+				});
 				return json({ status: 'success', message: 'Usuario creado', data: user });
 			} catch (e: unknown) {
 				const err = e as { status?: number; userMessage?: string; message?: string };
