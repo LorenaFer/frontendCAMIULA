@@ -73,5 +73,7 @@ export async function getCurrentStock(): Promise<StockItem[]> {
 	if (mockFlags.inventoryBatches) {
 		return mockStockItems;
 	}
-	return apiFetch<StockItem[]>('/inventory/reports/stock');
+	const raw = await apiFetch<Record<string, unknown>>('/inventory/reports/stock');
+	// El endpoint devuelve StockReport { items, total_medications, ... }, no un array directo
+	return (raw.items as StockItem[]) ?? [];
 }
