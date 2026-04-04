@@ -12,10 +12,12 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		search: url.searchParams.get('search') ?? undefined,
 		status: (url.searchParams.get('status') as MedicationFilters['status']) ?? undefined,
 		page: Number(url.searchParams.get('page') ?? 1),
-		pageSize: 25
+		pageSize: [10, 25, 50, 100].includes(Number(url.searchParams.get('page_size'))) ? Number(url.searchParams.get('page_size')) : 25
 	};
 
-	const medications = await medicationsService.getMedications(filters);
+	const medications = await medicationsService.getMedications(filters).catch(() => ({
+		data: [], total: 0, page: 1, pageSize: 25, hasNext: false
+	}));
 	return { medications, filters };
 };
 

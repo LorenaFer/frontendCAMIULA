@@ -27,9 +27,16 @@ export async function getSuppliers(
 		};
 	}
 
-	return apiFetch<InventoryPaginatedResponse<Supplier>>(
-		`/inventory/suppliers?page=${page}&page_size=${pageSize}`
-	);
+	const raw = await apiFetch<Record<string, unknown>>(`/inventory/suppliers?page=${page}&page_size=${pageSize}`);
+	const items = (raw.items as Supplier[]) ?? [];
+	const pagination = raw.pagination as Record<string, number>;
+	return {
+		data: items,
+		total: pagination.total,
+		page: pagination.page,
+		pageSize: pagination.page_size,
+		hasNext: pagination.page < pagination.pages
+	};
 }
 
 export async function getSupplierById(id: string): Promise<Supplier | null> {

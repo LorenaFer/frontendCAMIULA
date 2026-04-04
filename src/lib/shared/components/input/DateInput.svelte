@@ -188,6 +188,21 @@
 		else mode = 'days';
 	}
 
+	// ─── Position for popover (fixed to work inside dialogs) ─
+	let popoverStyle = $state('');
+
+	function updatePopoverPosition() {
+		if (!triggerRef) return;
+		const rect = triggerRef.getBoundingClientRect();
+		const spaceBelow = window.innerHeight - rect.bottom;
+		const openAbove = spaceBelow < 340 && rect.top > 340;
+		if (openAbove) {
+			popoverStyle = `position:fixed; left:${rect.left}px; bottom:${window.innerHeight - rect.top + 4}px;`;
+		} else {
+			popoverStyle = `position:fixed; left:${rect.left}px; top:${rect.bottom + 4}px;`;
+		}
+	}
+
 	// ─── Styles ──────────────────────────────────────────────
 	const sizeStyles: Record<InputSize, string> = {
 		sm: 'h-8 px-2.5 text-sm gap-1.5',
@@ -215,7 +230,7 @@
 					: 'border-border hover:border-border-strong'}
 			{disabled ? 'opacity-60 cursor-not-allowed bg-canvas-subtle' : 'cursor-pointer'}
 			{className}"
-		onclick={() => { if (!disabled) { open = !open; mode = 'days'; } }}
+		onclick={() => { if (!disabled) { open = !open; mode = 'days'; if (!open) return; updatePopoverPosition(); } }}
 	>
 		<svg class="w-4 h-4 text-ink-subtle shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
 			<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
@@ -251,7 +266,8 @@
 	{#if open}
 		<div
 			bind:this={pickerRef}
-			class="absolute z-50 mt-1 left-0 w-[280px]
+			style={popoverStyle}
+			class="z-[9999] w-[280px]
 				bg-surface-elevated rounded-xl border border-border
 				shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]
 				animate-fade-in overflow-hidden"

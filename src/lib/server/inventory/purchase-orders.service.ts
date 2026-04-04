@@ -27,9 +27,16 @@ export async function getPurchaseOrders(
 		};
 	}
 
-	return apiFetch<InventoryPaginatedResponse<PurchaseOrder>>(
-		`/inventory/purchase-orders?page=${page}&page_size=${pageSize}`
-	);
+	const raw = await apiFetch<Record<string, unknown>>(`/inventory/purchase-orders?page=${page}&page_size=${pageSize}`);
+	const items = (raw.items as PurchaseOrder[]) ?? [];
+	const pagination = raw.pagination as Record<string, number>;
+	return {
+		data: items,
+		total: pagination.total,
+		page: pagination.page,
+		pageSize: pagination.page_size,
+		hasNext: pagination.page < pagination.pages
+	};
 }
 
 export async function getPurchaseOrderById(id: string): Promise<PurchaseOrder | null> {
@@ -87,6 +94,6 @@ export async function receivePurchaseOrder(
 
 	return apiFetch<PurchaseOrder>(
 		`/inventory/purchase-orders/${input.order_id}/receive`,
-		{ method: 'POST', body: JSON.stringify(input) }
+		{ method: 'POST', body: JSON.stringify({ items: input.items }) }
 	);
 }

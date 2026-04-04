@@ -54,6 +54,9 @@
 		{ label: 'Eliminar', icon: 'delete', variant: 'danger', onclick: (row) => openDelete(row as unknown as Medication) }
 	];
 
+	// Auto-generar código para nuevo medicamento
+	const nextCode = $derived(`MED-${String(data.medications.total + 1).padStart(3, '0')}`);
+
 	const statsTotal  = $derived(data.medications.total);
 	const statsActive = $derived(
 		(data.medications.data as Medication[]).filter((m) => m.medication_status === 'active').length
@@ -70,12 +73,59 @@
 		goto(`?${qs}`, { replaceState: true });
 	}
 
-	function changePage(p: number) {
+	function changePage(p: number, ps?: number) {
 		const qs = new URLSearchParams($page.url.searchParams);
 		qs.set('page', String(p));
+		if (ps) qs.set('page_size', String(ps));
 		goto(`?${qs}`, { replaceState: true });
 	}
+
+	const pagination = $derived(data.medications);
+	const pageSizeOptions = [10, 25, 50, 100];
 </script>
+
+{#snippet paginationBar()}
+	{#if pagination.total > 0}
+		<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2.5 border-t border-border/30 bg-canvas-subtle/30">
+			<div class="flex items-center gap-3">
+				<p class="text-xs text-ink-muted">
+					{((pagination.page - 1) * pagination.pageSize) + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} de {pagination.total}
+				</p>
+				<div class="flex items-center gap-1.5">
+					<span class="text-xs text-ink-subtle">Mostrar</span>
+					<select
+						class="text-xs border border-border/60 rounded-md px-1.5 py-1 bg-surface text-ink focus:outline-none focus:ring-1 focus:ring-viking-500/40"
+						value={pagination.pageSize}
+						onchange={(e) => changePage(1, Number((e.target as HTMLSelectElement).value))}
+					>
+						{#each pageSizeOptions as size}
+							<option value={size}>{size}</option>
+						{/each}
+					</select>
+				</div>
+			</div>
+			{#if pagination.total > pagination.pageSize}
+				{@const pages = Math.ceil(pagination.total / pagination.pageSize)}
+				<div class="flex items-center gap-1">
+					<button type="button" disabled={pagination.page <= 1} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page - 1)}>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+					</button>
+					{#each Array.from({ length: Math.min(pages, 7) }, (_, i) => {
+						const start = Math.max(1, Math.min(pagination.page - 3, pages - 6));
+						return start + i;
+					}) as p}
+						<button type="button" class="w-7 h-7 rounded-md text-xs font-medium transition-colors {p === pagination.page ? 'bg-viking-600 text-white' : 'text-ink-muted hover:bg-canvas-subtle'}" onclick={() => changePage(p)}>
+							{p}
+						</button>
+					{/each}
+					<button type="button" disabled={!pagination.hasNext} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page + 1)}>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+					</button>
+				</div>
+			{/if}
+		</div>
+	{/if}
+{/snippet}
 
 <svelte:head>
 	<title>Catálogo de Medicamentos — Inventario</title>
@@ -148,8 +198,8 @@
 			>
 				<div>
 					<label class="block text-sm font-medium text-ink-muted mb-1" for="code">Código *</label>
-					<input id="code" name="code" type="text" required placeholder="MED-XXX"
-						class="w-full h-11 px-3 text-sm rounded-lg border border-border bg-surface-elevated text-ink
+					<input id="code" name="code" type="text" required readonly value={nextCode}
+						class="w-full h-11 px-3 text-sm rounded-lg border border-border bg-canvas-subtle text-ink-muted cursor-not-allowed
 						       hover:border-border-strong focus:outline-none focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60 uppercase"
 					/>
 				</div>
@@ -271,22 +321,7 @@
 			emptyMessage="No hay medicamentos que coincidan con los filtros."
 		/>
 
-		{#if data.medications.total > data.medications.pageSize}
-			<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-t border-border">
-				<span class="text-sm text-ink-muted">
-					{(data.medications.page - 1) * data.medications.pageSize + 1}–{Math.min(
-						data.medications.page * data.medications.pageSize,
-						data.medications.total
-					)} de {data.medications.total}
-				</span>
-				<div class="flex gap-2">
-					<Button variant="ghost" size="md" disabled={data.medications.page <= 1}
-						onclick={() => changePage(data.medications.page - 1)}>Anterior</Button>
-					<Button variant="ghost" size="md" disabled={!data.medications.hasNext}
-						onclick={() => changePage(data.medications.page + 1)}>Siguiente</Button>
-				</div>
-			</div>
-		{/if}
+		{@render paginationBar()}
 	</Card>
 </div>
 

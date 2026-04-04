@@ -105,6 +105,7 @@ export const ACTION_PERMISSIONS: Record<string, string> = {
 	editarProveedor: P.INVENTORY_WRITE,
 	// /inventory/purchase-orders
 	crearOrden: P.INVENTORY_WRITE,
+	enviarOrden: P.INVENTORY_WRITE,
 	recibirOrden: P.INVENTORY_WRITE,
 	// /inventory/dispatches
 	validarDespacho: P.INVENTORY_DISPATCH,

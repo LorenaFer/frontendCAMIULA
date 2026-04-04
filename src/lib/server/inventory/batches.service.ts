@@ -50,7 +50,16 @@ export async function getBatches(
 	qs.set('page', String(filters.page ?? 1));
 	qs.set('page_size', String(filters.pageSize ?? 25));
 
-	return apiFetch<InventoryPaginatedResponse<Batch>>(`/inventory/batches?${qs}`);
+	const raw = await apiFetch<Record<string, unknown>>(`/inventory/batches?${qs}`);
+	const items = (raw.items as Batch[]) ?? [];
+	const pagination = raw.pagination as Record<string, number>;
+	return {
+		data: items,
+		total: pagination.total,
+		page: pagination.page,
+		pageSize: pagination.page_size,
+		hasNext: pagination.page < pagination.pages
+	};
 }
 
 export async function getBatchById(id: string): Promise<Batch | null> {

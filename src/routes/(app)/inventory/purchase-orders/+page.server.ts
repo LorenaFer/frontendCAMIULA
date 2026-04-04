@@ -5,15 +5,22 @@ import * as suppliersService from '$lib/server/inventory/suppliers.service.js';
 import * as medicationsService from '$lib/server/inventory/medications.service.js';
 import { assertPermission, assertActionPermission } from '$lib/server/rbac.js';
 import { P } from '$shared/rbac-config.js';
+import type { PurchaseOrder } from '$shared/types/inventory.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	assertPermission(locals.user, P.INVENTORY_WRITE);
 
 	const page = Number(url.searchParams.get('page') ?? 1);
+	const pageSize = [10, 25, 50, 100].includes(Number(url.searchParams.get('page_size'))) ? Number(url.searchParams.get('page_size')) : 25;
+
+	// El backend ya resuelve JOINs (supplier, items[].medication, total_amount)
+	// Solo necesitamos supplierOptions y medicationOptions para el formulario de nueva orden
 	const [orders, supplierOptions, medicationOptions] = await Promise.all([
-		purchaseOrdersService.getPurchaseOrders(page, 25),
-		suppliersService.getSupplierOptions(),
-		medicationsService.getMedicationOptions()
+		purchaseOrdersService.getPurchaseOrders(page, pageSize).catch(() => ({
+			data: [] as PurchaseOrder[], total: 0, page: 1, pageSize: 25, hasNext: false
+		})),
+		suppliersService.getSupplierOptions().catch(() => []),
+		medicationsService.getMedicationOptions().catch(() => [])
 	]);
 
 	return { orders, supplierOptions, medicationOptions, page };
@@ -44,11 +51,9 @@ export const actions: Actions = {
 			await purchaseOrdersService.createPurchaseOrder({ fk_supplier_id, expected_date, notes, items });
 			return { success: true, action: 'created' };
 		} catch (e: unknown) {
-			const msg = (e as { message?: string }).message ?? '';
-			if (msg.toLowerCase().includes('mock')) {
-				return fail(503, { error: 'La creación de órdenes requiere integración con el backend.' });
-			}
-			return fail(500, { error: 'Error al crear la orden de compra' });
+			const err = e as { status?: number; detail?: string; message?: string; userMessage?: string };
+			const detail = err.userMessage ?? err.detail ?? err.message ?? 'Error al crear la orden de compra';
+			return fail(err.status ?? 500, { error: detail });
 		}
 	},
 
@@ -63,10 +68,10 @@ export const actions: Actions = {
 			await purchaseOrdersService.sendPurchaseOrder(order_id);
 			return { success: true, action: 'sent' };
 		} catch (e: unknown) {
-			const status = (e as { status?: number }).status;
-			if (status === 404) return fail(404, { error: 'Orden no encontrada' });
-			if (status === 400) return fail(400, { error: (e as Error).message });
-			return fail(500, { error: 'Error al enviar la orden' });
+			console.error('[enviarOrden] Error:', e);
+			const err = e as { status?: number; detail?: string; message?: string; userMessage?: string };
+			const detail = err.userMessage ?? err.detail ?? err.message ?? 'Error al enviar la orden';
+			return fail(err.status ?? 500, { error: detail });
 		}
 	},
 
@@ -96,9 +101,10 @@ export const actions: Actions = {
 			await purchaseOrdersService.receivePurchaseOrder({ order_id, items });
 			return { success: true };
 		} catch (e: unknown) {
-			const status = (e as { status?: number }).status;
-			if (status === 404) return fail(404, { error: 'Orden no encontrada' });
-			return fail(500, { error: 'Error al registrar recepción' });
+			console.error('[recibirOrden] Error:', e);
+			const err = e as { status?: number; detail?: string; message?: string; userMessage?: string };
+			const detail = err.userMessage ?? err.detail ?? err.message ?? 'Error al registrar recepción';
+			return fail(err.status ?? 500, { error: detail });
 		}
 	}
 };

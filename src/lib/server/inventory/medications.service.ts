@@ -56,7 +56,16 @@ export async function getMedications(
 	qs.set('page', String(filters.page ?? 1));
 	qs.set('page_size', String(filters.pageSize ?? 25));
 
-	return apiFetch<InventoryPaginatedResponse<Medication>>(`/inventory/medications?${qs}`);
+	const raw = await apiFetch<Record<string, unknown>>(`/inventory/medications?${qs}`);
+	const items = (raw.items as Medication[]) ?? [];
+	const pagination = raw.pagination as Record<string, number>;
+	return {
+		data: items,
+		total: pagination.total,
+		page: pagination.page,
+		pageSize: pagination.page_size,
+		hasNext: pagination.page < pagination.pages
+	};
 }
 
 export async function getMedicationById(id: string): Promise<Medication | null> {

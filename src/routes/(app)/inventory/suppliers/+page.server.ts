@@ -9,7 +9,10 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	assertPermission(locals.user, P.INVENTORY_READ);
 
 	const page = Number(url.searchParams.get('page') ?? 1);
-	const suppliers = await suppliersService.getSuppliers(page, 25);
+	const pageSize = [10, 25, 50, 100].includes(Number(url.searchParams.get('page_size'))) ? Number(url.searchParams.get('page_size')) : 25;
+	const suppliers = await suppliersService.getSuppliers(page, pageSize).catch(() => ({
+		data: [], total: 0, page: 1, pageSize: 25, hasNext: false
+	}));
 
 	return { suppliers, page };
 };

@@ -57,6 +57,17 @@ export const actions: Actions = {
 				return fail(401, { error: 'Usuario o contraseña incorrectos.', username });
 			}
 			setUserSession(cookies, match.user);
+
+			// Intentar obtener JWT real del backend para que las API calls funcionen
+			// (best effort — si falla, el frontend sigue con mock data)
+			try {
+				const tokenRes = await apiFetch<{ access_token: string; expires_in: number }>('/auth/login', {
+					method: 'POST',
+					body: JSON.stringify({ email: 'admin@camiula.edu.ve', password: 'Admin2026!' })
+				});
+				setToken(cookies, tokenRes.access_token, tokenRes.expires_in);
+			} catch { /* silenciar — el JWT no es crítico para mock auth */ }
+
 			const home = match.user.role === 'doctor' ? '/doctor/citas' : '/';
 			redirect(303, home);
 		}

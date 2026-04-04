@@ -3,15 +3,33 @@ import { redirect } from '@sveltejs/kit';
 import type { AuthUser } from '$shared/types/auth.js';
 import { getRequiredPermission } from '$lib/server/rbac.js';
 import { hasPermission } from '$shared/rbac-config.js';
-import { setRequestToken } from '$lib/server/api.js';
+import { setRequestToken, apiFetch } from '$lib/server/api.js';
+import { setToken } from '$lib/server/auth.js';
 
 const AUTH_COOKIE = 'mock_auth';
 const TOKEN_COOKIE = 'auth_token';
 const PUBLIC_ROUTES = ['/login', '/logout', '/portal'];
 
+// Credenciales del service account para mock auth
+const SERVICE_EMAIL = 'admin@camiula.edu.ve';
+const SERVICE_PASSWORD = 'Admin2026!';
+
 export const handle: Handle = async ({ event, resolve }) => {
 	// 0. Set JWT token for all API calls in this request
-	const token = event.cookies.get(TOKEN_COOKIE) ?? null;
+	let token = event.cookies.get(TOKEN_COOKIE) ?? null;
+
+	// Auto-refresh: si hay sesión pero no hay JWT (expiró o nunca se obtuvo), obtener uno
+	if (!token && event.cookies.get(AUTH_COOKIE)) {
+		try {
+			const tokenRes = await apiFetch<{ access_token: string; expires_in: number }>('/auth/login', {
+				method: 'POST',
+				body: JSON.stringify({ email: SERVICE_EMAIL, password: SERVICE_PASSWORD })
+			});
+			token = tokenRes.access_token;
+			setToken(event.cookies, token, tokenRes.expires_in);
+		} catch { /* silenciar — si falla, continuar sin token */ }
+	}
+
 	setRequestToken(token);
 
 	// 1. Parse auth cookie
