@@ -22,42 +22,34 @@
 
 	const appName = 'Centro Ambulatorio ULA';
 
-	const mockRecentSearches: SearchResult[] = [
-		{ id: '1', title: 'John Smith', subtitle: 'Patient • MRN: 849201' },
-		{ id: '2', title: 'Appointment Schedule', subtitle: "Today's appointments" },
-		{ id: '3', title: 'Inventory Report', subtitle: 'Medical supplies' }
-	];
+	// ─── Búsqueda global (conectada al backend) ──────────────
+	let searchCategories = $state<Array<{ label: string; results: SearchResult[] }>>([]);
+	let searchLoading = $state(false);
+	let searchDebounce: ReturnType<typeof setTimeout>;
 
-	const mockSearchData = [
-		{ id: 'p1', title: 'John Smith', subtitle: 'Patient • MRN: 849201', category: 'Patients', href: 'patients' },
-		{ id: 'p2', title: 'Sarah Jenkins', subtitle: 'Patient • MRN: 849312', category: 'Patients', href: 'patients' },
-		{ id: 'a1', title: 'Dr. Emily Ray', subtitle: 'Cardiology • 3 appointments today', category: 'Staff', href: 'appointments' },
-		{ id: 'i1', title: 'Surgical Gloves', subtitle: 'Inventory • 500 units', category: 'Inventory', href: 'inventory' }
-	];
+	async function handleSearch(query: string) {
+		clearTimeout(searchDebounce);
+		if (!query || query.length < 2) {
+			searchCategories = [];
+			searchLoading = false;
+			return;
+		}
+		searchLoading = true;
+		searchDebounce = setTimeout(async () => {
+			try {
+				const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
+				const data = await res.json();
+				searchCategories = data.categories ?? [];
+			} catch {
+				searchCategories = [];
+			} finally {
+				searchLoading = false;
+			}
+		}, 300);
+	}
 
-	let searchQuery = $state('');
-
-	let searchCategories = $derived.by(() => {
-		if (!searchQuery.trim()) return [];
-		const filtered = mockSearchData.filter(
-			(item) =>
-				item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				item.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
-		);
-		const grouped = filtered.reduce(
-			(acc, item) => {
-				if (!acc[item.category]) acc[item.category] = [];
-				acc[item.category].push(item);
-				return acc;
-			},
-			{} as Record<string, typeof filtered>
-		);
-		return Object.entries(grouped).map(([label, results]) => ({ label, results }));
-	});
-
-	function handleSearch(query: string) { searchQuery = query; }
 	function handleSearchSelect(result: { id: string; href?: string }) {
-		if (result.href) goto(`/${result.href}`);
+		if (result.href) goto(result.href);
 	}
 	function handleLogout() {
 		const form = document.createElement('form');
@@ -203,7 +195,7 @@
 			{permissions}
 			notificationCount={3}
 			{searchCategories}
-			recentSearches={mockRecentSearches}
+			{searchLoading}
 			onSearch={handleSearch}
 			onSearchSelect={handleSearchSelect}
 			onLogout={handleLogout}

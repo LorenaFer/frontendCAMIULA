@@ -34,10 +34,25 @@ export async function getFormSchema(specialtyIdOrName: string): Promise<MedicalF
 		schema = mockSchemas[normalizedKey] ?? mockSchemas[specialtyIdOrName] ?? fallbackSchema;
 	} else {
 		try {
-			schema = await apiFetch<MedicalFormSchema>(`/schemas/${specialtyIdOrName}`);
+			const raw = await apiFetch<Record<string, unknown>>(`/schemas/${specialtyIdOrName}`);
+			// El backend puede devolver schema_json como string o como objeto
+			const schemaJson = typeof raw.schema_json === 'string' ? JSON.parse(raw.schema_json) : raw.schema_json;
+			schema = {
+				id: String(raw.id ?? raw.specialty_id ?? specialtyIdOrName),
+				specialtyId: String(raw.specialty_id ?? specialtyIdOrName),
+				specialtyName: String(raw.specialty_name ?? specialtyIdOrName),
+				version: String(raw.version ?? '1.0'),
+				sections: schemaJson?.sections ?? []
+			};
+			// Si el schema del backend está vacío (0 secciones), usar fallback con contenido real
+			if (schema.sections.length === 0) {
+				const mock = mockSchemas[normalizedKey] ?? mockSchemas[specialtyIdOrName];
+				if (mock) schema = mock;
+				else schema = fallbackSchema;
+			}
 		} catch {
-			// Fallback a Medicina General si el backend no tiene el schema
-			schema = fallbackSchema;
+			// Si el backend no tiene schema para esta especialidad, usar mock o fallback
+			schema = mockSchemas[normalizedKey] ?? mockSchemas[specialtyIdOrName] ?? fallbackSchema;
 		}
 	}
 
