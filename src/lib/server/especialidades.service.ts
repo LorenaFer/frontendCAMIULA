@@ -1,6 +1,7 @@
 import { mockFlags } from './mock-flags.js';
 import { apiFetch } from './api.js';
 import { mockEspecialidades } from './mock/data.js';
+import { mapSpecialty } from './mappers.js';
 import type { Especialidad } from '$shared/types/appointments.js';
 
 // ─── Mock mutable store ─────────────────────────────────────
@@ -10,7 +11,8 @@ let mockStore = [...mockEspecialidades];
 
 export async function getAll(): Promise<Especialidad[]> {
 	if (mockFlags.doctores) return [...mockStore];
-	return apiFetch<Especialidad[]>('/specialties');
+	const raw = await apiFetch<Record<string, unknown>[]>('/specialties');
+	return raw.map(mapSpecialty);
 }
 
 export async function create(input: { nombre: string }): Promise<Especialidad> {

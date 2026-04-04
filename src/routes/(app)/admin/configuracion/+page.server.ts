@@ -2,15 +2,20 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import * as especialidadesService from '$lib/server/especialidades.service.js';
 import * as schemasService from '$lib/server/schemas.service.js';
+import * as usersService from '$lib/server/users.service.js';
 import { assertActionPermission } from '$lib/server/rbac.js';
 
-export const load: PageServerLoad = async () => {
-	const [especialidades, schemas] = await Promise.all([
-		especialidadesService.getAll(),
-		schemasService.getAllSchemas()
+export const load: PageServerLoad = async ({ url }) => {
+	const userPage = Number(url.searchParams.get('user_page') ?? 1);
+	const userPageSize = [10, 25, 50].includes(Number(url.searchParams.get('user_page_size'))) ? Number(url.searchParams.get('user_page_size')) : 25;
+
+	const [especialidades, schemas, usersResult] = await Promise.all([
+		especialidadesService.getAll().catch(() => []),
+		schemasService.getAllSchemas().catch(() => []),
+		usersService.getUsers(userPage, userPageSize, { staffOnly: true }).catch(() => ({ items: [], pagination: { total: 0, page: 1, page_size: 25, pages: 0, has_next: false } }))
 	]);
 
-	return { especialidades, schemas };
+	return { especialidades, schemas, users: usersResult };
 };
 
 export const actions: Actions = {
