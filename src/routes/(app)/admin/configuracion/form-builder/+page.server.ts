@@ -19,10 +19,13 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 
 export const actions: Actions = {
-	guardarSchema: async ({ request, locals }) => {
+	guardarSchema: async ({ request, url, locals }) => {
 		assertActionPermission(locals.user, 'guardarSchema');
 		const fd = await request.formData();
 		const schemaJson = String(fd.get('schema') ?? '');
+
+		// El specialty original viene del query param, no del schema cargado (que puede ser fallback)
+		const originalSpecialty = url.searchParams.get('specialty') ?? '';
 
 		let schema: MedicalFormSchema;
 		try {
@@ -31,23 +34,29 @@ export const actions: Actions = {
 			return fail(400, { error: 'Schema inválido' });
 		}
 
-		if (!schema.specialtyName) {
+		// Forzar specialtyId y specialtyName del query param original
+		const specialtyName = originalSpecialty || schema.specialtyName;
+		if (!specialtyName) {
 			return fail(400, { error: 'Nombre de especialidad requerido' });
 		}
 
-		// Auto-generate ID if missing
-		if (!schema.id) {
-			const key = schema.specialtyName
-				.toLowerCase()
-				.normalize('NFD')
-				.replace(/[\u0300-\u036f]/g, '')
-				.replace(/\s+/g, '-')
-				.replace(/[^a-z0-9-]/g, '');
-			schema.id = `${key}-v${schema.version ?? '1'}`;
-			schema.specialtyId = key;
-		}
+		const key = specialtyName
+			.toLowerCase()
+			.normalize('NFD')
+			.replace(/[\u0300-\u036f]/g, '')
+			.replace(/\s+/g, '-')
+			.replace(/[^a-z0-9-]/g, '');
 
-		await schemasService.saveSchema(schema);
-		return { success: true };
+		schema.specialtyId = key;
+		schema.specialtyName = specialtyName;
+		schema.id = `${key}-v${schema.version ?? '1'}`;
+
+		try {
+			await schemasService.saveSchema(schema);
+			return { success: true };
+		} catch (e: unknown) {
+			const err = e as { userMessage?: string; message?: string };
+			return fail(500, { error: err.userMessage ?? err.message ?? 'Error al guardar el formulario' });
+		}
 	}
 };

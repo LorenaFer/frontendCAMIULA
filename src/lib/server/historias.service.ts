@@ -68,13 +68,15 @@ export async function findByPaciente(
 			.map((h) => {
 				const doc = mockDoctores.find((d) => d.id === h.doctor_id);
 				const cita = mockCitas.find((c) => c.id === h.cita_id);
+				const examenes = (h.evaluacion as Record<string, unknown>)?.examenes_solicitados as Array<{ nombre: string; indicaciones?: string }> | undefined;
 				return {
 					id: h.id,
 					fecha: h.created_at.split('T')[0],
 					especialidad: doc?.especialidad?.nombre ?? cita?.especialidad_id ?? 'Medicina General',
 					doctor_nombre: doc ? `${doc.nombre} ${doc.apellido}` : 'Doctor',
 					diagnostico_descripcion: h.evaluacion.diagnostico?.descripcion,
-					diagnostico_cie10: h.evaluacion.diagnostico?.cie10
+					diagnostico_cie10: h.evaluacion.diagnostico?.cie10,
+					examenes_solicitados: examenes?.length ? examenes : undefined
 				};
 			});
 	}

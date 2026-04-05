@@ -50,7 +50,7 @@ function createDefaultSection(): FormSection {
 // ─── Store ──────────────────────────────────────────────────
 
 export class FormBuilderStore {
-	schema = $state.raw<MedicalFormSchema>({
+	schema = $state<MedicalFormSchema>({
 		id: '',
 		version: '1.0',
 		specialtyId: '',

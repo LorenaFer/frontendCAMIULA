@@ -29,7 +29,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			excludeCitaId: citaId
 		}),
 		prescriptionsService.getPrescriptionByAppointment(citaId).catch(() => null),
-		medicationsService.getMedicationOptions()
+		medicationsService.getMedicationOptions().catch(() => [])
 	]);
 
 	return { cita, historia, formSchema, previousHistories, existingPrescription, medicationOptions };
@@ -144,20 +144,22 @@ export const actions: Actions = {
 		const allItems = items; // Todos van en la receta impresa
 
 		try {
-			// Crear prescripción formal (con todos los items para impresión)
-			await prescriptionsService.createPrescription({
-				fk_appointment_id: citaId,
-				fk_patient_id: cita.paciente_id,
-				notes: inventoryItems.length > 0
-					? `${inventoryItems.length} medicamento(s) para despacho en farmacia del hospital`
-					: 'Todos los medicamentos son de farmacia externa',
-				items: inventoryItems.map((i) => ({
-					medication_id: String(i.medication_id),
-					quantity_prescribed: Number(i.cantidad) || 1,
-					dosage_instructions: `${i.dosis ?? ''} ${i.via ?? ''} ${i.frecuencia ?? ''}`.trim(),
-					duration_days: parseInt(String(i.duracion ?? '0')) || undefined
-				}))
-			});
+			// Crear prescripción formal solo si hay items de inventario del hospital
+			// (el backend requiere mínimo 1 item)
+			if (inventoryItems.length > 0) {
+				await prescriptionsService.createPrescription({
+					fk_appointment_id: citaId,
+					fk_patient_id: cita.paciente_id,
+					fk_doctor_id: cita.doctor_id,
+					notes: `${inventoryItems.length} medicamento(s) para despacho en farmacia del hospital`,
+					items: inventoryItems.map((i) => ({
+						medication_id: String(i.medication_id),
+						quantity_prescribed: Number(i.cantidad) || 1,
+						dosage_instructions: `${i.dosis ?? ''} ${i.via ?? ''} ${i.frecuencia ?? ''}`.trim(),
+						duration_days: parseInt(String(i.duracion ?? '0')) || undefined
+					}))
+				});
+			}
 
 			const hasInventory = inventoryItems.length > 0;
 			const hasExternal = allItems.length > inventoryItems.length;

@@ -17,6 +17,12 @@ export interface HistoriaMedicaDynamic extends HistoriaMedica {
 	evaluacion: DynamicEvaluacion;
 }
 
+/** Examen solicitado en una consulta */
+export interface ExamenSolicitadoEntry {
+	nombre: string;
+	indicaciones?: string;
+}
+
 /** Resumen de historia previa para el panel de insights */
 export interface HistorialPrevioEntry {
 	id: string;
@@ -25,4 +31,5 @@ export interface HistorialPrevioEntry {
 	doctor_nombre: string;
 	diagnostico_descripcion?: string;
 	diagnostico_cie10?: string;
+	examenes_solicitados?: ExamenSolicitadoEntry[];
 }

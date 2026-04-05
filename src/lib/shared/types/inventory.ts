@@ -335,6 +335,7 @@ export interface ReceivePurchaseOrderInput {
 export interface CreatePrescriptionInput {
 	fk_appointment_id: string;
 	fk_patient_id: string;
+	fk_doctor_id?: string;
 	notes?: string;
 	items: Array<{
 		medication_id: string;

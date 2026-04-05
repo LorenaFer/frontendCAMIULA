@@ -178,25 +178,71 @@
 					<p class="text-xs text-ink-muted">Sin consultas registradas</p>
 				</div>
 			{:else}
-				<div class="bg-surface-elevated border border-border/60 rounded-xl divide-y divide-border/40 overflow-hidden">
+				<div class="space-y-2">
 					{#each historias as historia (historia.id)}
-						<div class="px-4 py-3 hover:bg-canvas-subtle/50 transition-colors">
-							<div class="flex items-start justify-between gap-2">
-								<div class="flex-1 min-w-0">
-									<div class="flex items-center gap-2 mb-0.5">
-										<p class="text-sm font-medium text-ink">{formatFechaCorta(historia.fecha)}</p>
-										<Badge variant="info" style="soft" size="sm">{historia.especialidad}</Badge>
+						{@const hasExamenes = historia.examenes_solicitados && historia.examenes_solicitados.length > 0}
+						<details class="group bg-surface-elevated border border-border/60 rounded-xl hover:border-viking-300 dark:hover:border-viking-700 transition-colors">
+							<summary class="p-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden select-none">
+								<div class="flex items-start justify-between gap-3">
+									<div class="flex items-center gap-2.5">
+										<div class="w-9 h-9 rounded-lg bg-sage-100 dark:bg-sage-900/30 flex items-center justify-center shrink-0">
+											<svg class="w-4 h-4 text-sage-600 dark:text-sage-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z" />
+											</svg>
+										</div>
+										<div>
+											<div class="flex items-center gap-2">
+												<p class="text-sm font-semibold text-ink">{historia.especialidad}</p>
+												<Badge variant="info" style="soft" size="xs">{formatFechaCorta(historia.fecha)}</Badge>
+												{#if hasExamenes}
+													<Badge variant="warning" style="soft" size="xs">{historia.examenes_solicitados?.length} examen{(historia.examenes_solicitados?.length ?? 0) !== 1 ? 'es' : ''}</Badge>
+												{/if}
+											</div>
+											<p class="text-xs text-ink-muted">Dr. {historia.doctor_nombre}</p>
+										</div>
 									</div>
-									<p class="text-xs text-ink-muted">Dr. {historia.doctor_nombre}</p>
-									{#if historia.diagnostico_descripcion}
-										<p class="text-xs text-ink-subtle mt-1 line-clamp-2">{historia.diagnostico_descripcion}</p>
-									{/if}
+									<div class="flex items-center gap-2 shrink-0">
+										{#if historia.diagnostico_cie10}
+											<span class="text-[10px] font-mono text-ink-subtle bg-canvas-subtle px-1.5 py-0.5 rounded">{historia.diagnostico_cie10}</span>
+										{/if}
+										<svg class="w-4 h-4 text-ink-subtle transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+										</svg>
+									</div>
 								</div>
-								{#if historia.diagnostico_cie10}
-									<span class="text-xs font-mono text-ink-subtle shrink-0">{historia.diagnostico_cie10}</span>
+							</summary>
+							<div class="px-4 pb-4 pt-0 space-y-3">
+								{#if historia.diagnostico_descripcion}
+									<div class="border-l-2 border-sage-200 dark:border-sage-800 pl-3 ml-[18px]">
+										<p class="text-xs font-medium text-ink-muted">Diagnóstico</p>
+										<p class="text-sm text-ink mt-0.5">{historia.diagnostico_descripcion}</p>
+									</div>
+								{/if}
+								{#if hasExamenes}
+									<div class="border-l-2 border-amber-200 dark:border-amber-800 pl-3 ml-[18px]">
+										<p class="text-xs font-medium text-amber-700 dark:text-amber-300 mb-1.5">Exámenes solicitados</p>
+										<div class="space-y-1">
+											{#each historia.examenes_solicitados ?? [] as examen}
+												<div class="flex items-start gap-2">
+													<svg class="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082" />
+													</svg>
+													<div>
+														<p class="text-sm text-ink">{examen.nombre}</p>
+														{#if examen.indicaciones}
+															<p class="text-xs text-ink-muted">{examen.indicaciones}</p>
+														{/if}
+													</div>
+												</div>
+											{/each}
+										</div>
+									</div>
+								{/if}
+								{#if !historia.diagnostico_descripcion && !hasExamenes}
+									<p class="text-xs text-ink-subtle ml-[18px] pl-3">Sin detalles adicionales registrados</p>
 								{/if}
 							</div>
-						</div>
+						</details>
 					{/each}
 				</div>
 			{/if}
@@ -216,14 +262,21 @@
 					<p class="text-xs text-ink-muted">Sin recetas registradas</p>
 				</div>
 			{:else}
-				<div class="space-y-2">
+				<div class="space-y-3">
 					{#each recetas as receta (receta.id)}
 						<div class="bg-surface-elevated border border-border/60 rounded-xl overflow-hidden">
 							<!-- Header -->
-							<div class="px-4 py-2.5 flex items-center justify-between border-b border-border/40">
-								<div class="flex items-center gap-2">
-									<span class="text-sm font-semibold text-ink font-mono">{receta.prescription_number}</span>
-									<span class="text-xs text-ink-muted">{formatFechaCorta(receta.prescription_date)}</span>
+							<div class="px-4 py-3 flex items-center justify-between bg-iris-50/50 dark:bg-iris-900/10 border-b border-border/40">
+								<div class="flex items-center gap-3">
+									<div class="w-8 h-8 rounded-lg bg-iris-100 dark:bg-iris-900/30 flex items-center justify-center">
+										<svg class="w-4 h-4 text-iris-600 dark:text-iris-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+										</svg>
+									</div>
+									<div>
+										<p class="text-sm font-semibold text-ink font-mono">{receta.prescription_number}</p>
+										<p class="text-xs text-ink-muted">{formatFechaCorta(receta.prescription_date)} · {receta.items.length} medicamento{receta.items.length !== 1 ? 's' : ''}</p>
+									</div>
 								</div>
 								<Badge
 									variant={prescriptionStatusVariant[receta.prescription_status] ?? 'info'}
@@ -235,22 +288,38 @@
 							</div>
 							<!-- Items -->
 							<div class="divide-y divide-border/30">
-								{#each receta.items as item (item.id)}
-									<div class="px-4 py-2 flex items-start gap-2.5">
-										<div class="w-1.5 h-1.5 rounded-full bg-sage-500 shrink-0 mt-1.5"></div>
+								{#each receta.items as item, i (item.id ?? i)}
+									<div class="px-4 py-3 flex items-start gap-3">
+										<div class="w-6 h-6 rounded-full bg-canvas-subtle flex items-center justify-center text-[10px] font-bold text-ink-muted shrink-0 mt-0.5">
+											{i + 1}
+										</div>
 										<div class="flex-1 min-w-0">
-											<p class="text-sm font-medium text-ink">{item.medication.generic_name}</p>
-											<p class="text-xs text-ink-muted">
-												{item.medication.pharmaceutical_form} · {item.quantity_prescribed} {item.medication.unit_measure}
-												{#if item.duration_days} · {item.duration_days} días{/if}
-											</p>
+											<p class="text-sm font-semibold text-ink">{item.medication?.generic_name ?? 'Medicamento'}</p>
+											<div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+												{#if item.medication?.pharmaceutical_form}
+													<span class="text-xs text-ink-muted">{item.medication.pharmaceutical_form}</span>
+												{/if}
+												<span class="text-xs text-ink-muted">Cantidad: <span class="font-medium text-ink">{item.quantity_prescribed}</span></span>
+												{#if item.duration_days}
+													<span class="text-xs text-ink-muted">Duración: <span class="font-medium text-ink">{item.duration_days} días</span></span>
+												{/if}
+											</div>
 											{#if item.dosage_instructions}
-												<p class="text-xs text-ink-subtle mt-0.5">{item.dosage_instructions}</p>
+												<div class="mt-1.5 px-2.5 py-1.5 bg-canvas-subtle rounded-lg">
+													<p class="text-xs text-ink">
+														<span class="font-medium text-ink-muted">Indicaciones:</span> {item.dosage_instructions}
+													</p>
+												</div>
 											{/if}
 										</div>
 									</div>
 								{/each}
 							</div>
+							{#if receta.notes}
+								<div class="px-4 py-2.5 border-t border-border/40 bg-canvas-subtle/30">
+									<p class="text-xs text-ink-muted"><span class="font-medium">Nota:</span> {receta.notes}</p>
+								</div>
+							{/if}
 						</div>
 					{/each}
 				</div>

@@ -5,6 +5,7 @@ import * as historiasService from '$lib/server/historias.service.js';
 import * as prescriptionsService from '$lib/server/inventory/prescriptions.service.js';
 import { mockFlags } from '$lib/server/mock-flags.js';
 import { mockPacientes } from '$lib/server/mock/data.js';
+import type { Prescription } from '$shared/types/inventory.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -24,7 +25,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		const [{ items: todasLasCitas }, historias, recetas] = await Promise.all([
 			citasService.getCitasByPatientId(pacienteId),
 			historiasService.findByPaciente(pacienteId, { limit: 20 }).catch(() => []),
-			prescriptionsService.getPrescriptionsByPatient(pacienteId).catch(() => [])
+			prescriptionsService.getPrescriptionsByPatient(pacienteId).catch(() => [] as Prescription[])
 		]);
 
 		const citasPaciente = todasLasCitas
@@ -34,9 +35,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 				return a.hora_inicio.localeCompare(b.hora_inicio);
 			});
 
+		// Enriquecer historias con nombres de doctor de las citas
+		const historiasEnriquecidas = historias.map(h => {
+			const citaRelacionada = citasPaciente.find(c =>
+				c.fecha === h.fecha && c.doctor?.especialidad?.nombre === h.especialidad
+			);
+			return {
+				...h,
+				doctor_nombre: citaRelacionada
+					? `${citaRelacionada.doctor.nombre} ${citaRelacionada.doctor.apellido}`
+					: h.doctor_nombre
+			};
+		});
+
 		return {
 			citas: citasPaciente,
-			historias,
+			historias: historiasEnriquecidas,
 			recetas,
 			pacienteNombre: user.name
 		};

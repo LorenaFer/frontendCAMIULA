@@ -44,7 +44,12 @@ export async function getPrescriptionsByPatient(patientId: string): Promise<Pres
 	if (mockFlags.inventoryPrescriptions) {
 		return mockPrescriptions.filter((p) => p.fk_patient_id === patientId);
 	}
-	return apiFetch<Prescription[]>(`/inventory/prescriptions?patient_id=${patientId}`);
+	const raw = await apiFetch<unknown>(`/inventory/prescriptions?patient_id=${patientId}`);
+	// El backend puede devolver array o { items, pagination }
+	if (Array.isArray(raw)) return raw as Prescription[];
+	const obj = raw as Record<string, unknown>;
+	if (obj.items) return obj.items as Prescription[];
+	return [];
 }
 
 export async function createPrescription(
