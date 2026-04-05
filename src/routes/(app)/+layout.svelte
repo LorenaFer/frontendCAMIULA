@@ -144,6 +144,7 @@
 		{ id: 'inv-dispatches',    label: 'Despachos',      href: 'inventory/dispatches',        icon: dispatchIcon,    permission: P.INVENTORY_DISPATCH, group: 'Farmacia' },
 		{ id: 'inv-suppliers',     label: 'Proveedores',    href: 'inventory/suppliers',         icon: suppliersIcon,   permission: P.INVENTORY_WRITE,    group: 'Farmacia' },
 		{ id: 'inv-orders',        label: 'Órdenes Compra', href: 'inventory/purchase-orders',   icon: ordersIcon,      permission: P.INVENTORY_WRITE,    group: 'Farmacia' },
+		{ id: 'reportes', label: 'Reportes EPI', href: 'reportes', icon: settingsIcon, permission: P.DASHBOARD_READ, group: 'Administración' },
 		{ id: 'configuracion', label: 'Configuración', href: 'admin/configuracion', icon: settingsIcon, permission: P.SETTINGS_READ, group: 'Administración' }
 	]}
 

@@ -68,7 +68,8 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
 	// Recipe del doctor
 	'doctor/citas/[citaId]/prescription': P.RECIPE_WRITE,
 	// Admin
-	'admin/configuracion': P.SETTINGS_READ
+	'admin/configuracion': P.SETTINGS_READ,
+	'reportes': P.DASHBOARD_READ
 };
 
 // ─── Action → Permission (acciones granulares) ───────────────

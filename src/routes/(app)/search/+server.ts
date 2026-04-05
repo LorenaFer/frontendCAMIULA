@@ -199,6 +199,9 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		{ title: 'Despachos', subtitle: 'Despacho de medicamentos', href: '/inventory/dispatches', keywords: ['despacho', 'dispensar', 'entregar'], permission: P.INVENTORY_DISPATCH },
 		{ title: 'Proveedores', subtitle: 'Gestión de proveedores', href: '/inventory/suppliers', keywords: ['proveedor', 'supplier', 'compra'], permission: P.INVENTORY_WRITE },
 		{ title: 'Órdenes de Compra', subtitle: 'Pedidos a proveedores', href: '/inventory/purchase-orders', keywords: ['orden', 'compra', 'pedido', 'purchase'], permission: P.INVENTORY_WRITE },
+		{ title: 'Reportes EPI-12', subtitle: 'Consolidado semanal por grupo etario', href: '/reportes?tab=epi12', keywords: ['reporte', 'epi12', 'epi-12', 'epidemiologico', 'semanal', 'grupo etario'], permission: P.DASHBOARD_READ },
+		{ title: 'Reportes EPI-13', subtitle: 'Listado nominal de casos', href: '/reportes?tab=epi13', keywords: ['reporte', 'epi13', 'epi-13', 'nominal', 'casos', 'listado'], permission: P.DASHBOARD_READ },
+		{ title: 'Reportes EPI-15', subtitle: 'Consolidado mensual de morbilidad', href: '/reportes?tab=epi15', keywords: ['reporte', 'epi15', 'epi-15', 'mensual', 'morbilidad', 'consolidado'], permission: P.DASHBOARD_READ },
 		{ title: 'Configuración', subtitle: 'Especialidades y usuarios', href: '/admin/configuracion', keywords: ['configuracion', 'config', 'especialidad', 'usuario', 'admin', 'ajustes'], permission: P.SETTINGS_READ }
 	];
 
