@@ -63,6 +63,9 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
 	'inventory/suppliers': P.INVENTORY_WRITE,
 	'inventory/purchase-orders': P.INVENTORY_WRITE,
 	'inventory/dispatches': P.INVENTORY_DISPATCH,
+	'inventory/categories': P.INVENTORY_WRITE,
+	'inventory/movements': P.INVENTORY_READ,
+	'inventory/alerts': P.INVENTORY_READ,
 	'inventory/limits': P.INVENTORY_ADMIN,
 	'inventory/reports': P.INVENTORY_REPORTS,
 	// Recipe del doctor

@@ -53,6 +53,7 @@ export async function getMedications(
 	if (filters.search) qs.set('q', filters.search);
 	if (filters.status) qs.set('status', filters.status);
 	if (filters.therapeutic_class) qs.set('therapeutic_class', filters.therapeutic_class);
+	if (filters.category_id) qs.set('category_id', filters.category_id);
 	qs.set('page', String(filters.page ?? 1));
 	qs.set('page_size', String(filters.pageSize ?? 25));
 

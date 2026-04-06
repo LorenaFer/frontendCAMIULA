@@ -14,6 +14,20 @@ export type DispatchStatus = 'pending' | 'completed' | 'cancelled';
 export type StockAlert = 'ok' | 'low' | 'critical' | 'expired';
 export type LimitAppliesTo = 'all' | 'student' | 'employee' | 'professor';
 
+// ─── Categorías de Medicamentos ──────────────────────────────
+
+export interface MedicationCategory {
+	id: string;
+	name: string;
+	description: string | null;
+	created_at: string | null;
+}
+
+export interface CreateCategoryInput {
+	name: string;
+	description?: string;
+}
+
 // ─── Proveedores ─────────────────────────────────────────────
 
 export interface Supplier {
@@ -45,6 +59,8 @@ export interface Medication {
 	concentration?: string;
 	unit_measure: string;
 	therapeutic_class?: string;
+	fk_category_id?: string | null;
+	category_name?: string | null;
 	controlled_substance: boolean;
 	requires_refrigeration: boolean;
 	medication_status: MedicationStatus;
@@ -264,6 +280,7 @@ export interface MedicationFilters {
 	search?: string;
 	status?: MedicationStatus;
 	therapeutic_class?: string;
+	category_id?: string;
 	page?: number;
 	pageSize?: number;
 }
@@ -297,6 +314,7 @@ export interface CreateMedicationInput {
 	concentration?: string;
 	unit_measure: string;
 	therapeutic_class?: string;
+	fk_category_id?: string;
 	controlled_substance: boolean;
 	requires_refrigeration: boolean;
 }
@@ -377,6 +395,73 @@ export interface PrescriptionItemDraft {
 	quantity_prescribed: number;
 	dosage_instructions: string;
 	duration_days: number;
+}
+
+// ─── Movimientos de Inventario (Kardex) ──────────────────────
+
+export type MovementType = 'entry' | 'exit' | 'adjustment' | 'expiration';
+
+export interface InventoryMovement {
+	id: string;
+	fk_medication_id: string;
+	medication_name: string | null;
+	fk_batch_id: string | null;
+	fk_dispatch_id: string | null;
+	fk_purchase_order_id: string | null;
+	movement_type: MovementType;
+	quantity: number;
+	balance_after: number;
+	reference: string | null;
+	lot_number: string | null;
+	unit_cost: number | null;
+	notes: string | null;
+	movement_date: string;
+	created_at: string | null;
+	created_by: string | null;
+}
+
+export interface MovementFilters {
+	medication_id?: string;
+	movement_type?: MovementType;
+	date_from?: string;
+	date_to?: string;
+	page?: number;
+	pageSize?: number;
+}
+
+// ─── Alertas de Stock (persistidas) ──────────────────────────
+
+export type AlertLevel = 'low' | 'critical' | 'expired';
+export type AlertStatus = 'active' | 'acknowledged' | 'resolved';
+
+export interface StockAlertRecord {
+	id: string;
+	fk_medication_id: string;
+	medication_name: string | null;
+	medication_code: string | null;
+	alert_level: AlertLevel;
+	current_stock: number;
+	threshold: number;
+	message: string;
+	detected_at: string;
+	resolved_at: string | null;
+	resolved_by: string | null;
+	alert_status: AlertStatus;
+}
+
+export interface StockAlertsResponse {
+	items: StockAlertRecord[];
+	total: number;
+	active_count: number;
+	resolved_count: number;
+}
+
+export interface StockAlertFilters {
+	alert_status?: AlertStatus;
+	alert_level?: AlertLevel;
+	medication_id?: string;
+	page?: number;
+	pageSize?: number;
 }
 
 // ─── Pagination (módulo inventario) ───────────────────────────

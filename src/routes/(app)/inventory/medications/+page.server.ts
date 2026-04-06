@@ -1,9 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import * as medicationsService from '$lib/server/inventory/medications.service.js';
+import * as categoriesService from '$lib/server/inventory/categories.service.js';
 import { assertPermission, assertActionPermission } from '$lib/server/rbac.js';
 import { P } from '$shared/rbac-config.js';
-import type { MedicationFilters, CreateMedicationInput } from '$shared/types/inventory.js';
+import type { MedicationFilters, CreateMedicationInput, MedicationCategory } from '$shared/types/inventory.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	assertPermission(locals.user, P.INVENTORY_READ);
@@ -11,14 +12,19 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const filters: MedicationFilters = {
 		search: url.searchParams.get('search') ?? undefined,
 		status: (url.searchParams.get('status') as MedicationFilters['status']) ?? undefined,
+		category_id: url.searchParams.get('category_id') ?? undefined,
 		page: Number(url.searchParams.get('page') ?? 1),
 		pageSize: [10, 25, 50, 100].includes(Number(url.searchParams.get('page_size'))) ? Number(url.searchParams.get('page_size')) : 25
 	};
 
-	const medications = await medicationsService.getMedications(filters).catch(() => ({
-		data: [], total: 0, page: 1, pageSize: 25, hasNext: false
-	}));
-	return { medications, filters };
+	const [medications, categoryOptions] = await Promise.all([
+		medicationsService.getMedications(filters).catch(() => ({
+			data: [], total: 0, page: 1, pageSize: 25, hasNext: false
+		})),
+		categoriesService.getCategoryOptions().catch(() => [] as MedicationCategory[])
+	]);
+
+	return { medications, categoryOptions, filters };
 };
 
 export const actions: Actions = {
@@ -34,6 +40,7 @@ export const actions: Actions = {
 			concentration: String(fd.get('concentration') ?? '').trim() || undefined,
 			unit_measure: String(fd.get('unit_measure') ?? '').trim(),
 			therapeutic_class: String(fd.get('therapeutic_class') ?? '').trim() || undefined,
+			fk_category_id: String(fd.get('fk_category_id') ?? '').trim() || undefined,
 			controlled_substance: fd.get('controlled_substance') === 'true',
 			requires_refrigeration: fd.get('requires_refrigeration') === 'true'
 		};
@@ -72,6 +79,8 @@ export const actions: Actions = {
 			input.unit_measure = String(fd.get('unit_measure')).trim();
 		if (fd.has('therapeutic_class'))
 			input.therapeutic_class = String(fd.get('therapeutic_class')).trim() || undefined;
+		if (fd.has('fk_category_id'))
+			(input as Record<string, unknown>).fk_category_id = String(fd.get('fk_category_id')).trim() || null;
 
 		try {
 			await medicationsService.updateMedication(id, input);

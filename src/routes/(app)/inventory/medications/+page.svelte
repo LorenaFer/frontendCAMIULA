@@ -65,10 +65,22 @@
 		(data.medications.data as Medication[]).filter((m) => m.current_stock < 10).length
 	);
 
-	function applyFilters(filters: { search?: string; status?: string }) {
+	function applyFilters(filters: { search?: string; status?: string; category_id?: string }) {
 		const qs = new URLSearchParams();
 		if (filters.search) qs.set('search', filters.search);
 		if (filters.status) qs.set('status', filters.status);
+		if ((filters as Record<string, string>).category_id) qs.set('category_id', (filters as Record<string, string>).category_id);
+		qs.set('page', '1');
+		goto(`?${qs}`, { replaceState: true });
+	}
+
+	let categoryFilter = $state(data.filters.category_id ?? '');
+
+	function applyAllFilters(filters: { search?: string; status?: string }) {
+		const qs = new URLSearchParams();
+		if (filters.search) qs.set('search', filters.search);
+		if (filters.status) qs.set('status', filters.status);
+		if (categoryFilter) qs.set('category_id', categoryFilter);
 		qs.set('page', '1');
 		goto(`?${qs}`, { replaceState: true });
 	}
@@ -130,6 +142,15 @@
 <svelte:head>
 	<title>Catálogo de Medicamentos — Inventario</title>
 </svelte:head>
+
+{#snippet categoryCell(_v: unknown, row: MedicationRow, _index: number)}
+	{@const name = (row.category_name as string | null)}
+	{#if name}
+		<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-viking-50 text-viking-700 dark:bg-viking-900/20 dark:text-viking-400">{name}</span>
+	{:else}
+		<span class="text-xs text-ink-subtle">—</span>
+	{/if}
+{/snippet}
 
 {#snippet statusCell(_v: unknown, row: MedicationRow, _index: number)}
 	<StatusBadge status={row.medication_status as string} />
@@ -288,6 +309,18 @@
 						<option value="Otro">Otro</option>
 					</select>
 				</div>
+				<div>
+					<label class="block text-sm font-medium text-ink-muted mb-1" for="fk_category_id">Categoría</label>
+					<select id="fk_category_id" name="fk_category_id"
+						class="w-full h-11 px-3 text-sm rounded-lg border border-border bg-surface-elevated text-ink
+						       hover:border-border-strong focus:outline-none focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60"
+					>
+						<option value="">Sin categoría</option>
+						{#each data.categoryOptions as cat}
+							<option value={cat.id}>{cat.name}</option>
+						{/each}
+					</select>
+				</div>
 				<input type="hidden" name="controlled_substance" value="false" />
 				<input type="hidden" name="requires_refrigeration" value="false" />
 
@@ -301,7 +334,29 @@
 
 	<!-- Filtros -->
 	<div class="bg-surface-elevated rounded-xl border border-border p-3 sm:p-4">
-		<InventoryFilters value={data.filters} onchange={applyFilters} />
+		<div class="flex flex-col sm:flex-row gap-3">
+			<div class="flex-1">
+				<InventoryFilters value={data.filters} onchange={applyAllFilters} />
+			</div>
+			<div class="sm:w-48">
+				<label for="cat-filter" class="block text-xs font-medium text-ink-muted mb-1">Categoría</label>
+				<select id="cat-filter" bind:value={categoryFilter}
+					onchange={() => {
+						const qs = new URLSearchParams($page.url.searchParams);
+						if (categoryFilter) qs.set('category_id', categoryFilter);
+						else qs.delete('category_id');
+						qs.set('page', '1');
+						goto(`?${qs}`, { replaceState: true });
+					}}
+					class="w-full h-9 px-2.5 text-sm rounded-lg border border-border bg-surface text-ink
+					       focus:outline-none focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60">
+					<option value="">Todas</option>
+					{#each data.categoryOptions as cat}
+						<option value={cat.id}>{cat.name}</option>
+					{/each}
+				</select>
+			</div>
+		</div>
 	</div>
 
 	<!-- Tabla -->
@@ -310,8 +365,8 @@
 			columns={[
 				{ key: 'code',               header: 'Código',       width: '100px' },
 				{ key: 'generic_name',       header: 'Nombre genérico' },
-				{ key: 'pharmaceutical_form', header: 'Forma farmacéutica',  width: '120px' },
-				{ key: 'therapeutic_class',  header: 'Clase',        width: '140px' },
+				{ key: 'pharmaceutical_form', header: 'Forma',        width: '110px' },
+				{ key: 'category_name',      header: 'Categoría',    width: '140px', render: categoryCell },
 				{ key: 'medication_status',  header: 'Estado',       width: '110px', align: 'center', render: statusCell },
 				{ key: 'current_stock',      header: 'Stock',        width: '100px', align: 'right',  render: stockCell }
 			] as DataTableColumn<MedicationRow>[]}
@@ -448,6 +503,21 @@
 							{/each}
 						</select>
 					</div>
+
+					<div>
+						<label class="block text-sm font-medium text-ink-muted mb-1" for="edit-category">Categoría</label>
+						<select
+							id="edit-category"
+							name="fk_category_id"
+							class="w-full h-11 px-3 text-sm rounded-lg border border-border bg-surface-elevated text-ink
+							       hover:border-border-strong focus:outline-none focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60"
+						>
+							<option value="">Sin categoría</option>
+							{#each data.categoryOptions as cat}
+								<option value={cat.id} selected={editingMed.fk_category_id === cat.id}>{cat.name}</option>
+							{/each}
+						</select>
+					</div>
 				</div>
 			</DialogBody>
 			<DialogFooter>
@@ -490,6 +560,10 @@
 				<div>
 					<p class="text-ink-muted">Clase terapéutica</p>
 					<p class="font-medium text-ink">{viewingMed.therapeutic_class ?? '—'}</p>
+				</div>
+				<div>
+					<p class="text-ink-muted">Categoría</p>
+					<p class="font-medium text-ink">{viewingMed.category_name ?? '—'}</p>
 				</div>
 				<div>
 					<p class="text-ink-muted">Stock actual</p>
