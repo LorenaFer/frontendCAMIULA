@@ -10,7 +10,7 @@ import type {
 	DispatchException,
 	CreateDispatchLimitInput,
 	CreateDispatchExceptionInput
-} from '$shared/types/inventory.js';
+} from '$domain/inventory/types.js';
 
 export async function getDispatchLimits(): Promise<DispatchLimit[]> {
 	if (mockFlags.inventoryLimits) {

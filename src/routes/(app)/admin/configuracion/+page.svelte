@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
-	import type { Especialidad } from '$shared/types/appointments.js';
-	import type { MedicalFormSchema } from '$shared/types/form-schema.js';
+	import type { Especialidad } from '$domain/staff/types.js';
+	import type { MedicalFormSchema } from '$domain/medical-records/form-schema.js';
 	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
-	import type { User } from '$lib/server/users.service.js';
+	import type { User } from '$lib/server/admin/users.service.js';
 	import { enhance } from '$app/forms';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -18,6 +18,8 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
+	import { TabGroup } from '$shared/components/tabs';
+	import PaginationBar from '$shared/components/table/PaginationBar.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -195,38 +197,6 @@
 	</Badge>
 {/snippet}
 
-{#snippet paginationBarClient(pg: { page: number; pageSize: number; total: number; pages: number }, changeFn: (p: number, ps?: number) => void)}
-	{#if pg.total > 0}
-		<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2.5 border-t border-border/30 bg-canvas-subtle/30">
-			<div class="flex items-center gap-3">
-				<p class="text-xs text-ink-muted">{((pg.page - 1) * pg.pageSize) + 1}–{Math.min(pg.page * pg.pageSize, pg.total)} de {pg.total}</p>
-				<div class="flex items-center gap-1.5">
-					<span class="text-xs text-ink-subtle">Mostrar</span>
-					<select class="text-xs border border-border/60 rounded-md px-1.5 py-1 bg-surface text-ink focus:outline-none focus:ring-1 focus:ring-viking-500/40"
-						value={pg.pageSize}
-						onchange={(e) => changeFn(1, Number((e.target as HTMLSelectElement).value))}
-					>
-						{#each [10, 25, 50] as size}<option value={size}>{size}</option>{/each}
-					</select>
-				</div>
-			</div>
-			{#if pg.pages > 1}
-				<div class="flex items-center gap-1">
-					<button type="button" disabled={pg.page <= 1} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changeFn(pg.page - 1)}>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-					</button>
-					{#each Array.from({ length: Math.min(pg.pages, 7) }, (_, i) => { const start = Math.max(1, Math.min(pg.page - 3, pg.pages - 6)); return start + i; }) as p}
-						<button type="button" class="w-7 h-7 rounded-md text-xs font-medium transition-colors {p === pg.page ? 'bg-viking-600 text-white' : 'text-ink-muted hover:bg-canvas-subtle'}" onclick={() => changeFn(p)}>{p}</button>
-					{/each}
-					<button type="button" disabled={pg.page >= pg.pages} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changeFn(pg.page + 1)}>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-					</button>
-				</div>
-			{/if}
-		</div>
-	{/if}
-{/snippet}
-
 <svelte:head>
 	<title>Configuración</title>
 </svelte:head>
@@ -238,26 +208,15 @@
 	</div>
 
 	<!-- Tabs -->
-	<div class="flex gap-1 border-b border-border">
-		{#each [
-			{ id: 'especialidades' as const, label: 'Especialidades', count: espTotal },
-			{ id: 'formularios' as const, label: 'Formularios HMD' },
-			{ id: 'usuarios' as const, label: 'Usuarios', count: userTotal }
-		] as tab}
-			<button
-				class="px-4 py-2.5 text-sm font-medium transition-colors relative {activeTab === tab.id ? 'text-viking-600' : 'text-ink-muted hover:text-ink'}"
-				onclick={() => { activeTab = tab.id; }}
-			>
-				{tab.label}
-				{#if tab.count != null}
-					<span class="ml-1 text-xs text-ink-subtle">({tab.count})</span>
-				{/if}
-				{#if activeTab === tab.id}
-					<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-viking-600"></div>
-				{/if}
-			</button>
-		{/each}
-	</div>
+	<TabGroup
+		tabs={[
+			{ id: 'especialidades', label: 'Especialidades', count: espTotal },
+			{ id: 'formularios', label: 'Formularios HMD' },
+			{ id: 'usuarios', label: 'Usuarios', count: userTotal }
+		]}
+		bind:active={activeTab}
+		variant="underline"
+	/>
 
 	<!-- ═══ TAB: Especialidades ═══ -->
 	{#if activeTab === 'especialidades'}
@@ -280,10 +239,14 @@
 				] satisfies RowMenuItem<EspRow>[]}
 				emptyMessage="No hay especialidades registradas."
 			/>
-			{@render paginationBarClient(
-				{ page: espPage, pageSize: espPageSize, total: espTotal, pages: espPages },
-				(p, ps) => { if (ps) { espPageSize = ps; espPage = 1; } else espPage = p; }
-			)}
+			<PaginationBar
+				page={espPage}
+				total={espTotal}
+				pageSize={espPageSize}
+				pageSizeOptions={[10, 25, 50]}
+				onPageChange={(p) => { espPage = p; }}
+				onPageSizeChange={(ps) => { espPageSize = ps; espPage = 1; }}
+			/>
 		</Card>
 	{/if}
 
@@ -362,10 +325,14 @@
 					] satisfies RowMenuItem<UserRow>[]}
 					emptyMessage="No hay usuarios registrados."
 				/>
-				{@render paginationBarClient(
-					{ page: userPagination.page, pageSize: userPagination.page_size, total: userPagination.total, pages: userPagination.pages },
-					changeUserPage
-				)}
+				<PaginationBar
+					page={userPagination.page}
+					total={userPagination.total}
+					pageSize={userPagination.page_size}
+					pageSizeOptions={[10, 25, 50]}
+					onPageChange={(p) => changeUserPage(p)}
+					onPageSizeChange={(ps) => changeUserPage(1, ps)}
+				/>
 			</Card>
 		{/if}
 	{/if}

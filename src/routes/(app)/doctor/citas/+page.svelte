@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
-	import type { CitaConPaciente } from '$shared/types/appointments.js';
-	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
+	import type { CitaConPaciente } from '$domain/appointments/types.js';
+	import AppointmentStatusBadge from '$domain/appointments/components/AppointmentStatusBadge.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import Input from '$shared/components/input/Input.svelte';
 	import Select from '$shared/components/select/Select.svelte';

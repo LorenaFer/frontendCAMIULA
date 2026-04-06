@@ -1,11 +1,11 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail } from '@sveltejs/kit';
-import * as citasService from '$lib/server/citas.service.js';
-import * as historiasService from '$lib/server/historias.service.js';
-import * as schemasService from '$lib/server/schemas.service.js';
+import * as citasService from '$lib/server/appointments/appointments.service.js';
+import * as historiasService from '$lib/server/medical-records/records.service.js';
+import * as schemasService from '$lib/server/medical-records/schemas.service.js';
 import * as prescriptionsService from '$lib/server/inventory/prescriptions.service.js';
 import * as medicationsService from '$lib/server/inventory/medications.service.js';
-import type { Evaluacion } from '$shared/types/appointments.js';
+import type { Evaluacion } from '$domain/medical-records/types.js';
 import { assertActionPermission, requireDoctorId } from '$lib/server/rbac.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {

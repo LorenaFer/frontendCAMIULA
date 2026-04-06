@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
-	import type { CitaConPaciente } from '$shared/types/appointments.js';
-	import type { HistorialPrevioEntry } from '$shared/types/medical-records.js';
-	import type { Prescription } from '$shared/types/inventory.js';
-	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
+	import type { CitaConPaciente } from '$domain/appointments/types.js';
+	import type { HistorialPrevioEntry } from '$domain/medical-records/types.js';
+	import type { Prescription } from '$domain/inventory/types.js';
+	import AppointmentStatusBadge from '$domain/appointments/components/AppointmentStatusBadge.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import Dialog from '$shared/components/dialog/Dialog.svelte';
 	import DialogHeader from '$shared/components/dialog/DialogHeader.svelte';

@@ -8,7 +8,9 @@ const config = {
 		adapter: adapter(),
 		alias: {
 			'$shared': './src/lib/shared',
-			'$shared/*': './src/lib/shared/*'
+			'$shared/*': './src/lib/shared/*',
+			'$domain': './src/lib/domain',
+			'$domain/*': './src/lib/domain/*'
 		}
 	}
 };

@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import type { StockItem, Batch } from '$shared/types/inventory.js';
+	import type { StockItem, Batch } from '$domain/inventory/types.js';
 	import type { DataTableColumn } from '$shared/components/table/types.js';
 	type StockRow = StockItem & Record<string, unknown>;
 	type BatchRow = Batch & Record<string, unknown>;
@@ -10,13 +10,26 @@
 	import Card from '$shared/components/card/Card.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
-	import StockIndicator from '$shared/components/inventory/StockIndicator.svelte';
-	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
-	import BatchTag from '$shared/components/inventory/BatchTag.svelte';
+	import { TabGroup } from '$shared/components/tabs';
+	import PaginationBar from '$shared/components/table/PaginationBar.svelte';
+	import StockIndicator from '$domain/inventory/components/StockIndicator.svelte';
+	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
+	import BatchTag from '$domain/inventory/components/BatchTag.svelte';
 
 	let { data }: { data: PageData } = $props();
 
 	let search = $state('');
+	let activeView = $state(data.view ?? 'stock');
+
+	// Sync view selection to URL when user switches tabs
+	$effect(() => {
+		if (activeView !== data.view) {
+			const qs = new URLSearchParams($page.url.searchParams);
+			qs.set('view', activeView);
+			qs.delete('page');
+			goto(`?${qs}`, { replaceState: true });
+		}
+	});
 
 	const filteredStockItems = $derived(
 		search.trim()
@@ -39,13 +52,6 @@
 			: (data.batches?.data ?? [])
 	);
 
-	function switchView(v: 'stock' | 'batches') {
-		const qs = new URLSearchParams($page.url.searchParams);
-		qs.set('view', v);
-		qs.delete('page');
-		goto(`?${qs}`, { replaceState: true });
-	}
-
 	function changePage(p: number, ps?: number) {
 		const qs = new URLSearchParams($page.url.searchParams);
 		qs.set('page', String(p));
@@ -53,38 +59,7 @@
 		goto(`?${qs}`, { replaceState: true });
 	}
 
-	const pageSizeOptions = [10, 25, 50, 100];
 </script>
-
-{#snippet paginationBarFor(pg: { page: number; pageSize: number; total: number; hasNext: boolean })}
-	{#if pg.total > 0}
-		<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2.5 border-t border-border/30 bg-canvas-subtle/30">
-			<div class="flex items-center gap-3">
-				<p class="text-xs text-ink-muted">{((pg.page - 1) * pg.pageSize) + 1}–{Math.min(pg.page * pg.pageSize, pg.total)} de {pg.total}</p>
-				<div class="flex items-center gap-1.5">
-					<span class="text-xs text-ink-subtle">Mostrar</span>
-					<select class="text-xs border border-border/60 rounded-md px-1.5 py-1 bg-surface text-ink focus:outline-none focus:ring-1 focus:ring-viking-500/40" value={pg.pageSize} onchange={(e) => changePage(1, Number((e.target as HTMLSelectElement).value))}>
-						{#each pageSizeOptions as size}<option value={size}>{size}</option>{/each}
-					</select>
-				</div>
-			</div>
-			{#if pg.total > pg.pageSize}
-				{@const pages = Math.ceil(pg.total / pg.pageSize)}
-				<div class="flex items-center gap-1">
-					<button type="button" disabled={pg.page <= 1} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pg.page - 1)}>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-					</button>
-					{#each Array.from({ length: Math.min(pages, 7) }, (_, i) => { const start = Math.max(1, Math.min(pg.page - 3, pages - 6)); return start + i; }) as p}
-						<button type="button" class="w-7 h-7 rounded-md text-xs font-medium transition-colors {p === pg.page ? 'bg-viking-600 text-white' : 'text-ink-muted hover:bg-canvas-subtle'}" onclick={() => changePage(p)}>{p}</button>
-					{/each}
-					<button type="button" disabled={!pg.hasNext} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pg.page + 1)}>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-					</button>
-				</div>
-			{/if}
-		</div>
-	{/if}
-{/snippet}
 
 <svelte:head>
 	<title>Stock y Lotes — Inventario</title>
@@ -122,26 +97,14 @@
 			<p class="text-sm text-ink-muted mt-0.5">Control de inventario por lote y vencimiento</p>
 		</div>
 		<!-- Selector de vista -->
-		<div class="flex gap-1 p-1 bg-canvas-subtle rounded-lg border border-border">
-			<button
-				onclick={() => switchView('stock')}
-				class="px-4 py-2.5 text-sm font-medium rounded-md transition-colors
-				       {data.view === 'stock'
-				         ? 'bg-surface-elevated text-ink shadow-[var(--shadow-1)] border border-border/60'
-				         : 'text-ink-muted hover:text-ink'}"
-			>
-				Stock consolidado
-			</button>
-			<button
-				onclick={() => switchView('batches')}
-				class="px-4 py-2.5 text-sm font-medium rounded-md transition-colors
-				       {data.view === 'batches'
-				         ? 'bg-surface-elevated text-ink shadow-[var(--shadow-1)] border border-border/60'
-				         : 'text-ink-muted hover:text-ink'}"
-			>
-				Por lote
-			</button>
-		</div>
+		<TabGroup
+			tabs={[
+				{ id: 'stock', label: 'Stock consolidado' },
+				{ id: 'batches', label: 'Por lote' }
+			]}
+			bind:active={activeView}
+			variant="pill"
+		/>
 	</div>
 
 	<!-- Buscador -->
@@ -194,8 +157,14 @@
 				emptyMessage="No hay lotes registrados."
 			/>
 
-			{@const batches = data.batches}
-			{@render paginationBarFor(batches)}
+			<PaginationBar
+				page={data.batches.page}
+				total={data.batches.total}
+				pageSize={data.batches.pageSize}
+				pageSizeOptions={[10, 25, 50, 100]}
+				onPageChange={(p) => changePage(p)}
+				onPageSizeChange={(ps) => changePage(1, ps)}
+			/>
 		</Card>
 	{/if}
 </div>

@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import StockIndicator from '$shared/components/inventory/StockIndicator.svelte';
-	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
+	import StockIndicator from '$domain/inventory/components/StockIndicator.svelte';
+	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
 	import Card from '$shared/components/card/Card.svelte';
 	import StatCard from '$shared/components/card/StatCard.svelte';
 	import Badge from '$shared/components/badge/Badge.svelte';
 	import Input from '$shared/components/input/Input.svelte';
-	import type { StockItem } from '$shared/types/inventory.js';
+	import type { StockItem } from '$domain/inventory/types.js';
 	import type { DataTableColumn } from '$shared/components/table/types.js';
 	type StockRow = StockItem & Record<string, unknown>;
 	import DataTable from '$shared/components/table/DataTable.svelte';

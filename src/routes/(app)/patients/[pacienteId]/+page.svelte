@@ -4,8 +4,9 @@
 	import Badge from '$shared/components/badge/Badge.svelte';
 	import EmptyState from '$shared/components/empty-state/EmptyState.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
-	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
-	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
+	import AppointmentStatusBadge from '$domain/appointments/components/AppointmentStatusBadge.svelte';
+	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
+	import { TabGroup } from '$shared/components/tabs';
 
 	let { data }: { data: PageData } = $props();
 	const p = $derived(data.patient);
@@ -134,16 +135,15 @@
 		{/if}
 
 		<!-- Tabs -->
-		<div class="flex gap-1 p-1 bg-canvas-subtle rounded-xl border border-border/40">
-			{#each [['timeline', 'Historial'], ['citas', `Citas (${data.patientCitas.length})`], ['despachos', `Despachos (${data.patientDispatches.length})`]] as [key, label]}
-				<button
-					type="button"
-					class="flex-1 py-2.5 text-sm font-medium rounded-lg transition-colors
-						{activeTab === key ? 'bg-surface-elevated text-ink shadow-sm border border-border/60' : 'text-ink-muted hover:text-ink'}"
-					onclick={() => { activeTab = key as typeof activeTab; }}
-				>{label}</button>
-			{/each}
-		</div>
+		<TabGroup
+			tabs={[
+				{ id: 'timeline', label: 'Historial' },
+				{ id: 'citas', label: `Citas (${data.patientCitas.length})` },
+				{ id: 'despachos', label: `Despachos (${data.patientDispatches.length})` }
+			]}
+			bind:active={activeTab}
+			variant="underline"
+		/>
 
 		<!-- Tab: Timeline -->
 		{#if activeTab === 'timeline'}

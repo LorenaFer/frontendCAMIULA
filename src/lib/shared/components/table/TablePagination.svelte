@@ -119,7 +119,7 @@
             class="
               min-w-[24px] h-6 px-1.5 text-xs font-medium rounded transition-colors font-mono
               {currentPage === page
-                ? 'bg-slate-800 text-white'
+                ? 'bg-viking-600 text-white'
                 : 'text-ink-muted hover:bg-canvas-subtle/70'}
             "
           >

@@ -1,8 +1,8 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import * as citasService from '$lib/server/citas.service.js';
-import * as doctoresService from '$lib/server/doctores.service.js';
-import * as pacientesService from '$lib/server/pacientes.service.js';
+import * as citasService from '$lib/server/appointments/appointments.service.js';
+import * as doctoresService from '$lib/server/staff/doctors.service.js';
+import * as pacientesService from '$lib/server/patients/patients.service.js';
 import { assertActionPermission, requireDoctorId } from '$lib/server/rbac.js';
 
 export const load: PageServerLoad = async ({ locals }) => {

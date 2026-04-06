@@ -1,4 +1,4 @@
-import type { MedicalFormSchema } from '$shared/types/form-schema.js';
+import type { MedicalFormSchema } from '$domain/medical-records/form-schema.js';
 
 // ============================================================
 // Schemas mock para desarrollo.

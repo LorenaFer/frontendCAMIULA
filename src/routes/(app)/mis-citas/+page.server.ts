@@ -1,11 +1,11 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import * as citasService from '$lib/server/citas.service.js';
-import * as historiasService from '$lib/server/historias.service.js';
+import * as citasService from '$lib/server/appointments/appointments.service.js';
+import * as historiasService from '$lib/server/medical-records/records.service.js';
 import * as prescriptionsService from '$lib/server/inventory/prescriptions.service.js';
 import { mockFlags } from '$lib/server/mock-flags.js';
 import { mockPacientes } from '$lib/server/mock/data.js';
-import type { Prescription } from '$shared/types/inventory.js';
+import type { Prescription } from '$domain/inventory/types.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;

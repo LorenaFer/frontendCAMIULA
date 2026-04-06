@@ -3,16 +3,18 @@
 // IDs son UUIDs (string) para coincidir con el backend.
 // ============================================================
 
+import type { Paciente } from '$domain/patients/types.js';
 import type {
 	Especialidad,
 	DoctorConEspecialidad,
 	DisponibilidadDoctor,
-	Paciente,
-	Cita,
-	CitaConPaciente,
-	HistoriaMedica,
 	DoctorOption
-} from '$shared/types/appointments.js';
+} from '$domain/staff/types.js';
+import type {
+	Cita,
+	CitaConPaciente
+} from '$domain/appointments/types.js';
+import type { HistoriaMedica } from '$domain/medical-records/types.js';
 import type {
 	Supplier,
 	Medication,
@@ -23,7 +25,7 @@ import type {
 	Dispatch,
 	DispatchLimit,
 	DispatchException
-} from '$shared/types/inventory.js';
+} from '$domain/inventory/types.js';
 
 // ─── IDs estables para mock ─────────────────────────────────
 

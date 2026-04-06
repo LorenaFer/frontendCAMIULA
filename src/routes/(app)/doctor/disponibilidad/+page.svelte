@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
-	import type { DisponibilidadDoctor } from '$shared/types/appointments.js';
+	import type { DisponibilidadDoctor } from '$domain/staff/types.js';
 	import Button from '$shared/components/button/Button.svelte';
+	import { TabGroup } from '$shared/components/tabs';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
@@ -21,6 +22,9 @@
 	// ─── Mobile: día seleccionado ─────────────────────────────
 	const todayDow = (() => { const d = new Date().getDay(); return d === 0 ? 1 : d > 5 ? 1 : d; })();
 	let mobileDay = $state(todayDow);
+	let mobileDayStr = $state(String(todayDow));
+	// Sync string ↔ number for TabGroup compatibility
+	$effect(() => { mobileDay = Number(mobileDayStr); });
 
 	// ─── Time helpers ────────────────────────────────────────
 	const horasEje = Array.from({ length: 12 }, (_, i) => i + 7);
@@ -185,20 +189,16 @@
 	<!-- ═══ MOBILE: Single-day view (< sm) ═══ -->
 	<div class="sm:hidden">
 		<!-- Day tabs — touch-friendly -->
-		<div class="flex gap-1 p-1 bg-canvas-subtle rounded-xl border border-border/40 mb-3">
-			{#each [1, 2, 3, 4, 5] as dia}
-				<button
-					onclick={() => mobileDay = dia}
-					class="flex-1 py-2.5 text-center text-sm font-medium rounded-lg transition-colors
-						{mobileDay === dia ? 'bg-surface-elevated text-viking-600 shadow-sm border border-border/60' : 'text-ink-muted'}"
-				>
-					{diasSemana[dia]}
-					{#if bloquesPorDia[dia].length > 0}
-						<span class="text-xs opacity-60 block">{bloquesPorDia[dia].length}</span>
-					{/if}
-				</button>
-			{/each}
-		</div>
+		<TabGroup
+			tabs={[1, 2, 3, 4, 5].map(dia => ({
+				id: String(dia),
+				label: diasSemana[dia],
+				detail: bloquesPorDia[dia].length > 0 ? String(bloquesPorDia[dia].length) : undefined
+			}))}
+			bind:active={mobileDayStr}
+			variant="pill"
+			class="mb-3"
+		/>
 
 		<!-- Single day grid -->
 		<div class="bg-surface-elevated border border-border/60 rounded-xl shadow-[var(--shadow-1)] overflow-hidden select-none">

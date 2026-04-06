@@ -2,9 +2,9 @@
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
-	import type { MedicationOption, PrescriptionItemDraft } from '$shared/types/inventory.js';
+	import type { MedicationOption, PrescriptionItemDraft } from '$domain/inventory/types.js';
 	import Card from '$shared/components/card/Card.svelte';
-	import PrescriptionForm from '$shared/components/inventory/PrescriptionForm.svelte';
+	import PrescriptionForm from '$domain/inventory/components/PrescriptionForm.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

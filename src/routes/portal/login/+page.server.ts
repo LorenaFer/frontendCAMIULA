@@ -1,6 +1,6 @@
 import type { Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { findByCedula, findByNHM } from '$lib/server/pacientes.service';
+import { findByCedula, findByNHM } from '$lib/server/patients/patients.service.js';
 import { mockFlags } from '$lib/server/mock-flags';
 import { apiFetch, ApiError } from '$lib/server/api';
 import { setToken, setUserSession } from '$lib/server/auth';
@@ -47,7 +47,7 @@ export const actions: Actions = {
 				expires_in?: number;
 			}>('/auth/patient/login', {
 				method: 'POST',
-				body: JSON.stringify({ query, query_type: isNhm ? 'nhm' : 'cedula' })
+				body: JSON.stringify({ query, query_type: isNhm ? 'nhm' : 'dni' })
 			});
 
 			if (!res.found || !res.patient) {

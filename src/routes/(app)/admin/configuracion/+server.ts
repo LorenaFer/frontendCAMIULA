@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import * as usersService from '$lib/server/users.service.js';
+import * as usersService from '$lib/server/admin/users.service.js';
 
 export const POST: RequestHandler = async ({ request }) => {
 	let body: Record<string, unknown>;

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import type { PurchaseOrder } from '$shared/types/inventory.js';
+	import type { PurchaseOrder } from '$domain/inventory/types.js';
 	import Dialog from '$shared/components/dialog/Dialog.svelte';
 	import DialogHeader from '$shared/components/dialog/DialogHeader.svelte';
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';

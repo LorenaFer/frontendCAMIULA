@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
-import * as citasService from '$lib/server/citas.service.js';
-import * as doctoresService from '$lib/server/doctores.service.js';
-import * as pacientesService from '$lib/server/pacientes.service.js';
-import * as historiasService from '$lib/server/historias.service.js';
+import * as citasService from '$lib/server/appointments/appointments.service.js';
+import * as doctoresService from '$lib/server/staff/doctors.service.js';
+import * as pacientesService from '$lib/server/patients/patients.service.js';
+import * as historiasService from '$lib/server/medical-records/records.service.js';
 import * as prescriptionsService from '$lib/server/inventory/prescriptions.service.js';
 import * as reportsService from '$lib/server/inventory/reports.service.js';
 import { mockHistorias } from '$lib/server/mock/data.js';
@@ -81,7 +81,7 @@ export const load: PageServerLoad = async () => {
 	}
 
 	// ── Heatmap citas por día×hora ──
-	const { items: todasCitas } = await citasService.getCitasByFilters({ page_size: 10_000 }).catch(() => ({ items: [] as import('$shared/types/appointments.js').CitaConPaciente[], pagination: { total: 0, page: 1, page_size: 10000, pages: 0, has_next: false } }));
+	const { items: todasCitas } = await citasService.getCitasByFilters({ page_size: 10_000 }).catch(() => ({ items: [] as import('$domain/appointments/types.js').CitaConPaciente[], pagination: { total: 0, page: 1, page_size: 10000, pages: 0, has_next: false } }));
 	const heatmap: number[][] = Array.from({ length: 5 }, () => Array(12).fill(0));
 	for (const c of todasCitas) {
 		const d = new Date(c.fecha + 'T12:00:00');

@@ -2,12 +2,13 @@
 	import type { PageData } from './$types';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
-	import type { StockAlertRecord, AlertLevel, AlertStatus } from '$shared/types/inventory.js';
+	import type { StockAlertRecord, AlertLevel, AlertStatus } from '$domain/inventory/types.js';
 	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
 	type AlertRow = StockAlertRecord & Record<string, unknown>;
 	import DataTable from '$shared/components/table/DataTable.svelte';
 	import Card from '$shared/components/card/Card.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
+	import PaginationBar from '$shared/components/table/PaginationBar.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 
 	let { data }: { data: PageData } = $props();
@@ -42,8 +43,6 @@
 		if (ps) qs.set('page_size', String(ps));
 		goto(`?${qs}`, { replaceState: true });
 	}
-
-	const pageSizeOptions = [10, 25, 50, 100];
 
 	// ─── Acciones ───────────────────────────────────
 	async function doAction(action: string, alertId?: string) {
@@ -191,36 +190,6 @@
 	</div>
 {/snippet}
 
-{#snippet paginationBar(pg: { page: number; pageSize: number; total: number; hasNext: boolean })}
-	{#if pg.total > 0}
-		<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2.5 border-t border-border/30 bg-canvas-subtle/30">
-			<div class="flex items-center gap-3">
-				<p class="text-xs text-ink-muted">{((pg.page - 1) * pg.pageSize) + 1}–{Math.min(pg.page * pg.pageSize, pg.total)} de {pg.total}</p>
-				<div class="flex items-center gap-1.5">
-					<span class="text-xs text-ink-subtle">Mostrar</span>
-					<select class="text-xs border border-border/60 rounded-md px-1.5 py-1 bg-surface text-ink focus:outline-none focus:ring-1 focus:ring-viking-500/40" value={pg.pageSize} onchange={(e) => changePage(1, Number((e.target as HTMLSelectElement).value))}>
-						{#each pageSizeOptions as size}<option value={size}>{size}</option>{/each}
-					</select>
-				</div>
-			</div>
-			{#if pg.total > pg.pageSize}
-				{@const pages = Math.ceil(pg.total / pg.pageSize)}
-				<div class="flex items-center gap-1">
-					<button type="button" disabled={pg.page <= 1} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pg.page - 1)}>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-					</button>
-					{#each Array.from({ length: Math.min(pages, 7) }, (_, i) => { const start = Math.max(1, Math.min(pg.page - 3, pages - 6)); return start + i; }) as p}
-						<button type="button" class="w-7 h-7 rounded-md text-xs font-medium transition-colors {p === pg.page ? 'bg-viking-600 text-white' : 'text-ink-muted hover:bg-canvas-subtle'}" onclick={() => changePage(p)}>{p}</button>
-					{/each}
-					<button type="button" disabled={!pg.hasNext} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pg.page + 1)}>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-					</button>
-				</div>
-			{/if}
-		</div>
-	{/if}
-{/snippet}
-
 <svelte:head>
 	<title>Alertas de Stock — Inventario</title>
 </svelte:head>
@@ -325,6 +294,13 @@
 			rowMenu={alertMenu}
 		/>
 
-		{@render paginationBar(data.alerts)}
+		<PaginationBar
+			page={data.alerts.page}
+			total={data.alerts.total}
+			pageSize={data.alerts.pageSize}
+			pageSizeOptions={[10, 25, 50, 100]}
+			onPageChange={(p) => changePage(p)}
+			onPageSizeChange={(ps) => changePage(1, ps)}
+		/>
 	</Card>
 </div>

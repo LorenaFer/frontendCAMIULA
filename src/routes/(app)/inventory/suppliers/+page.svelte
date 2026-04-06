@@ -3,7 +3,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { enhance } from '$app/forms';
-	import type { Supplier } from '$shared/types/inventory.js';
+	import type { Supplier } from '$domain/inventory/types.js';
 	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
 	type SupplierRow = Supplier & Record<string, unknown>;
 	import DataTable from '$shared/components/table/DataTable.svelte';
@@ -14,7 +14,8 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
-	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
+	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
+	import PaginationBar from '$shared/components/table/PaginationBar.svelte';
 	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -73,38 +74,7 @@
 	}
 
 	const pagination = $derived(data.suppliers);
-	const pageSizeOptions = [10, 25, 50, 100];
 </script>
-
-{#snippet paginationBar()}
-	{#if pagination.total > 0}
-		<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2.5 border-t border-border/30 bg-canvas-subtle/30">
-			<div class="flex items-center gap-3">
-				<p class="text-xs text-ink-muted">{((pagination.page - 1) * pagination.pageSize) + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} de {pagination.total}</p>
-				<div class="flex items-center gap-1.5">
-					<span class="text-xs text-ink-subtle">Mostrar</span>
-					<select class="text-xs border border-border/60 rounded-md px-1.5 py-1 bg-surface text-ink focus:outline-none focus:ring-1 focus:ring-viking-500/40" value={pagination.pageSize} onchange={(e) => changePage(1, Number((e.target as HTMLSelectElement).value))}>
-						{#each pageSizeOptions as size}<option value={size}>{size}</option>{/each}
-					</select>
-				</div>
-			</div>
-			{#if pagination.total > pagination.pageSize}
-				{@const pages = Math.ceil(pagination.total / pagination.pageSize)}
-				<div class="flex items-center gap-1">
-					<button type="button" disabled={pagination.page <= 1} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page - 1)}>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-					</button>
-					{#each Array.from({ length: Math.min(pages, 7) }, (_, i) => { const start = Math.max(1, Math.min(pagination.page - 3, pages - 6)); return start + i; }) as p}
-						<button type="button" class="w-7 h-7 rounded-md text-xs font-medium transition-colors {p === pagination.page ? 'bg-viking-600 text-white' : 'text-ink-muted hover:bg-canvas-subtle'}" onclick={() => changePage(p)}>{p}</button>
-					{/each}
-					<button type="button" disabled={!pagination.hasNext} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page + 1)}>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-					</button>
-				</div>
-			{/if}
-		</div>
-	{/if}
-{/snippet}
 
 <svelte:head>
 	<title>Proveedores — Inventario</title>
@@ -236,7 +206,14 @@
 			emptyMessage="No hay proveedores registrados."
 		/>
 
-		{@render paginationBar()}
+		<PaginationBar
+			page={pagination.page}
+			total={pagination.total}
+			pageSize={pagination.pageSize}
+			pageSizeOptions={[10, 25, 50, 100]}
+			onPageChange={(p) => changePage(p)}
+			onPageSizeChange={(ps) => changePage(1, ps)}
+		/>
 	</Card>
 </div>
 
