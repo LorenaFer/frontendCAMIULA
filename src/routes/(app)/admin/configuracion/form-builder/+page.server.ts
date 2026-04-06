@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import * as schemasService from '$lib/server/schemas.service.js';
-import * as especialidadesService from '$lib/server/especialidades.service.js';
+import * as schemasService from '$lib/server/medical-records/schemas.service.js';
+import * as especialidadesService from '$lib/server/staff/specialties.service.js';
 import { assertActionPermission } from '$lib/server/rbac.js';
-import type { MedicalFormSchema } from '$shared/types/form-schema.js';
+import type { MedicalFormSchema } from '$domain/medical-records/form-schema.js';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const specialtyName = url.searchParams.get('specialty') ?? '';

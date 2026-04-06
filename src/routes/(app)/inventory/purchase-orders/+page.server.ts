@@ -5,7 +5,7 @@ import * as suppliersService from '$lib/server/inventory/suppliers.service.js';
 import * as medicationsService from '$lib/server/inventory/medications.service.js';
 import { assertPermission, assertActionPermission } from '$lib/server/rbac.js';
 import { P } from '$shared/rbac-config.js';
-import type { PurchaseOrder } from '$shared/types/inventory.js';
+import type { PurchaseOrder } from '$domain/inventory/types.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	assertPermission(locals.user, P.INVENTORY_WRITE);

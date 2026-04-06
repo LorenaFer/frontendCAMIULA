@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import SchemaBuilder from '$shared/components/form-builder/SchemaBuilder.svelte';
-	import { FormBuilderStore } from '$shared/components/form-builder/FormBuilderStore.svelte.js';
-	import FormEngine from '$shared/components/form-engine/FormEngine.svelte';
+	import SchemaBuilder from '$domain/medical-records/components/form-builder/SchemaBuilder.svelte';
+	import { FormBuilderStore } from '$domain/medical-records/components/form-builder/FormBuilderStore.svelte.js';
+	import FormEngine from '$domain/medical-records/components/form-engine/FormEngine.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 

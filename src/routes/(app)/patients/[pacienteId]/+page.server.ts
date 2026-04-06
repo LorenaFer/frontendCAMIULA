@@ -1,11 +1,11 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { findByPaciente, findById as findHistoriaById } from '$lib/server/historias.service';
-import * as citasService from '$lib/server/citas.service';
-import * as pacientesService from '$lib/server/pacientes.service';
-import * as dispatchesService from '$lib/server/inventory/dispatches.service';
-import * as schemasService from '$lib/server/schemas.service';
-import type { Dispatch } from '$shared/types/inventory';
+import { findByPaciente, findById as findHistoriaById } from '$lib/server/medical-records/records.service.js';
+import * as citasService from '$lib/server/appointments/appointments.service.js';
+import * as pacientesService from '$lib/server/patients/patients.service.js';
+import * as dispatchesService from '$lib/server/inventory/dispatches.service.js';
+import * as schemasService from '$lib/server/medical-records/schemas.service.js';
+import type { Dispatch } from '$domain/inventory/types.js';
 
 interface TimelineEntry {
 	id: string;

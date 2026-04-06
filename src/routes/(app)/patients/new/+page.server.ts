@@ -1,8 +1,8 @@
 import type { Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { createPaciente } from '$lib/server/pacientes.service';
-import type { CreatePacienteInput } from '$lib/server/pacientes.service';
-import type { Sexo, EstadoCivil, RelacionUniversidad } from '$shared/types/appointments';
+import { createPaciente } from '$lib/server/patients/patients.service.js';
+import type { CreatePacienteInput } from '$lib/server/patients/patients.service.js';
+import type { Sexo, EstadoCivil, RelacionUniversidad } from '$domain/patients/types.js';
 
 function toEnum<T extends string>(value: string, allowed: readonly T[]): T | undefined {
   return allowed.includes(value as T) ? (value as T) : undefined;

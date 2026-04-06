@@ -6,10 +6,10 @@
 
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import * as pacientesService from '$lib/server/pacientes.service.js';
-import * as doctoresService from '$lib/server/doctores.service.js';
-import * as citasService from '$lib/server/citas.service.js';
-import { computeAvailableSlots, getMinBookingDate, isDateAllowed } from '$lib/server/slots.service.js';
+import * as pacientesService from '$lib/server/patients/patients.service.js';
+import * as doctoresService from '$lib/server/staff/doctors.service.js';
+import * as citasService from '$lib/server/appointments/appointments.service.js';
+import { computeAvailableSlots, getMinBookingDate, isDateAllowed } from '$lib/server/appointments/slots.service.js';
 
 type ApiResponse<T = unknown> =
 	| { status: 'success'; message: string; data: T }

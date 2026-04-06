@@ -2,12 +2,12 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { hasPermission, P } from '$shared/rbac-config.js';
 import type { AuthUser } from '$shared/types/auth.js';
-import * as pacientesService from '$lib/server/pacientes.service.js';
-import * as citasService from '$lib/server/citas.service.js';
-import * as doctoresService from '$lib/server/doctores.service.js';
+import * as pacientesService from '$lib/server/patients/patients.service.js';
+import * as citasService from '$lib/server/appointments/appointments.service.js';
+import * as doctoresService from '$lib/server/staff/doctors.service.js';
 import * as medicationsService from '$lib/server/inventory/medications.service.js';
 import * as suppliersService from '$lib/server/inventory/suppliers.service.js';
-import * as usersService from '$lib/server/users.service.js';
+import * as usersService from '$lib/server/admin/users.service.js';
 
 interface SearchResultItem {
 	id: string;

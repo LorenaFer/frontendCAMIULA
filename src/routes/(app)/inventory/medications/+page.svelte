@@ -3,7 +3,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { enhance } from '$app/forms';
-	import type { Medication } from '$shared/types/inventory.js';
+	import type { Medication } from '$domain/inventory/types.js';
 	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
 	type MedicationRow = Medication & Record<string, unknown>;
 	import DataTable from '$shared/components/table/DataTable.svelte';
@@ -14,9 +14,9 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
-	import StatusBadge from '$shared/components/inventory/StatusBadge.svelte';
-	import StockIndicator from '$shared/components/inventory/StockIndicator.svelte';
-	import InventoryFilters from '$shared/components/inventory/InventoryFilters.svelte';
+	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
+	import StockIndicator from '$domain/inventory/components/StockIndicator.svelte';
+	import InventoryFilters from '$domain/inventory/components/InventoryFilters.svelte';
 	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

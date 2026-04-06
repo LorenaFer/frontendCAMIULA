@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import type { SupplierOption, MedicationOption } from '$shared/types/inventory.js';
-	import MedicationSelector from '$shared/components/inventory/MedicationSelector.svelte';
+	import type { SupplierOption, MedicationOption } from '$domain/inventory/types.js';
+	import MedicationSelector from '$domain/inventory/components/MedicationSelector.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import Select from '$shared/components/select/Select.svelte';
 	import DateInput from '$shared/components/input/DateInput.svelte';

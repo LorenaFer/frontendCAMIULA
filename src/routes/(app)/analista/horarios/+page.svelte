@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { DoctorConEspecialidad, DisponibilidadDoctor } from '$shared/types/appointments.js';
+	import type { DoctorConEspecialidad, DisponibilidadDoctor } from '$domain/staff/types.js';
 	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
 	import DataTable from '$shared/components/table/DataTable.svelte';
 	import Badge from '$shared/components/badge/Badge.svelte';

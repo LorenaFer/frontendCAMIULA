@@ -1,6 +1,6 @@
 import type { Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { registerPaciente } from '$lib/server/pacientes.service';
+import { registerPaciente } from '$lib/server/patients/patients.service.js';
 import { apiFetch, ApiError } from '$lib/server/api';
 import { setToken, setUserSession } from '$lib/server/auth';
 import { mockFlags } from '$lib/server/mock-flags';
@@ -93,7 +93,7 @@ export const actions: Actions = {
 						expires_in?: number;
 					}>('/auth/patient/login', {
 						method: 'POST',
-						body: JSON.stringify({ query: cedula, query_type: 'cedula' })
+						body: JSON.stringify({ query: cedula, query_type: 'dni' })
 					});
 					if (loginRes.access_token) {
 						setToken(cookies, loginRes.access_token, loginRes.expires_in ?? 86400);

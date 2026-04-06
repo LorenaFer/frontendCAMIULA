@@ -1,10 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import * as citasService from '$lib/server/citas.service.js';
-import * as doctoresService from '$lib/server/doctores.service.js';
-import * as exportService from '$lib/server/export.service.js';
-import { computeAvailableSlots } from '$lib/server/slots.service.js';
-import type { AppointmentFilters, CitaEstado } from '$shared/types/appointments.js';
+import * as citasService from '$lib/server/appointments/appointments.service.js';
+import * as doctoresService from '$lib/server/staff/doctors.service.js';
+import * as exportService from '$lib/server/appointments/export.service.js';
+import { computeAvailableSlots } from '$lib/server/appointments/slots.service.js';
+import type { AppointmentFilters, CitaEstado } from '$domain/appointments/types.js';
 import { assertActionPermission } from '$lib/server/rbac.js';
 
 export const load: PageServerLoad = async ({ url }) => {

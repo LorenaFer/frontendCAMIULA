@@ -3,7 +3,7 @@ import { fail } from '@sveltejs/kit';
 import * as suppliersService from '$lib/server/inventory/suppliers.service.js';
 import { assertPermission, assertActionPermission } from '$lib/server/rbac.js';
 import { P } from '$shared/rbac-config.js';
-import type { CreateSupplierInput } from '$shared/types/inventory.js';
+import type { CreateSupplierInput } from '$domain/inventory/types.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	assertPermission(locals.user, P.INVENTORY_READ);

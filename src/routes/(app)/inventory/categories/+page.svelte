@@ -3,7 +3,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { enhance } from '$app/forms';
-	import type { MedicationCategory } from '$shared/types/inventory.js';
+	import type { MedicationCategory } from '$domain/inventory/types.js';
 	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
 	type CategoryRow = MedicationCategory & Record<string, unknown>;
 	import DataTable from '$shared/components/table/DataTable.svelte';

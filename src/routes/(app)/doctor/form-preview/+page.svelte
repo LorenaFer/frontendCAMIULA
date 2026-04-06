@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { goto } from '$app/navigation';
-	import FormEngine from '$shared/components/form-engine/FormEngine.svelte';
+	import FormEngine from '$domain/medical-records/components/form-engine/FormEngine.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	let formEngineRef: { store: import('$shared/components/form-engine/FormStore.svelte.js').FormStore } | undefined;
+	let formEngineRef: { store: import('$domain/medical-records/components/form-engine/FormStore.svelte.js').FormStore } | undefined;
 	let lastSubmitData = $state<string>('');
 	let showSchema = $state(false);
 

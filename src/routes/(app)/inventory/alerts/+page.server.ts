@@ -3,7 +3,7 @@ import * as reportsService from '$lib/server/inventory/reports.service.js';
 import * as medicationsService from '$lib/server/inventory/medications.service.js';
 import { assertPermission } from '$lib/server/rbac.js';
 import { P } from '$shared/rbac-config.js';
-import type { StockAlertFilters, MedicationOption } from '$shared/types/inventory.js';
+import type { StockAlertFilters, MedicationOption } from '$domain/inventory/types.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	assertPermission(locals.user, P.INVENTORY_READ);

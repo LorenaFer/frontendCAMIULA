@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
-import * as doctoresService from '$lib/server/doctores.service.js';
-import * as citasService from '$lib/server/citas.service.js';
-import type { DisponibilidadDoctor } from '$shared/types/appointments.js';
+import * as doctoresService from '$lib/server/staff/doctors.service.js';
+import * as citasService from '$lib/server/appointments/appointments.service.js';
+import type { DisponibilidadDoctor } from '$domain/staff/types.js';
 
 export const load: PageServerLoad = async () => {
 	const [doctores, especialidades, stats] = await Promise.all([

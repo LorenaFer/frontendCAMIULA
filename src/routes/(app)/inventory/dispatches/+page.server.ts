@@ -4,7 +4,7 @@ import * as dispatchesService from '$lib/server/inventory/dispatches.service.js'
 import * as prescriptionsService from '$lib/server/inventory/prescriptions.service.js';
 import { assertPermission, assertActionPermission } from '$lib/server/rbac.js';
 import { P } from '$shared/rbac-config.js';
-import type { DispatchFilters } from '$shared/types/inventory.js';
+import type { DispatchFilters } from '$domain/inventory/types.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	assertPermission(locals.user, P.INVENTORY_DISPATCH);

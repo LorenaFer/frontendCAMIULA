@@ -2,11 +2,11 @@
 	import type { PageData } from './$types';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
-	import type { AppointmentFilters as AppointmentFiltersType, CitaConPaciente } from '$shared/types/appointments.js';
+	import type { AppointmentFilters as AppointmentFiltersType, CitaConPaciente } from '$domain/appointments/types.js';
 	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
 	type CitaRow = CitaConPaciente & Record<string, unknown>;
-	import AppointmentFilters from '$shared/components/appointments/AppointmentFilters.svelte';
-	import AppointmentStatusBadge from '$shared/components/appointments/AppointmentStatusBadge.svelte';
+	import AppointmentFilters from '$domain/appointments/components/AppointmentFilters.svelte';
+	import AppointmentStatusBadge from '$domain/appointments/components/AppointmentStatusBadge.svelte';
 	import DataTable from '$shared/components/table/DataTable.svelte';
 	import StatCard from '$shared/components/card/StatCard.svelte';
 	import Card from '$shared/components/card/Card.svelte';
@@ -16,11 +16,13 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Sparkline from '$shared/components/sparkline/Sparkline.svelte';
-	import DoctorAvailabilityCalendar from '$shared/components/appointments/DoctorAvailabilityCalendar.svelte';
-	import TimeSlotPicker from '$shared/components/appointments/TimeSlotPicker.svelte';
-	import type { TimeSlot, DoctorOption } from '$shared/types/appointments.js';
+	import DoctorAvailabilityCalendar from '$domain/appointments/components/DoctorAvailabilityCalendar.svelte';
+	import TimeSlotPicker from '$domain/appointments/components/TimeSlotPicker.svelte';
+	import type { TimeSlot } from '$domain/appointments/types.js';
+	import type { DoctorOption } from '$domain/staff/types.js';
 	import { enhance, deserialize } from '$app/forms';
 	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
+	import PaginationBar from '$shared/components/table/PaginationBar.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -44,12 +46,7 @@
 		goto(`?${qs}`, { replaceState: true });
 	}
 
-	function changePageSize(size: number) {
-		changePage(1, size);
-	}
-
 	const pagination = $derived(data.citas.pagination);
-	const pageSizeOptions = [10, 25, 50, 100];
 
 	// ─── Métricas derivadas ──────────────────────────────────
 	const stats = $derived(data.stats);
@@ -225,45 +222,6 @@
 	];
 </script>
 
-{#snippet paginationBar()}
-	{#if pagination.pages > 1 || pagination.page_size !== 25}
-		<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2.5 border-t border-border/30 bg-canvas-subtle/30">
-			<div class="flex items-center gap-3">
-				<p class="text-xs text-ink-muted">
-					{((pagination.page - 1) * pagination.page_size) + 1}–{Math.min(pagination.page * pagination.page_size, pagination.total)} de {pagination.total}
-				</p>
-				<div class="flex items-center gap-1.5">
-					<span class="text-xs text-ink-subtle">Mostrar</span>
-					<select
-						class="text-xs border border-border/60 rounded-md px-1.5 py-1 bg-surface text-ink focus:outline-none focus:ring-1 focus:ring-viking-500/40"
-						value={pagination.page_size}
-						onchange={(e) => changePageSize(Number((e.target as HTMLSelectElement).value))}
-					>
-						{#each pageSizeOptions as size}
-							<option value={size}>{size}</option>
-						{/each}
-					</select>
-				</div>
-			</div>
-			<div class="flex items-center gap-1">
-				<button type="button" disabled={pagination.page <= 1} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page - 1)}>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-				</button>
-				{#each Array.from({ length: Math.min(pagination.pages, 7) }, (_, i) => {
-					const start = Math.max(1, Math.min(pagination.page - 3, pagination.pages - 6));
-					return start + i;
-				}) as p}
-					<button type="button" class="w-7 h-7 rounded-md text-xs font-medium transition-colors {p === pagination.page ? 'bg-viking-600 text-white' : 'text-ink-muted hover:bg-canvas-subtle'}" onclick={() => changePage(p)}>
-						{p}
-					</button>
-				{/each}
-				<button type="button" disabled={!pagination.has_next} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page + 1)}>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-				</button>
-			</div>
-		</div>
-	{/if}
-{/snippet}
 
 {#snippet pacienteCell(_v: unknown, row: CitaRow)}
 	<div class="flex items-center gap-2.5">
@@ -561,7 +519,14 @@
 			emptyMessage="No hay citas que coincidan con los filtros aplicados."
 		/>
 
-		{@render paginationBar()}
+		<PaginationBar
+			page={pagination.page}
+			total={pagination.total}
+			pageSize={pagination.page_size}
+			pageSizeOptions={[10, 25, 50, 100]}
+			onPageChange={(p) => changePage(p)}
+			onPageSizeChange={(ps) => changePage(1, ps)}
+		/>
 	</Card>
 </div>
 

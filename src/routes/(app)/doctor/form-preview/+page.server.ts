@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { requireDoctorId } from '$lib/server/rbac.js';
-import * as schemasService from '$lib/server/schemas.service.js';
+import * as schemasService from '$lib/server/medical-records/schemas.service.js';
 import { mockSchemas } from '$lib/server/mock/schemas.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {

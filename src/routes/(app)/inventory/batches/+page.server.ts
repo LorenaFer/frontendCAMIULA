@@ -3,7 +3,7 @@ import * as batchesService from '$lib/server/inventory/batches.service.js';
 import * as medicationsService from '$lib/server/inventory/medications.service.js';
 import { assertPermission } from '$lib/server/rbac.js';
 import { P } from '$shared/rbac-config.js';
-import type { BatchFilters, Batch, MedicationOption } from '$shared/types/inventory.js';
+import type { BatchFilters, Batch, MedicationOption } from '$domain/inventory/types.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	assertPermission(locals.user, P.INVENTORY_READ);

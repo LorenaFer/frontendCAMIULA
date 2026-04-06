@@ -6,6 +6,7 @@
 	import Badge from '$shared/components/badge/Badge.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import Select from '$shared/components/select/Select.svelte';
+	import { TabGroup } from '$shared/components/tabs';
 
 	let { data }: { data: PageData } = $props();
 
@@ -161,15 +162,17 @@
 		goto(`?${qs}`, { replaceState: true });
 	}
 
-	function changeTab(tab: string) {
-		selectedTab = tab;
+	// Sync tab selection to URL when user switches tabs
+	$effect(() => {
+		const tab = selectedTab;
+		if (tab === data.tab) return;
 		const qs = new URLSearchParams();
 		qs.set('tab', tab);
 		qs.set('year', selectedYear);
 		if (tab === 'epi15') qs.set('month', selectedMonth);
 		else qs.set('week', selectedWeek);
 		goto(`?${qs}`, { replaceState: true });
-	}
+	});
 
 	function formatDate(iso: string) {
 		try {
@@ -207,24 +210,15 @@
 	</div>
 
 	<!-- Tabs -->
-	<div class="flex gap-1 border-b border-border">
-		{#each [
+	<TabGroup
+		tabs={[
 			{ id: 'epi12', label: 'EPI-12', subtitle: 'Consolidado Semanal' },
 			{ id: 'epi13', label: 'EPI-13', subtitle: 'Listado Nominal' },
 			{ id: 'epi15', label: 'EPI-15', subtitle: 'Consolidado Mensual' }
-		] as tab}
-			<button
-				class="px-4 py-2.5 text-sm font-medium transition-colors relative {selectedTab === tab.id ? 'text-viking-600' : 'text-ink-muted hover:text-ink'}"
-				onclick={() => changeTab(tab.id)}
-			>
-				<span class="font-semibold">{tab.label}</span>
-				<span class="hidden sm:inline text-xs font-normal ml-1">— {tab.subtitle}</span>
-				{#if selectedTab === tab.id}
-					<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-viking-600"></div>
-				{/if}
-			</button>
-		{/each}
-	</div>
+		]}
+		bind:active={selectedTab}
+		variant="underline"
+	/>
 
 	<!-- Filtros -->
 	<div class="bg-surface-elevated rounded-xl border border-border/60 p-4">

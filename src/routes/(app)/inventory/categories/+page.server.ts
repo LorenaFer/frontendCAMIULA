@@ -3,7 +3,7 @@ import { fail } from '@sveltejs/kit';
 import * as categoriesService from '$lib/server/inventory/categories.service.js';
 import { assertPermission, assertActionPermission } from '$lib/server/rbac.js';
 import { P } from '$shared/rbac-config.js';
-import type { CreateCategoryInput } from '$shared/types/inventory.js';
+import type { CreateCategoryInput } from '$domain/inventory/types.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	assertPermission(locals.user, P.INVENTORY_WRITE);

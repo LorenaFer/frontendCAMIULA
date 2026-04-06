@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import * as pacientesService from '$lib/server/pacientes.service';
-import * as citasService from '$lib/server/citas.service';
+import * as pacientesService from '$lib/server/patients/patients.service.js';
+import * as citasService from '$lib/server/appointments/appointments.service.js';
 
 const VALID_PAGE_SIZES = [10, 25, 50, 100];
 
