@@ -15,7 +15,6 @@
 	import type { DoctorOption, Especialidad, TimeSlot, PacientePublic } from '$shared/types/appointments.js';
 	import Button from '$shared/components/button/Button.svelte';
 	import Input from '$shared/components/input/Input.svelte';
-	import DateInput from '$shared/components/input/DateInput.svelte';
 	import Select from '$shared/components/select/Select.svelte';
 	import Textarea from '$shared/components/input/Textarea.svelte';
 	import DoctorAvailabilityCalendar from './DoctorAvailabilityCalendar.svelte';
@@ -35,8 +34,8 @@
 
 	// ─── Estado del wizard ────────────────────────────────────
 
-	// Si hay paciente logueado, saltar step 0 (identificación) e ir directo a step 2 (doctor)
-	let currentStep = $state(loggedPatient ? 2 : 0);
+	// Si hay paciente logueado, saltar step 0 (identificación) e ir directo a step 1 (doctor)
+	let currentStep = $state(loggedPatient ? 1 : 0);
 	let loading = $state(false);
 	let formError = $state('');
 
@@ -48,49 +47,7 @@
 	});
 	let paciente = $state<PacientePublic | null>(loggedPatient ?? null);
 	let esNuevo = $state(loggedPatient?.es_nuevo ?? false);
-
-	// Paso 2 — Registro (campos planilla ULA, dividido en 5 sub-pasos)
-	let regSubStep = $state(0); // 0=identificación, 1=datos personales, 2=universidad, 3=direcciones+contacto, 4=alergias
-	// I. Identificación
-	let regNombre = $state('');
-	let regApellido = $state('');
-	let regCedula = $state('');
-	let regCorreo = $state('');
-	let regTelefono = $state('');
-	// II. Datos personales y demográficos
-	let regSexo = $state('');
-	let regFechaNacimiento = $state('');
-	let regLugarNacimiento = $state('');
-	let regPais = $state('Venezuela');
-	let regEstado = $state('');
-	let regCiudad = $state('');
-	// III. Info socio-económica
-	let regEstadoCivil = $state('');
-	let regReligion = $state('');
-	let regProcedencia = $state('');
-	let regTipoSangre = $state('');
-	let regProfesion = $state('');
-	let regOcupacionActual = $state('');
-	let regClasificacionEconomica = $state('');
-	// IV. Relación con la universidad
-	let regTipoBase = $state('');
-	let regFamiliarDe = $state('');
-	const esFamiliar = $derived(regTipoBase === 'familiar');
-	let regParentesco = $state('');
-	let regTitularCedula = $state('');
-	// V. Direcciones
-	let regDireccionHabitacion = $state('');
-	let regDireccionTrabajo = $state('');
-	// VI. Contacto de emergencia
-	let regEmergenciaNombre = $state('');
-	let regEmergenciaParentesco = $state('');
-	let regEmergenciaDireccion = $state('');
-	let regEmergenciaTelefono = $state('');
-	// VII. Alergias y alertas
-	let regTieneAlergias = $state(false);
-	let regAlergias = $state('');
-	let regAlertasMedicas = $state('');
-	let regContacto = $state('');
+	let pacienteNoEncontrado = $state(false);
 
 	// Paso 5 — Motivo y observaciones
 	let motivoConsulta = $state('');
@@ -159,7 +116,6 @@
 
 	const steps = [
 		{ title: 'Identificación' },
-		{ title: 'Datos personales' },
 		{ title: 'Especialidad y doctor' },
 		{ title: 'Fecha y hora' },
 		{ title: 'Confirmación' }
@@ -167,9 +123,8 @@
 
 	const stepMaxWidth = $derived(
 		currentStep === 0 ? 'max-w-[440px]' :
-		currentStep === 1 ? 'max-w-2xl' :
-		currentStep === 2 ? 'max-w-lg' :
-		currentStep === 3 ? 'max-w-2xl' :
+		currentStep === 1 ? 'max-w-lg' :
+		currentStep === 2 ? 'max-w-2xl' :
 		'max-w-lg'
 	);
 
@@ -197,67 +152,21 @@
 	async function buscarPaciente() {
 		if (!query.trim()) { formError = 'Ingrese su cédula o NHM'; return; }
 		formError = '';
+		pacienteNoEncontrado = false;
 		loading = true;
 		try {
 			const { data } = await api<{ found: boolean; paciente: PacientePublic | null }>('buscarPaciente', { query: query.trim(), queryType: queryType });
 			if (data.found) {
 				paciente = data.paciente;
-				esNuevo = false;
-				currentStep = 2;
+				esNuevo = data.paciente?.es_nuevo ?? false;
+				currentStep = 1; // Ir a selección de doctor (antes era step 2)
 			} else {
-				esNuevo = true;
-				if (queryType === 'cedula') regCedula = query.trim();
-				currentStep = 1;
+				pacienteNoEncontrado = true;
 			}
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : 'Error de conexión. Intente nuevamente.';
 			formError = msg;
 			toastError('No se encontró el paciente', msg);
-		} finally {
-			loading = false;
-		}
-	}
-
-	// ─── Paso 2: registrar paciente ───────────────────────────
-
-	async function registrarPaciente() {
-		if (!regNombre || !regApellido || !regCedula) {
-			formError = 'Nombre, apellido y cédula son requeridos';
-			return;
-		}
-		formError = '';
-		loading = true;
-		try {
-			const { data } = await api<{ paciente: PacientePublic }>('registrarPaciente', {
-				nombre: regNombre, apellido: regApellido, cedula: regCedula,
-				correo: regCorreo, telefono: regTelefono,
-				sexo: regSexo, fecha_nacimiento: regFechaNacimiento,
-				lugar_nacimiento: regLugarNacimiento,
-				pais: regPais, estado_geo: regEstado, ciudad: regCiudad,
-				estado_civil: regEstadoCivil, religion: regReligion,
-				procedencia: regProcedencia, tipo_sangre: regTipoSangre,
-				profesion: regProfesion, ocupacion_actual: regOcupacionActual,
-				clasificacion_economica: regClasificacionEconomica,
-				direccion_habitacion: regDireccionHabitacion,
-				direccion_trabajo: regDireccionTrabajo,
-				relacion_univ: esFamiliar ? regFamiliarDe : regTipoBase, parentesco: regParentesco,
-				titular_cedula: regTitularCedula,
-				alergias: regTieneAlergias ? regAlergias : '',
-				alertas_medicas: regAlertasMedicas,
-				numero_contacto: regContacto,
-				emergencia_nombre: regEmergenciaNombre,
-				emergencia_parentesco: regEmergenciaParentesco,
-				emergencia_direccion: regEmergenciaDireccion,
-				emergencia_telefono: regEmergenciaTelefono
-			});
-			paciente = data.paciente;
-			esNuevo = true;
-			currentStep = 2;
-			toastSuccess('Registro exitoso', `Bienvenido/a ${regNombre}. Ahora seleccione su doctor.`);
-		} catch (e) {
-			const msg = e instanceof Error ? e.message : 'Error de conexión. Intente nuevamente.';
-			formError = msg;
-			toastError('Error en el registro', msg);
 		} finally {
 			loading = false;
 		}
@@ -307,7 +216,7 @@
 
 	// Lanzar pre-fetch al llegar al paso de fecha/hora
 	$effect(() => {
-		if (currentStep === 3) prefetchSlots();
+		if (currentStep === 2) prefetchSlots();
 	});
 
 	// ─── Paso 5: confirmar cita ───────────────────────────────
@@ -411,7 +320,7 @@
 								label="Cédula o NHM"
 								placeholder="Ej: V-12345678 o 1001"
 								bind:value={query}
-								oninput={() => formError = ''}
+								oninput={() => { formError = ''; pacienteNoEncontrado = false; }}
 								inputSize="lg"
 							/>
 
@@ -424,244 +333,35 @@
 							<Button variant="primary" fullWidth onclick={buscarPaciente} isLoading={loading}>
 								Continuar
 							</Button>
-						</div>
 
-					<!-- ── Paso 2: Registro (3 sub-pasos) ── -->
-					{:else if currentStep === 1}
-						<div>
-							<div class="mb-4">
-								<h2 class="text-lg font-semibold text-ink">Registro del Paciente</h2>
-								<p class="text-xs text-ink-muted mt-0.5">
-									{['I. Identificación', 'II. Datos Personales y Socio-económicos', 'III. Relación Universitaria', 'IV. Direcciones y Contacto de Emergencia', 'V. Alergias y Alertas Médicas'][regSubStep]}
-								</p>
-								<div class="flex gap-1 mt-2">
-									{#each [0, 1, 2, 3, 4] as s}
-										<div class="h-1 flex-1 rounded-full {s <= regSubStep ? 'bg-viking-500' : 'bg-border/60'}"></div>
-									{/each}
-								</div>
-							</div>
-
-							<!-- Sub-paso 1: I. Identificación -->
-							{#if regSubStep === 0}
-								<div class="space-y-3">
-									<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider flex items-center gap-1.5">
-										<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z" /></svg>
-										Identificación
-									</p>
-									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0"><Input label="Apellidos *" bind:value={regApellido} /></div>
-										<div class="flex-1 min-w-0"><Input label="Nombres *" bind:value={regNombre} /></div>
-									</div>
-									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0"><Input label="C.I. / Documento de Identidad *" bind:value={regCedula} placeholder="V-12345678" /></div>
-										<div class="flex-1 min-w-0"><Input label="Teléfono *" bind:value={regTelefono} placeholder="(0000) 000-0000" /></div>
-									</div>
-									<Input label="Correo electrónico" bind:value={regCorreo} placeholder="email@ejemplo.com" type="email" />
-
-									<div class="flex gap-3 pt-3">
-										<Button variant="ghost" onclick={prev}>Volver</Button>
-										<Button variant="primary" fullWidth disabled={!regNombre || !regApellido || !regCedula || !regTelefono} onclick={() => { regSubStep = 1; }}>
-											Siguiente
-										</Button>
-									</div>
-								</div>
-
-							<!-- Sub-paso 2: II. Datos Personales + III. Socio-económica -->
-							{:else if regSubStep === 1}
-								<div class="space-y-3">
-									<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider flex items-center gap-1.5">
-										<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-										Datos Personales
-									</p>
-									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0">
-											<fieldset>
-												<legend class="block text-sm font-medium text-ink mb-1">Sexo *</legend>
-												<div class="flex gap-4">
-													{#each [['M','Masculino'],['F','Femenino']] as [val, lbl]}
-														<label class="flex items-center gap-2 text-sm text-ink cursor-pointer">
-															<input type="radio" bind:group={regSexo} value={val} class="accent-viking-600 w-4 h-4" />
-															{lbl}
-														</label>
-													{/each}
-												</div>
-											</fieldset>
+							{#if pacienteNoEncontrado}
+								<div class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl space-y-3">
+									<div class="flex items-start gap-2.5">
+										<svg class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+										</svg>
+										<div>
+											<p class="text-sm font-semibold text-amber-800 dark:text-amber-200">Paciente no registrado</p>
+											<p class="text-xs text-amber-700 dark:text-amber-300 mt-1">
+												No se encontró un paciente con la cédula o NHM ingresado. El paciente debe registrarse primero a través del portal.
+											</p>
 										</div>
-										<div class="flex-1 min-w-0"><DateInput label="Fecha de nacimiento *" bind:value={regFechaNacimiento} /></div>
 									</div>
-									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0"><Input label="País" bind:value={regPais} /></div>
-										<div class="flex-1 min-w-0"><Input label="Estado" bind:value={regEstado} placeholder="Mérida" /></div>
-										<div class="flex-1 min-w-0"><Input label="Ciudad" bind:value={regCiudad} placeholder="Mérida" /></div>
-									</div>
-
-									<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider pt-2 flex items-center gap-1.5">
-										<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-										Información Socio-económica
-									</p>
-									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0">
-											<Select label="Estado civil" value={regEstadoCivil} onchange={(v) => { regEstadoCivil = v; }} options={[
-												{ value: '', label: 'Seleccione' },
-												{ value: 'soltero', label: 'Soltero/a' },
-												{ value: 'casado', label: 'Casado/a' },
-												{ value: 'divorciado', label: 'Divorciado/a' },
-												{ value: 'viudo', label: 'Viudo/a' },
-												{ value: 'union_libre', label: 'Unión libre' }
-											]} />
-										</div>
-										<div class="flex-1 min-w-0">
-											<Select label="Grupo sanguíneo" value={regTipoSangre} onchange={(v) => { regTipoSangre = v; }} options={[
-												{ value: '', label: 'Seleccione' },
-												...'O+ O- A+ A- B+ B- AB+ AB-'.split(' ').map(v => ({ value: v, label: v }))
-											]} />
-										</div>
-										<div class="flex-1 min-w-0"><Input label="Religión" bind:value={regReligion} /></div>
-									</div>
-									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0"><Input label="Clasificación económica" bind:value={regClasificacionEconomica} /></div>
-										<div class="flex-1 min-w-0"><Input label="Profesión" bind:value={regProfesion} /></div>
-										<div class="flex-1 min-w-0"><Input label="Ocupación actual" bind:value={regOcupacionActual} /></div>
-									</div>
-
-									<div class="flex gap-3 pt-3">
-										<Button variant="ghost" onclick={() => { regSubStep = 0; }}>Volver</Button>
-										<Button variant="primary" fullWidth disabled={!regSexo || !regFechaNacimiento} onclick={() => { regSubStep = 2; }}>
-											Siguiente
-										</Button>
-									</div>
-								</div>
-
-							<!-- Sub-paso 3: Relación con la universidad -->
-							{:else if regSubStep === 2}
-								<div class="space-y-3">
-									<fieldset>
-										<legend class="text-sm font-medium text-ink mb-2">¿Cuál es su relación con la universidad? *</legend>
-										<div class="space-y-2">
-											{#each [['P','Profesor/a'],['E','Empleado/a'],['O','Obrero/a'],['B','Estudiante'],['familiar','Familiar de alguien de la universidad'],['X','Caso especial']] as [val, lbl]}
-												<label class="flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors
-													{regTipoBase === val ? 'border-viking-400 bg-viking-50 dark:bg-viking-900/20' : 'border-border/60 hover:bg-canvas-subtle'}">
-													<input type="radio" bind:group={regTipoBase} value={val} class="accent-viking-600 w-4 h-4" />
-													<span class="text-sm text-ink">{lbl}</span>
-												</label>
-											{/each}
-										</div>
-									</fieldset>
-
-									{#if esFamiliar}
-										<div class="pl-4 border-l-2 border-viking-200 dark:border-viking-800 space-y-3 mt-2">
-											<fieldset>
-												<legend class="block text-sm font-medium text-ink mb-1">Familiar de</legend>
-												<div class="flex flex-wrap gap-2">
-													{#each [['R','Profesor'],['S','Empleado'],['T','Obrero'],['C','Estudiante'],['F','Otro']] as [val, lbl]}
-														<label class="flex items-center gap-2 text-sm text-ink cursor-pointer px-3 py-1.5 rounded-lg border
-															{regFamiliarDe === val ? 'border-viking-400 bg-viking-50 dark:bg-viking-900/20' : 'border-border/60'}">
-															<input type="radio" bind:group={regFamiliarDe} value={val} class="accent-viking-600" />
-															{lbl}
-														</label>
-													{/each}
-												</div>
-											</fieldset>
-											<fieldset>
-												<legend class="block text-sm font-medium text-ink mb-1">Parentesco</legend>
-												<div class="flex flex-wrap gap-2">
-													{#each [['hijo','Hijo/a'],['padre','Padre'],['madre','Madre'],['conyuge','Cónyuge'],['otro','Otro']] as [val, lbl]}
-														<label class="flex items-center gap-2 text-sm text-ink cursor-pointer px-3 py-1.5 rounded-lg border
-															{regParentesco === val ? 'border-viking-400 bg-viking-50 dark:bg-viking-900/20' : 'border-border/60'}">
-															<input type="radio" bind:group={regParentesco} value={val} class="accent-viking-600" />
-															{lbl}
-														</label>
-													{/each}
-												</div>
-											</fieldset>
-											<Input label="Cédula del titular *" bind:value={regTitularCedula} placeholder="V-XXXXXXXX" />
-										</div>
-									{/if}
-
-									<div class="flex gap-3 pt-3">
-										<Button variant="ghost" onclick={() => { regSubStep = 1; }}>Volver</Button>
-										<Button variant="primary" fullWidth disabled={!regTipoBase} onclick={() => { regSubStep = 3; }}>
-											Siguiente
-										</Button>
-									</div>
-								</div>
-
-							<!-- Sub-paso 4: Direcciones + Contacto de emergencia -->
-							{:else if regSubStep === 3}
-								<div class="space-y-3">
-									<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider flex items-center gap-1.5">
-										<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-										Direcciones
-									</p>
-									<Input label="Dirección de habitación completa *" bind:value={regDireccionHabitacion} placeholder="Av., calle, urbanización, casa/apto" />
-									<Input label="Dirección de trabajo" bind:value={regDireccionTrabajo} placeholder="Dirección laboral" />
-
-									<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider pt-3 flex items-center gap-1.5">
-										<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
-										Contacto de Emergencia / Familiar
-									</p>
-									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0"><Input label="Nombre del familiar *" bind:value={regEmergenciaNombre} placeholder="Nombre completo" /></div>
-										<div class="flex-1 min-w-0"><Input label="Parentesco *" bind:value={regEmergenciaParentesco} placeholder="Ej: madre, padre, cónyuge" /></div>
-									</div>
-									<div class="flex flex-col sm:flex-row gap-2.5">
-										<div class="flex-1 min-w-0"><Input label="Teléfono del familiar *" bind:value={regEmergenciaTelefono} placeholder="(0000) 000-0000" /></div>
-										<div class="flex-1 min-w-0"><Input label="Dirección del familiar *" bind:value={regEmergenciaDireccion} placeholder="Dirección del contacto" /></div>
-									</div>
-
-									<div class="flex gap-3 pt-3">
-										<Button variant="ghost" onclick={() => { regSubStep = 2; }}>Volver</Button>
-										<Button variant="primary" fullWidth disabled={!regDireccionHabitacion || !regEmergenciaNombre || !regEmergenciaTelefono} onclick={() => { regSubStep = 4; }}>
-											Siguiente
-										</Button>
-									</div>
-								</div>
-
-							<!-- Sub-paso 5: Alergias y alertas médicas -->
-							{:else}
-								<div class="space-y-3">
-									<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider flex items-center gap-1.5">
-										<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
-										Alergias y Alertas Médicas
-									</p>
-
-									<div class="flex items-center gap-3">
-										<label class="text-sm font-medium text-ink">¿Presenta alergias?</label>
-										<button
-											type="button"
-											role="switch"
-											aria-checked={regTieneAlergias}
-											class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {regTieneAlergias ? 'bg-viking-600' : 'bg-border'}"
-											onclick={() => { regTieneAlergias = !regTieneAlergias; }}
-										>
-											<span class="inline-block h-4 w-4 rounded-full bg-white transition-transform {regTieneAlergias ? 'translate-x-6' : 'translate-x-1'}"></span>
-										</button>
-										<span class="text-sm text-ink-muted">{regTieneAlergias ? 'Sí' : 'No'}</span>
-									</div>
-
-									{#if regTieneAlergias}
-										<Textarea label="Descripción de alergias (medicamentos, alimentos, otros)" value={regAlergias} oninput={(e) => { regAlergias = (e.target as HTMLTextAreaElement).value; }} placeholder="Detalle las alergias conocidas" rows={3} />
-									{/if}
-
-									<Textarea label="Otras alertas médicas (condiciones crónicas, observaciones críticas)" value={regAlertasMedicas} oninput={(e) => { regAlertasMedicas = (e.target as HTMLTextAreaElement).value; }} placeholder="Ej: Diabetes, Hipertensión, Marcapasos, etc." rows={3} />
-
-									<div class="px-3 py-2 bg-viking-50 dark:bg-viking-900/20 border border-viking-200 dark:border-viking-800 rounded-lg text-xs text-viking-700 dark:text-viking-300 flex items-start gap-2">
-										<svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-										<span>Sus datos están protegidos bajo protocolo HIPAA/ULA. Solo personal autorizado tendrá acceso.</span>
-									</div>
-
-									<div class="flex gap-3 pt-3">
-										<Button variant="ghost" onclick={() => { regSubStep = 3; }}>Volver</Button>
-										<Button variant="primary" fullWidth onclick={registrarPaciente} isLoading={loading}>
-											Guardar registro
-										</Button>
-									</div>
+									<a
+										href="/portal/registro"
+										class="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg bg-viking-600 text-white text-sm font-medium hover:bg-viking-700 transition-colors"
+									>
+										<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+										</svg>
+										Ir al portal de registro
+									</a>
 								</div>
 							{/if}
 						</div>
 
-					<!-- ── Paso 3: Doctor ── -->
-					{:else if currentStep === 2}
+					<!-- ── Paso 2: Doctor ── -->
+					{:else if currentStep === 1}
 						<div class="space-y-4">
 							<h2 class="text-lg font-semibold text-ink">Seleccione el servicio médico</h2>
 
@@ -710,15 +410,15 @@
 							{/if}
 
 							<div class="flex gap-3">
-								{#if !esNuevo}<Button variant="ghost" onclick={prev}>Volver</Button>{/if}
+								<Button variant="ghost" onclick={prev}>Volver</Button>
 								<Button variant="primary" fullWidth disabled={!selectedDoctorId} onclick={next}>
 									Continuar
 								</Button>
 							</div>
 						</div>
 
-					<!-- ── Paso 4: Fecha y hora ── -->
-					{:else if currentStep === 3}
+					<!-- ── Paso 3: Fecha y hora ── -->
+					{:else if currentStep === 2}
 						<div class="space-y-3 sm:space-y-4">
 							<h2 class="text-base sm:text-lg font-semibold text-ink">Seleccione fecha y hora</h2>
 
@@ -768,8 +468,8 @@
 							</div>
 						</div>
 
-					<!-- ── Paso 5: Confirmación ── -->
-					{:else if currentStep === 4}
+					<!-- ── Paso 4: Confirmación ── -->
+					{:else if currentStep === 3}
 						<div class="space-y-4">
 							<h2 class="text-lg font-semibold text-ink">Confirme su cita</h2>
 

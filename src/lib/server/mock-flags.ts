@@ -27,6 +27,7 @@ import { env } from '$env/dynamic/private';
 
 // Default: mock activo si la variable no está definida como 'false'
 export const mockFlags = {
+	auth: env.MOCK_AUTH !== 'false',
 	pacientes: env.MOCK_PACIENTES !== 'false',
 	doctores: env.MOCK_DOCTORES !== 'false',
 	citas: env.MOCK_CITAS !== 'false',

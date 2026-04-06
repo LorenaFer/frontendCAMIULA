@@ -11,18 +11,29 @@ function normalizeSpecialtyName(name: string): string {
 	return name
 		.toLowerCase()
 		.normalize('NFD')
-		.replace(/[\u0300-\u036f]/g, '') // quitar acentos
+		.replace(/[\u0300-\u036f]/g, '')
 		.replace(/\s+/g, '-')
 		.replace(/[^a-z0-9-]/g, '');
 }
 
+/** Mapea la respuesta raw del backend a MedicalFormSchema */
+function mapRawSchema(raw: Record<string, unknown>): MedicalFormSchema {
+	const schemaJson = typeof raw.schema_json === 'string' ? JSON.parse(raw.schema_json) : raw.schema_json;
+	return {
+		id: String(raw.id ?? raw.specialty_id),
+		specialtyId: String(raw.specialty_id),
+		specialtyName: String(raw.specialty_name),
+		version: String(raw.version ?? '1.0'),
+		sections: (schemaJson as Record<string, unknown>)?.sections as MedicalFormSchema['sections'] ?? []
+	};
+}
+
 /**
  * Obtiene el schema de formulario para una especialidad.
- * Acepta specialtyId (UUID) o nombre de especialidad.
- * Usa cache en memoria para evitar llamadas repetidas al backend.
+ * Acepta specialtyId (key normalizado o UUID).
+ * Backend es la fuente principal, mock como fallback.
  */
 export async function getFormSchema(specialtyIdOrName: string): Promise<MedicalFormSchema> {
-	// Intentar como key normalizado (para nombres como "Medicina General")
 	const normalizedKey = normalizeSpecialtyName(specialtyIdOrName);
 
 	const cached = schemaCache.get(normalizedKey) ?? schemaCache.get(specialtyIdOrName);
@@ -34,10 +45,13 @@ export async function getFormSchema(specialtyIdOrName: string): Promise<MedicalF
 		schema = mockSchemas[normalizedKey] ?? mockSchemas[specialtyIdOrName] ?? fallbackSchema;
 	} else {
 		try {
-			schema = await apiFetch<MedicalFormSchema>(`/schemas/${specialtyIdOrName}`);
+			const raw = await apiFetch<Record<string, unknown>>(`/schemas/${specialtyIdOrName}`);
+			schema = mapRawSchema(raw);
+			if (schema.sections.length === 0) {
+				schema = mockSchemas[normalizedKey] ?? mockSchemas[specialtyIdOrName] ?? fallbackSchema;
+			}
 		} catch {
-			// Fallback a Medicina General si el backend no tiene el schema
-			schema = fallbackSchema;
+			schema = mockSchemas[normalizedKey] ?? mockSchemas[specialtyIdOrName] ?? fallbackSchema;
 		}
 	}
 
@@ -61,7 +75,14 @@ export async function getAllSchemas(): Promise<MedicalFormSchema[]> {
 	if (mockFlags.schemas) {
 		return Object.values(mockSchemas);
 	}
-	return apiFetch<MedicalFormSchema[]>('/schemas');
+
+	try {
+		const raw = await apiFetch<Record<string, unknown>[]>('/schemas');
+		const schemas = raw.map(mapRawSchema).filter(s => s.sections.length > 0);
+		return schemas;
+	} catch {
+		return Object.values(mockSchemas);
+	}
 }
 
 /** Guarda o actualiza un schema (upsert por specialtyId) */
@@ -74,10 +95,15 @@ export async function saveSchema(schema: MedicalFormSchema): Promise<MedicalForm
 		return schema;
 	}
 
-	const saved = await apiFetch<MedicalFormSchema>('/schemas', {
+	const saved = await apiFetch<Record<string, unknown>>('/schemas', {
 		method: 'PUT',
-		body: JSON.stringify(schema)
-	});
+		body: JSON.stringify({
+			specialty_id: schema.specialtyId,
+			specialty_name: schema.specialtyName,
+			version: schema.version,
+			schema_json: { sections: schema.sections }
+		})
+	}).then(mapRawSchema);
 	schemaCache.delete(normalizedKey);
 	return saved;
 }

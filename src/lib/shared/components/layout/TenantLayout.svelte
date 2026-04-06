@@ -17,6 +17,7 @@
 		notificationCount,
 		searchCategories = [],
 		recentSearches = [],
+		searchLoading = false,
 		onSearch,
 		onSearchSelect,
 		onSettingsClick,
@@ -32,6 +33,7 @@
 		notificationCount?: number;
 		searchCategories?: SearchCategory[];
 		recentSearches?: SearchResult[];
+		searchLoading?: boolean;
 		onSearch?: (query: string) => void;
 		onSearchSelect?: (result: SearchResult) => void;
 		onSettingsClick?: () => void;
@@ -94,5 +96,6 @@
 		onSelect={onSearchSelect}
 		categories={searchCategories}
 		{recentSearches}
+		isLoading={searchLoading}
 	/>
 </div>

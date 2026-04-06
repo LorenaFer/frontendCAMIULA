@@ -54,6 +54,9 @@
 		{ label: 'Eliminar', icon: 'delete', variant: 'danger', onclick: (row) => openDelete(row as unknown as Medication) }
 	];
 
+	// Auto-generar código para nuevo medicamento
+	const nextCode = $derived(`MED-${String(data.medications.total + 1).padStart(3, '0')}`);
+
 	const statsTotal  = $derived(data.medications.total);
 	const statsActive = $derived(
 		(data.medications.data as Medication[]).filter((m) => m.medication_status === 'active').length
@@ -62,24 +65,92 @@
 		(data.medications.data as Medication[]).filter((m) => m.current_stock < 10).length
 	);
 
-	function applyFilters(filters: { search?: string; status?: string }) {
+	function applyFilters(filters: { search?: string; status?: string; category_id?: string }) {
 		const qs = new URLSearchParams();
 		if (filters.search) qs.set('search', filters.search);
 		if (filters.status) qs.set('status', filters.status);
+		if ((filters as Record<string, string>).category_id) qs.set('category_id', (filters as Record<string, string>).category_id);
 		qs.set('page', '1');
 		goto(`?${qs}`, { replaceState: true });
 	}
 
-	function changePage(p: number) {
-		const qs = new URLSearchParams($page.url.searchParams);
-		qs.set('page', String(p));
+	let categoryFilter = $state(data.filters.category_id ?? '');
+
+	function applyAllFilters(filters: { search?: string; status?: string }) {
+		const qs = new URLSearchParams();
+		if (filters.search) qs.set('search', filters.search);
+		if (filters.status) qs.set('status', filters.status);
+		if (categoryFilter) qs.set('category_id', categoryFilter);
+		qs.set('page', '1');
 		goto(`?${qs}`, { replaceState: true });
 	}
+
+	function changePage(p: number, ps?: number) {
+		const qs = new URLSearchParams($page.url.searchParams);
+		qs.set('page', String(p));
+		if (ps) qs.set('page_size', String(ps));
+		goto(`?${qs}`, { replaceState: true });
+	}
+
+	const pagination = $derived(data.medications);
+	const pageSizeOptions = [10, 25, 50, 100];
 </script>
+
+{#snippet paginationBar()}
+	{#if pagination.total > 0}
+		<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2.5 border-t border-border/30 bg-canvas-subtle/30">
+			<div class="flex items-center gap-3">
+				<p class="text-xs text-ink-muted">
+					{((pagination.page - 1) * pagination.pageSize) + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} de {pagination.total}
+				</p>
+				<div class="flex items-center gap-1.5">
+					<span class="text-xs text-ink-subtle">Mostrar</span>
+					<select
+						class="text-xs border border-border/60 rounded-md px-1.5 py-1 bg-surface text-ink focus:outline-none focus:ring-1 focus:ring-viking-500/40"
+						value={pagination.pageSize}
+						onchange={(e) => changePage(1, Number((e.target as HTMLSelectElement).value))}
+					>
+						{#each pageSizeOptions as size}
+							<option value={size}>{size}</option>
+						{/each}
+					</select>
+				</div>
+			</div>
+			{#if pagination.total > pagination.pageSize}
+				{@const pages = Math.ceil(pagination.total / pagination.pageSize)}
+				<div class="flex items-center gap-1">
+					<button type="button" disabled={pagination.page <= 1} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page - 1)}>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+					</button>
+					{#each Array.from({ length: Math.min(pages, 7) }, (_, i) => {
+						const start = Math.max(1, Math.min(pagination.page - 3, pages - 6));
+						return start + i;
+					}) as p}
+						<button type="button" class="w-7 h-7 rounded-md text-xs font-medium transition-colors {p === pagination.page ? 'bg-viking-600 text-white' : 'text-ink-muted hover:bg-canvas-subtle'}" onclick={() => changePage(p)}>
+							{p}
+						</button>
+					{/each}
+					<button type="button" disabled={!pagination.hasNext} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page + 1)}>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+					</button>
+				</div>
+			{/if}
+		</div>
+	{/if}
+{/snippet}
 
 <svelte:head>
 	<title>Catálogo de Medicamentos — Inventario</title>
 </svelte:head>
+
+{#snippet categoryCell(_v: unknown, row: MedicationRow, _index: number)}
+	{@const name = (row.category_name as string | null)}
+	{#if name}
+		<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-viking-50 text-viking-700 dark:bg-viking-900/20 dark:text-viking-400">{name}</span>
+	{:else}
+		<span class="text-xs text-ink-subtle">—</span>
+	{/if}
+{/snippet}
 
 {#snippet statusCell(_v: unknown, row: MedicationRow, _index: number)}
 	<StatusBadge status={row.medication_status as string} />
@@ -148,8 +219,8 @@
 			>
 				<div>
 					<label class="block text-sm font-medium text-ink-muted mb-1" for="code">Código *</label>
-					<input id="code" name="code" type="text" required placeholder="MED-XXX"
-						class="w-full h-11 px-3 text-sm rounded-lg border border-border bg-surface-elevated text-ink
+					<input id="code" name="code" type="text" required readonly value={nextCode}
+						class="w-full h-11 px-3 text-sm rounded-lg border border-border bg-canvas-subtle text-ink-muted cursor-not-allowed
 						       hover:border-border-strong focus:outline-none focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60 uppercase"
 					/>
 				</div>
@@ -238,6 +309,18 @@
 						<option value="Otro">Otro</option>
 					</select>
 				</div>
+				<div>
+					<label class="block text-sm font-medium text-ink-muted mb-1" for="fk_category_id">Categoría</label>
+					<select id="fk_category_id" name="fk_category_id"
+						class="w-full h-11 px-3 text-sm rounded-lg border border-border bg-surface-elevated text-ink
+						       hover:border-border-strong focus:outline-none focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60"
+					>
+						<option value="">Sin categoría</option>
+						{#each data.categoryOptions as cat}
+							<option value={cat.id}>{cat.name}</option>
+						{/each}
+					</select>
+				</div>
 				<input type="hidden" name="controlled_substance" value="false" />
 				<input type="hidden" name="requires_refrigeration" value="false" />
 
@@ -251,7 +334,29 @@
 
 	<!-- Filtros -->
 	<div class="bg-surface-elevated rounded-xl border border-border p-3 sm:p-4">
-		<InventoryFilters value={data.filters} onchange={applyFilters} />
+		<div class="flex flex-col sm:flex-row gap-3">
+			<div class="flex-1">
+				<InventoryFilters value={data.filters} onchange={applyAllFilters} />
+			</div>
+			<div class="sm:w-48">
+				<label for="cat-filter" class="block text-xs font-medium text-ink-muted mb-1">Categoría</label>
+				<select id="cat-filter" bind:value={categoryFilter}
+					onchange={() => {
+						const qs = new URLSearchParams($page.url.searchParams);
+						if (categoryFilter) qs.set('category_id', categoryFilter);
+						else qs.delete('category_id');
+						qs.set('page', '1');
+						goto(`?${qs}`, { replaceState: true });
+					}}
+					class="w-full h-9 px-2.5 text-sm rounded-lg border border-border bg-surface text-ink
+					       focus:outline-none focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60">
+					<option value="">Todas</option>
+					{#each data.categoryOptions as cat}
+						<option value={cat.id}>{cat.name}</option>
+					{/each}
+				</select>
+			</div>
+		</div>
 	</div>
 
 	<!-- Tabla -->
@@ -260,8 +365,8 @@
 			columns={[
 				{ key: 'code',               header: 'Código',       width: '100px' },
 				{ key: 'generic_name',       header: 'Nombre genérico' },
-				{ key: 'pharmaceutical_form', header: 'Forma farmacéutica',  width: '120px' },
-				{ key: 'therapeutic_class',  header: 'Clase',        width: '140px' },
+				{ key: 'pharmaceutical_form', header: 'Forma',        width: '110px' },
+				{ key: 'category_name',      header: 'Categoría',    width: '140px', render: categoryCell },
 				{ key: 'medication_status',  header: 'Estado',       width: '110px', align: 'center', render: statusCell },
 				{ key: 'current_stock',      header: 'Stock',        width: '100px', align: 'right',  render: stockCell }
 			] as DataTableColumn<MedicationRow>[]}
@@ -271,22 +376,7 @@
 			emptyMessage="No hay medicamentos que coincidan con los filtros."
 		/>
 
-		{#if data.medications.total > data.medications.pageSize}
-			<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-t border-border">
-				<span class="text-sm text-ink-muted">
-					{(data.medications.page - 1) * data.medications.pageSize + 1}–{Math.min(
-						data.medications.page * data.medications.pageSize,
-						data.medications.total
-					)} de {data.medications.total}
-				</span>
-				<div class="flex gap-2">
-					<Button variant="ghost" size="md" disabled={data.medications.page <= 1}
-						onclick={() => changePage(data.medications.page - 1)}>Anterior</Button>
-					<Button variant="ghost" size="md" disabled={!data.medications.hasNext}
-						onclick={() => changePage(data.medications.page + 1)}>Siguiente</Button>
-				</div>
-			</div>
-		{/if}
+		{@render paginationBar()}
 	</Card>
 </div>
 
@@ -413,6 +503,21 @@
 							{/each}
 						</select>
 					</div>
+
+					<div>
+						<label class="block text-sm font-medium text-ink-muted mb-1" for="edit-category">Categoría</label>
+						<select
+							id="edit-category"
+							name="fk_category_id"
+							class="w-full h-11 px-3 text-sm rounded-lg border border-border bg-surface-elevated text-ink
+							       hover:border-border-strong focus:outline-none focus:border-viking-400 focus:ring-2 focus:ring-viking-100/60"
+						>
+							<option value="">Sin categoría</option>
+							{#each data.categoryOptions as cat}
+								<option value={cat.id} selected={editingMed.fk_category_id === cat.id}>{cat.name}</option>
+							{/each}
+						</select>
+					</div>
 				</div>
 			</DialogBody>
 			<DialogFooter>
@@ -455,6 +560,10 @@
 				<div>
 					<p class="text-ink-muted">Clase terapéutica</p>
 					<p class="font-medium text-ink">{viewingMed.therapeutic_class ?? '—'}</p>
+				</div>
+				<div>
+					<p class="text-ink-muted">Categoría</p>
+					<p class="font-medium text-ink">{viewingMed.category_name ?? '—'}</p>
 				</div>
 				<div>
 					<p class="text-ink-muted">Stock actual</p>

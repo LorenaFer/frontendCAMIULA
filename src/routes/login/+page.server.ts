@@ -1,8 +1,11 @@
 import type { Actions } from './$types';
 import { redirect, fail } from '@sveltejs/kit';
 import type { AuthUser } from '$shared/types/auth.js';
+import { mockFlags } from '$lib/server/mock-flags.js';
+import { apiFetch, ApiError } from '$lib/server/api.js';
+import { setToken, setUserSession } from '$lib/server/auth.js';
 
-// Mock staff credentials — en producción esto viene del backend con bcrypt
+// Mock staff credentials — solo cuando MOCK_AUTH=true
 const STAFF_CREDENTIALS: Array<{
 	username: string;
 	password: string;
@@ -45,24 +48,90 @@ export const actions: Actions = {
 			return fail(400, { error: 'Usuario y contraseña son requeridos.', username });
 		}
 
-		const match = STAFF_CREDENTIALS.find(
-			(c) => c.username.toLowerCase() === username && c.password === password
-		);
+		if (mockFlags.auth) {
+			// ── Mock login ──
+			const match = STAFF_CREDENTIALS.find(
+				(c) => c.username.toLowerCase() === username && c.password === password
+			);
+			if (!match) {
+				return fail(401, { error: 'Usuario o contraseña incorrectos.', username });
+			}
+			setUserSession(cookies, match.user);
 
-		if (!match) {
-			return fail(401, { error: 'Usuario o contraseña incorrectos.', username });
+			// Intentar obtener JWT real del backend para que las API calls funcionen
+			// (best effort — si falla, el frontend sigue con mock data)
+			try {
+				const tokenRes = await apiFetch<{ access_token: string; expires_in: number }>('/auth/login', {
+					method: 'POST',
+					body: JSON.stringify({ email: 'admin@camiula.edu.ve', password: 'Admin2026!' })
+				});
+				setToken(cookies, tokenRes.access_token, tokenRes.expires_in);
+			} catch { /* silenciar — el JWT no es crítico para mock auth */ }
+
+			const home = match.user.role === 'doctor' ? '/doctor/citas' : '/';
+			redirect(303, home);
 		}
 
-		cookies.set('mock_auth', JSON.stringify(match.user), {
-			path: '/',
-			httpOnly: false,
-			secure: false,
-			sameSite: 'lax',
-			maxAge: 60 * 60 * 24 * 7
-		});
+		// ── Real backend login ──
+		try {
+			const tokenRes = await apiFetch<{ access_token: string; token_type: string; expires_in: number }>('/auth/login', {
+				method: 'POST',
+				body: JSON.stringify({ email: username, password })
+			});
 
-		// Redirigir según rol
-		const home = match.user.role === 'doctor' ? '/doctor/citas' : '/';
-		redirect(303, home);
+			// Guardar JWT token en cookie httpOnly
+			setToken(cookies, tokenRes.access_token, tokenRes.expires_in);
+
+			// Obtener perfil del usuario para construir AuthUser
+			const profile = await apiFetch<{ id: string; email: string; full_name: string; roles: string[] }>('/users/me', {
+				headers: { 'Authorization': `Bearer ${tokenRes.access_token}` }
+			});
+
+			// Mapear rol del backend al frontend
+			const roleMap: Record<string, string> = {
+				administrador: 'admin', admin: 'admin',
+				doctor: 'doctor', medico: 'doctor',
+				analista: 'analista',
+				farmaceutico: 'farmaceutico', farmacéutico: 'farmaceutico',
+				paciente: 'paciente'
+			};
+			// Tomar el rol más privilegiado (no 'paciente' si hay otro)
+			const rolePriority = ['administrador', 'admin', 'doctor', 'medico', 'farmaceutico', 'farmacéutico', 'analista', 'paciente'];
+			const backendRole = rolePriority.find(r => profile.roles.map(x => x.toLowerCase()).includes(r)) ?? profile.roles[0] ?? 'analista';
+			const role = roleMap[backendRole.toLowerCase()] ?? 'analista';
+			const initials = profile.full_name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+
+			const user: AuthUser = {
+				id: profile.id,
+				name: profile.full_name,
+				role: role as AuthUser['role'],
+				initials
+			};
+
+			// Si es doctor, buscar su doctor_id vinculado
+			if (role === 'doctor') {
+				try {
+					const doctors = await apiFetch<Array<{ id: string; fk_user_id: string }>>('/doctors?active=true', {
+						headers: { 'Authorization': `Bearer ${tokenRes.access_token}` }
+					});
+					const doctorsList = Array.isArray(doctors) ? doctors : (doctors as Record<string, unknown>).items as Array<{ id: string; fk_user_id: string }> ?? [];
+					const match = doctorsList.find(d => d.fk_user_id === profile.id);
+					if (match) user.doctor_id = match.id;
+				} catch { /* si falla, el doctor_id queda undefined */ }
+			}
+
+			setUserSession(cookies, user);
+
+			const home = user.role === 'doctor' ? '/doctor/citas' : '/';
+			redirect(303, home);
+		} catch (e) {
+			if (e instanceof ApiError) {
+				if (e.status === 401) {
+					return fail(401, { error: 'Usuario o contraseña incorrectos.', username });
+				}
+				return fail(e.status, { error: e.detail, username });
+			}
+			throw e; // re-throw redirects
+		}
 	}
 };

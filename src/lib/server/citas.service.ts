@@ -2,6 +2,9 @@ import { mockFlags } from './mock-flags.js';
 import { apiFetch } from './api.js';
 import { mockCitas, mockCitasConPaciente } from './mock/data.js';
 import type { Cita, CitaConPaciente, CitaEstado, AppointmentFilters, PaginatedResponse } from '$shared/types/appointments.js';
+import { mapAppointment, mapAppointmentToBackend, mapStatusToBackend, mapPagination } from './mappers.js';
+
+type R = Record<string, unknown>;
 
 export interface CreateCitaInput {
 	paciente_id: string;
@@ -38,7 +41,9 @@ export async function createCita(input: CreateCitaInput): Promise<Cita> {
 		mockCitas.push(nueva);
 		return nueva;
 	}
-	return apiFetch<Cita>('/appointments', { method: 'POST', body: JSON.stringify(input) });
+	const backendData = mapAppointmentToBackend(input);
+	const raw = await apiFetch<R>('/appointments', { method: 'POST', body: JSON.stringify(backendData) });
+	return mapAppointment(raw) as Cita;
 }
 
 export async function getCitasByFilters(
@@ -86,7 +91,26 @@ export async function getCitasByFilters(
 	qs.set('page', String(filters.page ?? 1));
 	qs.set('page_size', String(filters.page_size ?? 25));
 
-	return apiFetch<PaginatedResponse<CitaConPaciente>>(`/appointments?${qs}`);
+	const raw = await apiFetch<R>(`/appointments?${qs}`);
+	const page = mapPagination(raw);
+	return {
+		items: (page.items as R[]).map(mapAppointment),
+		pagination: page.pagination
+	};
+}
+
+export async function getCitasByPatientId(patientId: string): Promise<{ items: CitaConPaciente[]; pagination: { total: number; page: number; page_size: number; pages: number; has_next: boolean } }> {
+	if (mockFlags.citas) {
+		const citas = mockCitasConPaciente.filter((c) => c.paciente_id === patientId);
+		return { items: citas, pagination: { total: citas.length, page: 1, page_size: 100, pages: 1, has_next: false } };
+	}
+	const raw = await apiFetch<R>(`/appointments?fk_patient_id=${patientId}&page_size=100`);
+	if (Array.isArray(raw)) {
+		const items = (raw as R[]).map(mapAppointment);
+		return { items, pagination: { total: items.length, page: 1, page_size: 100, pages: 1, has_next: false } };
+	}
+	const page = mapPagination(raw);
+	return { items: (page.items as R[]).map(mapAppointment), pagination: page.pagination };
 }
 
 export async function getCitasHoy(doctorId?: string): Promise<CitaConPaciente[]> {
@@ -98,7 +122,9 @@ export async function getCitasHoy(doctorId?: string): Promise<CitaConPaciente[]>
 	}
 	const qs = new URLSearchParams({ fecha: today });
 	if (doctorId) qs.set('doctor_id', doctorId);
-	return apiFetch<CitaConPaciente[]>(`/appointments?${qs}`);
+	const raw = await apiFetch<R | R[]>(`/appointments?${qs}`);
+	const items = Array.isArray(raw) ? raw : (raw.items as R[] ?? []);
+	return items.map(mapAppointment);
 }
 
 export async function getCitasByDoctorMes(doctorId: string, year: number, month: number): Promise<Cita[]> {
@@ -108,7 +134,10 @@ export async function getCitasByDoctorMes(doctorId: string, year: number, month:
 			(c) => c.doctor_id === doctorId && c.fecha.startsWith(prefix) && c.estado !== 'cancelada'
 		);
 	}
-	return apiFetch<Cita[]>(`/appointments?doctor_id=${doctorId}&mes=${prefix}&excluir_canceladas=true`);
+	const raw = await apiFetch<R | R[]>(`/appointments?doctor_id=${doctorId}&mes=${prefix}&excluir_canceladas=true`);
+	// Backend puede devolver array directo o paginado
+	const items = Array.isArray(raw) ? raw : (raw.items as R[] ?? []);
+	return items.map((r) => mapAppointment(r) as Cita);
 }
 
 export async function getCitasByDoctorFecha(doctorId: string, fecha: string): Promise<Cita[]> {
@@ -117,14 +146,17 @@ export async function getCitasByDoctorFecha(doctorId: string, fecha: string): Pr
 			(c) => c.doctor_id === doctorId && c.fecha === fecha && c.estado !== 'cancelada'
 		);
 	}
-	return apiFetch<Cita[]>(`/appointments?doctor_id=${doctorId}&fecha=${fecha}&excluir_canceladas=true`);
+	const raw = await apiFetch<R | R[]>(`/appointments?doctor_id=${doctorId}&fecha=${fecha}&excluir_canceladas=true`);
+	const items = Array.isArray(raw) ? raw : (raw.items as R[] ?? []);
+	return items.map((r) => mapAppointment(r) as Cita);
 }
 
 export async function getCitaById(id: string): Promise<CitaConPaciente | null> {
 	if (mockFlags.citas) {
 		return mockCitasConPaciente.find((c) => c.id === id) ?? null;
 	}
-	return apiFetch<CitaConPaciente>(`/appointments/${id}`);
+	const raw = await apiFetch<R>(`/appointments/${id}`);
+	return mapAppointment(raw);
 }
 
 export async function updateEstadoCita(id: string, estado: CitaEstado): Promise<void> {
@@ -133,7 +165,7 @@ export async function updateEstadoCita(id: string, estado: CitaEstado): Promise<
 		if (c) c.estado = estado;
 		return;
 	}
-	await apiFetch(`/appointments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ estado }) });
+	await apiFetch(`/appointments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ new_status: mapStatusToBackend(estado) }) });
 }
 
 // ─── Estadísticas para dashboard del analista ────────────────
@@ -248,13 +280,32 @@ export async function getStats(filters: AppointmentFilters): Promise<CitasStats>
 		};
 	}
 
-	// API real — el backend debería tener un endpoint /appointments/stats
+	// API real — mapear snake_case → camelCase
 	const qs = new URLSearchParams();
 	if (filters.fecha) qs.set('fecha', filters.fecha);
 	if (filters.doctor_id) qs.set('doctor_id', filters.doctor_id);
 	if (filters.especialidad_id) qs.set('especialidad_id', filters.especialidad_id);
 	if (filters.estado) qs.set('estado', filters.estado);
-	return apiFetch<CitasStats>(`/appointments/stats?${qs}`);
+	const raw = await apiFetch<R>(`/appointments/stats?${qs}`);
+	return {
+		total: Number(raw.total ?? 0),
+		byStatus: (raw.by_status as Record<string, number>) ?? {},
+		bySpecialty: (raw.by_specialty as { name: string; count: number }[]) ?? [],
+		byDoctor: ((raw.by_doctor as R[]) ?? []).map((d) => ({
+			name: String(d.name ?? ''),
+			specialty: String(d.specialty ?? ''),
+			count: Number(d.count ?? 0),
+			atendidas: Number(d.attended ?? d.atendidas ?? 0)
+		})),
+		firstTimeCount: Number(raw.first_time_count ?? 0),
+		returningCount: Number(raw.returning_count ?? 0),
+		byPatientType: (raw.by_patient_type as Record<string, number>) ?? {},
+		dailyTrend: (raw.daily_trend as number[]) ?? [],
+		peakHours: ((raw.peak_hours as R[]) ?? []).map((h) => ({
+			hour: String(h.hour ?? ''),
+			count: Number(h.count ?? 0)
+		}))
+	};
 }
 
 export async function isSlotOccupied(doctorId: string, fecha: string, horaInicio: string): Promise<boolean> {

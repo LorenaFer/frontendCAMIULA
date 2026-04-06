@@ -15,7 +15,9 @@ export const load: PageServerLoad = async ({ url }) => {
 		estado: (url.searchParams.get('estado') as CitaEstado) ?? undefined,
 		search: url.searchParams.get('search') ?? undefined,
 		page: Number(url.searchParams.get('page') ?? '1'),
-		page_size: 25
+		page_size: [10, 25, 50, 100].includes(Number(url.searchParams.get('page_size')))
+			? Number(url.searchParams.get('page_size'))
+			: 25
 	};
 
 	const [citasRes, doctores, especialidades, stats] = await Promise.all([

@@ -12,9 +12,19 @@
 
 	const doctores = $derived(data.doctores as DoctorConEspecialidad[]);
 	const disponibilidadMap = $derived(data.disponibilidadMap as Record<string, DisponibilidadDoctor[]>);
-	const ocupacion = $derived(data.ocupacionPorEspecialidad as { nombre: string; slotsDisponibles: number; slotsReservados: number }[]);
+	// Filtrar especialidades con nombre real (excluir UUIDs y sin datos)
+	function isRealSpecialty(name: string): boolean {
+		return !/^(Specialty-|[0-9a-f]{8})/.test(name) && !/^E2E-/.test(name);
+	}
+	const ocupacion = $derived(
+		(data.ocupacionPorEspecialidad as { nombre: string; slotsDisponibles: number; slotsReservados: number }[])
+			.filter(e => isRealSpecialty(e.nombre) && (e.slotsDisponibles > 0 || e.slotsReservados > 0))
+	);
 	const heatmap = $derived(data.heatmap as number[][]);
-	const ausentismo = $derived(data.ausentismoPorEspecialidad as { nombre: string; total: number; noShows: number; tasa: number }[]);
+	const ausentismo = $derived(
+		(data.ausentismoPorEspecialidad as { nombre: string; total: number; noShows: number; tasa: number }[])
+			.filter(e => isRealSpecialty(e.nombre))
+	);
 
 	let filtroEspecialidad = $state('');
 	let showAnalytics = $state(true);
@@ -106,16 +116,34 @@
 		return 'text-white dark:text-white';
 	}
 
-	// Ocupación promedio general
+	// Ocupación promedio general (cap at 100%)
 	const ocupacionPromedio = $derived.by(() => {
 		const totalDisp = ocupacion.reduce((a, o) => a + o.slotsDisponibles, 0);
 		const totalRes = ocupacion.reduce((a, o) => a + o.slotsReservados, 0);
-		return totalDisp > 0 ? Math.round((totalRes / totalDisp) * 100) : 0;
+		if (totalDisp === 0) return 0;
+		return Math.min(Math.round((totalRes / totalDisp) * 100), 100);
 	});
 
-	// Peak hours data
-	const peakHours = $derived((data.stats as { peakHours: { hour: string; count: number }[] }).peakHours);
-	const maxHourCount = $derived(Math.max(1, ...peakHours.map((h) => h.count)));
+	// Agrupar peakHours por hora (el backend devuelve minutos exactos)
+	// Solo mostrar el rango con datos (± 1 hora de buffer)
+	const hourlyDistribution = $derived.by(() => {
+		const rawHours = (data.stats as { peakHours: { hour: string; count: number }[] }).peakHours;
+		const byHour = new Map<number, number>();
+		for (const h of rawHours) {
+			const hour = parseInt(h.hour.split(':')[0], 10);
+			byHour.set(hour, (byHour.get(hour) ?? 0) + h.count);
+		}
+		// Encontrar rango con datos
+		const hoursWithData = [...byHour.keys()];
+		const minH = hoursWithData.length > 0 ? Math.max(7, Math.min(...hoursWithData) - 1) : 7;
+		const maxH = hoursWithData.length > 0 ? Math.min(18, Math.max(...hoursWithData) + 1) : 18;
+		const result: { hour: number; label: string; count: number }[] = [];
+		for (let h = minH; h <= maxH; h++) {
+			result.push({ hour: h, label: `${String(h).padStart(2, '0')}:00`, count: byHour.get(h) ?? 0 });
+		}
+		return result;
+	});
+	const maxHourCount = $derived(Math.max(1, ...hourlyDistribution.map(h => h.count)));
 </script>
 
 {#snippet doctorCell(_value: unknown, row: DoctorRow)}
@@ -176,7 +204,7 @@
 				class="text-sm border border-border/60 rounded-lg px-3 py-2 bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-viking-500/40"
 			>
 				<option value="">Todas las especialidades</option>
-				{#each data.especialidades as esp}
+				{#each data.especialidades.filter(e => isRealSpecialty(e.nombre)) as esp}
 					<option value={esp.id}>{esp.nombre}</option>
 				{/each}
 			</select>
@@ -193,38 +221,12 @@
 
 	<!-- ═══ ANALÍTICA ═══ -->
 	{#if showAnalytics}
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
 
-			<!-- a) Ocupación por especialidad -->
+			<!-- Heatmap de horarios pico -->
 			<div class="bg-surface-elevated border border-border/60 rounded-xl p-4">
-				<h3 class="text-sm font-semibold text-ink mb-3">Ocupación por Especialidad</h3>
-				<p class="text-xs text-ink-muted mb-4">Slots disponibles vs. citas agendadas</p>
-				<div class="space-y-3">
-					{#each ocupacion as esp}
-						{@const rate = esp.slotsDisponibles > 0 ? Math.round((esp.slotsReservados / esp.slotsDisponibles) * 100) : 0}
-						<div>
-							<div class="flex items-center justify-between mb-1">
-								<span class="text-xs font-medium text-ink">{esp.nombre}</span>
-								<span class="text-xs text-ink-muted">
-									<span class="font-mono font-semibold text-ink">{esp.slotsReservados}</span>/{esp.slotsDisponibles} slots
-									<span class="font-mono font-semibold ml-1 {rate > 80 ? 'text-red-500' : rate > 50 ? 'text-honey-600 dark:text-honey-400' : 'text-sage-600 dark:text-sage-400'}">{rate}%</span>
-								</span>
-							</div>
-							<Progress
-								value={esp.slotsReservados}
-								max={Math.max(esp.slotsDisponibles, 1)}
-								variant={rate > 80 ? 'danger' : rate > 50 ? 'warning' : 'success'}
-								size="sm"
-							/>
-						</div>
-					{/each}
-				</div>
-			</div>
-
-			<!-- b) Heatmap de horarios pico -->
-			<div class="bg-surface-elevated border border-border/60 rounded-xl p-4">
-				<h3 class="text-sm font-semibold text-ink mb-3">Mapa de Calor — Horarios Pico</h3>
-				<p class="text-xs text-ink-muted mb-4">Concentración de citas por día y hora</p>
+				<h3 class="text-sm font-semibold text-ink mb-1">Mapa de Calor</h3>
+				<p class="text-xs text-ink-muted mb-3">Concentración de citas por día y hora</p>
 				<div class="overflow-x-auto">
 					<table class="w-full border-collapse">
 						<thead>
@@ -256,7 +258,6 @@
 						</tbody>
 					</table>
 				</div>
-				<!-- Legend -->
 				<div class="flex items-center gap-2 mt-3 pt-2 border-t border-border/30">
 					<span class="text-[10px] text-ink-subtle">Menor</span>
 					<div class="flex gap-0.5">
@@ -270,52 +271,88 @@
 				</div>
 			</div>
 
-			<!-- d) Ausentismo por especialidad -->
+			<!-- Distribución horaria (barras verticales agrupadas) -->
 			<div class="bg-surface-elevated border border-border/60 rounded-xl p-4">
-				<h3 class="text-sm font-semibold text-ink mb-3">Índice de Ausentismo</h3>
-				<p class="text-xs text-ink-muted mb-4">Porcentaje de no-shows por especialidad</p>
-				{#if ausentismo.length === 0}
-					<p class="text-xs text-ink-subtle text-center py-4">Sin datos de ausentismo</p>
-				{:else}
-					<div class="space-y-2.5">
-						{#each ausentismo as esp}
-							<div class="flex items-center gap-3">
-								<span class="text-xs font-medium text-ink w-28 truncate shrink-0">{esp.nombre}</span>
-								<div class="flex-1 h-5 bg-canvas-subtle rounded-md overflow-hidden relative">
-									<div
-										class="h-full rounded-md transition-all {esp.tasa > 20 ? 'bg-red-400 dark:bg-red-500/60' : esp.tasa > 10 ? 'bg-honey-400 dark:bg-honey-500/60' : 'bg-sage-400 dark:bg-sage-500/60'}"
-										style="width: {Math.max(esp.tasa, 2)}%"
-									></div>
+				<h3 class="text-sm font-semibold text-ink mb-1">Distribución Horaria</h3>
+				<p class="text-xs text-ink-muted mb-3">Citas agendadas por franja horaria</p>
+				{#if hourlyDistribution.some(h => h.count > 0)}
+					<div class="flex items-end gap-1.5 h-32">
+						{#each hourlyDistribution as h (h.hour)}
+							{@const heightPct = (h.count / maxHourCount) * 100}
+							{@const isPeak = h.count === maxHourCount && h.count > 0}
+							<div class="flex-1 group flex flex-col items-center justify-end h-full relative">
+								<div class="absolute -top-5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-ink text-white text-[10px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap z-10">
+									{h.label} — {h.count}
 								</div>
-								<div class="text-right shrink-0 w-16">
-									<span class="text-xs font-mono font-semibold {esp.tasa > 20 ? 'text-red-600 dark:text-red-400' : 'text-ink'}">{esp.tasa}%</span>
-									<span class="text-[10px] text-ink-subtle ml-0.5">({esp.noShows})</span>
-								</div>
+								{#if h.count > 0}
+									<span class="text-[9px] font-mono text-ink-muted mb-0.5">{h.count}</span>
+								{/if}
+								<div
+									class="w-full rounded-t transition-colors {isPeak ? 'bg-viking-500 dark:bg-viking-400' : h.count > 0 ? 'bg-viking-300/80 dark:bg-viking-700 group-hover:bg-viking-400' : 'bg-border/20'}"
+									style:height="{h.count > 0 ? Math.max(heightPct, 6) : 4}%"
+								></div>
+								<span class="text-[10px] text-ink-subtle mt-1 font-mono">{String(h.hour).padStart(2, '0')}</span>
 							</div>
 						{/each}
+					</div>
+				{:else}
+					<div class="h-32 flex items-center justify-center">
+						<p class="text-xs text-ink-subtle">Sin datos</p>
 					</div>
 				{/if}
 			</div>
 
-			<!-- Distribución por hora -->
-			<div class="bg-surface-elevated border border-border/60 rounded-xl p-4">
-				<h3 class="text-sm font-semibold text-ink mb-3">Distribución Horaria</h3>
-				<p class="text-xs text-ink-muted mb-4">Citas agendadas por franja horaria</p>
-				<div class="space-y-1.5">
-					{#each peakHours as ph}
-						<div class="flex items-center gap-2">
-							<span class="text-xs font-mono text-ink-muted w-12 shrink-0">{ph.hour}</span>
-							<div class="flex-1 h-5 bg-canvas-subtle rounded-md overflow-hidden">
-								<div
-									class="h-full rounded-md bg-iris-400 dark:bg-iris-500/60 transition-all"
-									style="width: {(ph.count / maxHourCount) * 100}%"
-								></div>
+			<!-- Ocupación por especialidad (solo las que tienen datos) -->
+			{#if ocupacion.length > 0}
+				<div class="bg-surface-elevated border border-border/60 rounded-xl p-4">
+					<h3 class="text-sm font-semibold text-ink mb-1">Carga por Especialidad</h3>
+					<p class="text-xs text-ink-muted mb-3">Slots semanales disponibles vs citas agendadas</p>
+					<div class="space-y-2.5">
+						{#each ocupacion as esp}
+							{@const rate = esp.slotsDisponibles > 0 ? Math.round((esp.slotsReservados / esp.slotsDisponibles) * 100) : 0}
+							<div>
+								<div class="flex items-center justify-between mb-1">
+									<span class="text-xs font-medium text-ink">{esp.nombre}</span>
+									<span class="text-xs text-ink-muted tabular-nums">
+										<span class="font-mono font-semibold text-ink">{esp.slotsReservados}</span> citas · {esp.slotsDisponibles} slots/sem
+									</span>
+								</div>
+								<Progress
+									value={Math.min(esp.slotsReservados, esp.slotsDisponibles)}
+									max={Math.max(esp.slotsDisponibles, 1)}
+									variant={rate > 80 ? 'danger' : rate > 50 ? 'warning' : 'success'}
+									size="sm"
+								/>
 							</div>
-							<span class="text-xs font-mono font-semibold text-ink w-6 text-right">{ph.count}</span>
-						</div>
-					{/each}
+						{/each}
+					</div>
 				</div>
-			</div>
+			{/if}
+
+			<!-- Ausentismo -->
+			{#if ausentismo.length > 0}
+				<div class="bg-surface-elevated border border-border/60 rounded-xl p-4">
+					<h3 class="text-sm font-semibold text-ink mb-1">Índice de Ausentismo</h3>
+					<p class="text-xs text-ink-muted mb-3">No-shows por especialidad</p>
+					<div class="space-y-2">
+						{#each ausentismo as esp}
+							<div class="flex items-center gap-3">
+								<span class="text-xs font-medium text-ink w-32 truncate shrink-0">{esp.nombre}</span>
+								<div class="flex-1 h-4 bg-canvas-subtle rounded overflow-hidden">
+									<div
+										class="h-full rounded transition-all {esp.tasa > 20 ? 'bg-red-400 dark:bg-red-500/60' : esp.tasa > 10 ? 'bg-honey-400 dark:bg-honey-500/60' : 'bg-sage-400 dark:bg-sage-500/60'}"
+										style="width: {Math.max(esp.tasa, 3)}%"
+									></div>
+								</div>
+								<div class="text-right shrink-0 w-20">
+									<span class="text-xs font-mono font-semibold {esp.tasa > 20 ? 'text-red-600 dark:text-red-400' : 'text-ink'}">{esp.tasa}%</span>
+									<span class="text-[10px] text-ink-subtle ml-0.5">({esp.noShows}/{esp.total})</span>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 

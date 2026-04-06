@@ -14,13 +14,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Si el usuario es paciente logueado, buscar sus datos para saltar step 1
 	let loggedPatient = null;
 	if (locals.user?.role === 'paciente' && locals.user.id) {
-		const found = await pacientesService.findByNHM(0).catch(() => null); // dummy
-		// Search by user ID in mock
-		const { mockPacientes } = await import('$lib/server/mock/data.js');
-		const pac = mockPacientes.find((p: { id: string }) => p.id === locals.user!.id);
-		if (pac) {
-			loggedPatient = { id: pac.id, nhm: pac.nhm, nombre: pac.nombre, apellido: pac.apellido, relacion_univ: pac.relacion_univ, es_nuevo: pac.es_nuevo };
-		}
+		// Construir PacientePublic desde la sesión — el nombre ya viene del login
+		const nameParts = locals.user.name.split(' ');
+		loggedPatient = {
+			id: locals.user.id,
+			nhm: 0,
+			nombre: nameParts[0] ?? '',
+			apellido: nameParts.slice(1).join(' ') ?? '',
+			relacion_univ: 'estudiante' as const,
+			es_nuevo: false
+		};
 	}
 
 	return {

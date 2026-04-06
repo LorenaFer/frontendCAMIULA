@@ -63,12 +63,16 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
 	'inventory/suppliers': P.INVENTORY_WRITE,
 	'inventory/purchase-orders': P.INVENTORY_WRITE,
 	'inventory/dispatches': P.INVENTORY_DISPATCH,
+	'inventory/categories': P.INVENTORY_WRITE,
+	'inventory/movements': P.INVENTORY_READ,
+	'inventory/alerts': P.INVENTORY_READ,
 	'inventory/limits': P.INVENTORY_ADMIN,
 	'inventory/reports': P.INVENTORY_REPORTS,
 	// Recipe del doctor
 	'doctor/citas/[citaId]/prescription': P.RECIPE_WRITE,
 	// Admin
-	'admin/configuracion': P.SETTINGS_READ
+	'admin/configuracion': P.SETTINGS_READ,
+	'reportes': P.DASHBOARD_READ
 };
 
 // ─── Action → Permission (acciones granulares) ───────────────
@@ -105,6 +109,7 @@ export const ACTION_PERMISSIONS: Record<string, string> = {
 	editarProveedor: P.INVENTORY_WRITE,
 	// /inventory/purchase-orders
 	crearOrden: P.INVENTORY_WRITE,
+	enviarOrden: P.INVENTORY_WRITE,
 	recibirOrden: P.INVENTORY_WRITE,
 	// /inventory/dispatches
 	validarDespacho: P.INVENTORY_DISPATCH,

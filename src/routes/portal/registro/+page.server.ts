@@ -1,6 +1,9 @@
 import type { Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { createPaciente, findByCedula } from '$lib/server/pacientes.service';
+import { registerPaciente } from '$lib/server/pacientes.service';
+import { apiFetch, ApiError } from '$lib/server/api';
+import { setToken, setUserSession } from '$lib/server/auth';
+import { mockFlags } from '$lib/server/mock-flags';
 import type { AuthUser } from '$shared/types/auth';
 
 export const actions: Actions = {
@@ -38,41 +41,16 @@ export const actions: Actions = {
 			return fail(400, { error: 'Nombre, apellido y cédula son requeridos.' });
 		}
 
-		const existing = await findByCedula(cedula);
-		if (existing) {
-			return fail(409, { error: 'Ya existe un paciente con esa cédula. Use el login para ingresar.' });
-		}
-
-		// Calcular edad
-		let edad: number | undefined;
-		if (fecha_nacimiento) {
-			const birth = new Date(fecha_nacimiento);
-			const now = new Date();
-			edad = now.getFullYear() - birth.getFullYear();
-			if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) {
-				edad--;
-			}
-		}
-
-		// Verificar titular si es familiar
-		let titular_nhm: number | undefined;
-		if (relacion_univ === 'tercero' && titular_cedula) {
-			const titular = await findByCedula(titular_cedula);
-			if (!titular) {
-				return fail(400, { error: 'No se encontró el titular universitario con esa cédula.' });
-			}
-			titular_nhm = titular.nhm;
-		}
-
 		try {
-			const paciente = await createPaciente({
+			// registerPaciente usa POST /patients/register (público, sin JWT)
+			// El backend valida cédula duplicada (409) y titular (404) internamente
+			const paciente = await registerPaciente({
 				nombre,
 				apellido,
 				cedula,
 				sexo: sexo as 'M' | 'F' | undefined,
 				fecha_nacimiento,
 				lugar_nacimiento: [ciudad, estado_geo, pais].filter(Boolean).join(', ') || undefined,
-				edad,
 				estado_civil: estado_civil as any,
 				religion,
 				procedencia: estado_geo || undefined,
@@ -84,7 +62,6 @@ export const actions: Actions = {
 				clasificacion_economica,
 				relacion_univ: (relacion_univ as 'empleado' | 'estudiante' | 'profesor' | 'tercero') || 'tercero',
 				parentesco: parentesco as any,
-				titular_nhm,
 				datos_medicos: {
 					tipo_sangre,
 					alergias: alergias ? alergias.split(',').map((a) => a.trim()).filter(Boolean) : [],
@@ -104,17 +81,37 @@ export const actions: Actions = {
 				role: 'paciente',
 				initials: `${paciente.nombre[0]}${paciente.apellido[0]}`
 			};
+			setUserSession(cookies, authUser);
 
-			cookies.set('mock_auth', JSON.stringify(authUser), {
-				path: '/',
-				httpOnly: false,
-				maxAge: 60 * 60 * 24 * 7
-			});
+			// Auto-login: obtener JWT para que las páginas siguientes funcionen
+			if (!mockFlags.auth) {
+				try {
+					const loginRes = await apiFetch<{
+						found: boolean;
+						patient: unknown;
+						access_token?: string;
+						expires_in?: number;
+					}>('/auth/patient/login', {
+						method: 'POST',
+						body: JSON.stringify({ query: cedula, query_type: 'cedula' })
+					});
+					if (loginRes.access_token) {
+						setToken(cookies, loginRes.access_token, loginRes.expires_in ?? 86400);
+					}
+				} catch {
+					// Si el auto-login falla, el paciente irá al portal login
+				}
+			}
 
 			redirect(303, '/agendar');
 		} catch (e: unknown) {
-			const msg = e instanceof Error ? e.message : 'Error al registrar paciente.';
-			return fail(500, { error: msg });
+			if (e instanceof ApiError) {
+				if (e.status === 409) return fail(409, { error: 'Ya existe un paciente con esa cédula. Use el login para ingresar.' });
+				if (e.status === 404) return fail(400, { error: 'No se encontró el titular universitario con esa cédula.' });
+				return fail(e.status, { error: e.detail });
+			}
+			// Re-throw redirects
+			throw e;
 		}
 	}
 };

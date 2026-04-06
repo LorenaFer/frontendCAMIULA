@@ -37,11 +37,19 @@
 		goto(`?${qs}`, { replaceState: true });
 	}
 
-	function changePage(p: number) {
+	function changePage(p: number, ps?: number) {
 		const qs = new URLSearchParams($page.url.searchParams);
 		qs.set('page', String(p));
+		if (ps) qs.set('page_size', String(ps));
 		goto(`?${qs}`, { replaceState: true });
 	}
+
+	function changePageSize(size: number) {
+		changePage(1, size);
+	}
+
+	const pagination = $derived(data.citas.pagination);
+	const pageSizeOptions = [10, 25, 50, 100];
 
 	// ─── Métricas derivadas ──────────────────────────────────
 	const stats = $derived(data.stats);
@@ -66,18 +74,71 @@
 	);
 
 	const patientTypeLabels: Record<string, string> = {
-		empleado: 'Empleados',
-		estudiante: 'Estudiantes',
-		profesor: 'Profesores',
-		tercero: 'Terceros'
+		P: 'Profesores', E: 'Empleados', O: 'Obreros', B: 'Estudiantes',
+		F: 'Familiares', X: 'Caso Especial',
+		C: 'Fam. Estudiante', R: 'Fam. Profesor', S: 'Fam. Empleado', T: 'Fam. Obrero',
+		empleado: 'Empleados', estudiante: 'Estudiantes', profesor: 'Profesores', tercero: 'Terceros'
 	};
 
-	const topSpecialty = $derived(stats.bySpecialty[0]?.name ?? '—');
-	const peakHour = $derived(
-		stats.peakHours.length > 0
-			? stats.peakHours.reduce((a, b) => (b.count > a.count ? b : a)).hour
-			: '—'
+	// ─── Datos derivados para BI ─────────────────────────────
+	const statusColors: Record<string, string> = {
+		pendiente: 'bg-amber-400', confirmada: 'bg-viking-400',
+		atendida: 'bg-emerald-500', cancelada: 'bg-red-400', no_asistio: 'bg-slate-400'
+	};
+	const statusLabels: Record<string, string> = {
+		pendiente: 'Pendiente', confirmada: 'Confirmada',
+		atendida: 'Atendida', cancelada: 'Cancelada', no_asistio: 'No asistió'
+	};
+	const statusEntries = $derived(
+		Object.entries(stats.byStatus)
+			.filter(([, v]) => v > 0)
+			.sort(([, a], [, b]) => b - a)
 	);
+
+	// Sorted patient types by count
+	const sortedPatientTypes = $derived(
+		Object.entries(stats.byPatientType)
+			.filter(([, v]) => v > 0)
+			.sort(([, a], [, b]) => b - a)
+	);
+	const maxPatientTypeCount = $derived(
+		sortedPatientTypes.length > 0 ? sortedPatientTypes[0][1] : 1
+	);
+
+	// Agrupar peakHours por hora (el backend devuelve minutos exactos como 09:00, 09:37, 10:28...)
+	const hourlyDistribution = $derived.by(() => {
+		const byHour = new Map<number, number>();
+		for (const h of stats.peakHours) {
+			const hour = parseInt(h.hour.split(':')[0], 10);
+			byHour.set(hour, (byHour.get(hour) ?? 0) + h.count);
+		}
+		// Generar rango completo 7-18
+		const result: { hour: number; label: string; count: number }[] = [];
+		for (let h = 7; h <= 18; h++) {
+			result.push({ hour: h, label: `${String(h).padStart(2, '0')}:00`, count: byHour.get(h) ?? 0 });
+		}
+		return result;
+	});
+	const hourlyMax = $derived(Math.max(...hourlyDistribution.map(h => h.count), 1));
+
+	const donutColorMap: Record<string, string> = {
+		pendiente: '#fbbf24', confirmada: '#38b2ac',
+		atendida: '#10b981', cancelada: '#f87171', no_asistio: '#94a3b8'
+	};
+	const donutSegments = $derived(
+		statusEntries.map(([status, count]) => ({
+			status, count,
+			pct: stats.total > 0 ? (count / stats.total) * 100 : 0,
+			stroke: donutColorMap[status] ?? '#94a3b8',
+			dotColor: statusColors[status] ?? 'bg-slate-300'
+		}))
+	);
+
+	const topSpecialty = $derived(stats.bySpecialty[0]?.name ?? '—');
+	const peakHour = $derived.by(() => {
+		const peak = hourlyDistribution.reduce((a, b) => (b.count > a.count ? b : a), hourlyDistribution[0]);
+		return peak && peak.count > 0 ? peak.label : '—';
+	});
 
 	function exportar() {
 		const qs = new URLSearchParams($page.url.searchParams);
@@ -163,6 +224,46 @@
 		}}
 	];
 </script>
+
+{#snippet paginationBar()}
+	{#if pagination.pages > 1 || pagination.page_size !== 25}
+		<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2.5 border-t border-border/30 bg-canvas-subtle/30">
+			<div class="flex items-center gap-3">
+				<p class="text-xs text-ink-muted">
+					{((pagination.page - 1) * pagination.page_size) + 1}–{Math.min(pagination.page * pagination.page_size, pagination.total)} de {pagination.total}
+				</p>
+				<div class="flex items-center gap-1.5">
+					<span class="text-xs text-ink-subtle">Mostrar</span>
+					<select
+						class="text-xs border border-border/60 rounded-md px-1.5 py-1 bg-surface text-ink focus:outline-none focus:ring-1 focus:ring-viking-500/40"
+						value={pagination.page_size}
+						onchange={(e) => changePageSize(Number((e.target as HTMLSelectElement).value))}
+					>
+						{#each pageSizeOptions as size}
+							<option value={size}>{size}</option>
+						{/each}
+					</select>
+				</div>
+			</div>
+			<div class="flex items-center gap-1">
+				<button type="button" disabled={pagination.page <= 1} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page - 1)}>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+				</button>
+				{#each Array.from({ length: Math.min(pagination.pages, 7) }, (_, i) => {
+					const start = Math.max(1, Math.min(pagination.page - 3, pagination.pages - 6));
+					return start + i;
+				}) as p}
+					<button type="button" class="w-7 h-7 rounded-md text-xs font-medium transition-colors {p === pagination.page ? 'bg-viking-600 text-white' : 'text-ink-muted hover:bg-canvas-subtle'}" onclick={() => changePage(p)}>
+						{p}
+					</button>
+				{/each}
+				<button type="button" disabled={!pagination.has_next} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page + 1)}>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+				</button>
+			</div>
+		</div>
+	{/if}
+{/snippet}
 
 {#snippet pacienteCell(_v: unknown, row: CitaRow)}
 	<div class="flex items-center gap-2.5">
@@ -268,140 +369,167 @@
 		{showBreakdown ? 'Ocultar' : 'Ver'} desglose detallado
 	</button>
 
-	<!-- Breakdown Cards (colapsable) -->
+	<!-- Breakdown BI (colapsable) -->
 	{#if showBreakdown}
-		<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-fade-in-up">
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 animate-fade-in-up">
 
-			<!-- Distribución por especialidad -->
+			<!-- ── Card 1: Estado de citas (donut visual) ── -->
 			<Card padding="lg">
-				<h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">
-					Por Especialidad
-				</h3>
-				<div class="space-y-2">
-					{#each stats.bySpecialty as spec (spec.name)}
-						{@const pct = stats.total > 0 ? Math.round((spec.count / stats.total) * 100) : 0}
-						<div class="flex items-center gap-3">
-							<span class="text-xs text-ink flex-1 truncate">{spec.name}</span>
-							<div class="w-24 h-1.5 bg-canvas-subtle rounded-full overflow-hidden">
-								<div class="h-full bg-viking-500 rounded-full" style:width="{pct}%"></div>
-							</div>
-							<span class="text-xs font-mono text-ink-muted w-8 text-right">{spec.count}</span>
+				<h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">Distribución por Estado</h3>
+				<div class="flex items-center gap-6">
+					<div class="relative w-28 h-28 shrink-0">
+						<svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+							{#each donutSegments as seg, i}
+								{@const offset = donutSegments.slice(0, i).reduce((sum, s) => sum + s.pct, 0) + i}
+								<circle
+									r="15.91549"
+									cx="18" cy="18"
+									fill="none"
+									stroke={seg.stroke}
+									stroke-width="3.5"
+									stroke-dasharray="{Math.max(seg.pct - 1, 0.5)} {100 - Math.max(seg.pct - 1, 0.5)}"
+									stroke-dashoffset={-offset}
+									stroke-linecap="round"
+								/>
+							{/each}
+						</svg>
+						<div class="absolute inset-0 flex flex-col items-center justify-center">
+							<span class="text-xl font-bold text-ink tabular-nums">{stats.total}</span>
+							<span class="text-[10px] text-ink-muted">citas</span>
 						</div>
-					{/each}
-					{#if stats.bySpecialty.length === 0}
-						<p class="text-xs text-ink-subtle">Sin datos</p>
-					{/if}
-				</div>
-			</Card>
-
-			<!-- Carga por doctor -->
-			<Card padding="lg">
-				<h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">
-					Carga por Doctor
-				</h3>
-				<div class="space-y-2.5">
-					{#each stats.byDoctor as doc (doc.name)}
-						{@const atendidasPct = doc.count > 0 ? Math.round((doc.atendidas / doc.count) * 100) : 0}
-						<div>
-							<div class="flex items-center justify-between mb-0.5">
-								<span class="text-xs font-medium text-ink">{doc.name}</span>
-								<span class="text-xs text-ink-subtle">{doc.specialty}</span>
-							</div>
+					</div>
+					<div class="flex-1 space-y-1.5">
+						{#each donutSegments as seg}
+							{@const pct = stats.total > 0 ? Math.round((seg.count / stats.total) * 100) : 0}
 							<div class="flex items-center gap-2">
-								<div class="flex-1 h-1.5 bg-canvas-subtle rounded-full overflow-hidden">
-									<div class="h-full bg-sage-500 rounded-full" style:width="{atendidasPct}%"></div>
-								</div>
-								<span class="text-xs font-mono text-ink-muted w-16 text-right">
-									{doc.atendidas}/{doc.count}
-								</span>
+								<span class="w-2.5 h-2.5 rounded-full shrink-0 {seg.dotColor}"></span>
+								<span class="text-xs text-ink flex-1">{statusLabels[seg.status] ?? seg.status}</span>
+								<span class="text-xs font-mono font-semibold text-ink tabular-nums">{seg.count}</span>
+								<span class="text-[10px] text-ink-muted w-8 text-right tabular-nums">{pct}%</span>
 							</div>
-						</div>
-					{/each}
-					{#if stats.byDoctor.length === 0}
-						<p class="text-xs text-ink-subtle">Sin datos</p>
-					{/if}
+						{/each}
+					</div>
 				</div>
 			</Card>
 
-			<!-- Insights mixtos -->
+			<!-- ── Card 2: Distribución horaria ── -->
 			<Card padding="lg">
-				<h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">
-					Insights
-				</h3>
-				<div class="space-y-3">
-					<!-- Pacientes nuevos vs retorno -->
+				<div class="flex items-center justify-between mb-3">
+					<h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider">Distribución Horaria</h3>
+					<div class="flex items-center gap-1.5 text-xs text-ink-muted">
+						<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+						Pico: <span class="font-semibold text-ink font-mono">{peakHour}</span>
+					</div>
+				</div>
+				{#if hourlyDistribution.some(h => h.count > 0)}
+					<div class="flex items-end gap-1.5 h-28">
+						{#each hourlyDistribution as h (h.hour)}
+							{@const heightPct = (h.count / hourlyMax) * 100}
+							{@const isPeak = h.count === hourlyMax && h.count > 0}
+							<div class="flex-1 group flex flex-col items-center justify-end h-full relative">
+								<div class="absolute -top-5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-ink text-white text-[10px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap z-10">
+									{h.label} — {h.count} citas
+								</div>
+								{#if h.count > 0}
+									<span class="text-[9px] font-mono text-ink-subtle mb-0.5 opacity-0 group-hover:opacity-100 transition-opacity">{h.count}</span>
+								{/if}
+								<div
+									class="w-full rounded-t transition-colors {isPeak ? 'bg-viking-500 dark:bg-viking-400' : h.count > 0 ? 'bg-viking-300/80 dark:bg-viking-700 group-hover:bg-viking-400 dark:group-hover:bg-viking-500' : 'bg-border/20'}"
+									style:height="{h.count > 0 ? Math.max(heightPct, 6) : 4}%"
+								></div>
+								<span class="text-[10px] text-ink-subtle mt-1 font-mono leading-none">{String(h.hour).padStart(2, '0')}</span>
+							</div>
+						{/each}
+					</div>
+				{:else}
+					<div class="h-28 flex items-center justify-center">
+						<p class="text-xs text-ink-subtle">Sin datos suficientes</p>
+					</div>
+				{/if}
+			</Card>
+
+			<!-- ── Card 3: Rendimiento por especialidad + doctor ── -->
+			<Card padding="lg">
+				<h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">Rendimiento por Especialidad</h3>
+				{#if stats.bySpecialty.length === 0}
+					<p class="text-xs text-ink-subtle">Sin datos</p>
+				{:else}
+					<div class="space-y-2.5">
+						{#each stats.bySpecialty.slice(0, 6) as spec (spec.name)}
+							{@const pct = stats.total > 0 ? Math.round((spec.count / stats.total) * 100) : 0}
+							{@const docsInSpec = stats.byDoctor.filter(d => d.specialty === spec.name)}
+							{@const atendidosSpec = docsInSpec.reduce((s, d) => s + d.atendidas, 0)}
+							{@const tasaAtencion = spec.count > 0 ? Math.round((atendidosSpec / spec.count) * 100) : 0}
+							<div>
+								<div class="flex items-center justify-between mb-1">
+									<span class="text-xs font-medium text-ink">{spec.name}</span>
+									<div class="flex items-center gap-3">
+										<span class="text-xs text-ink-muted">{spec.count} citas</span>
+										<span class="text-xs font-mono {tasaAtencion >= 70 ? 'text-emerald-600 dark:text-emerald-400' : tasaAtencion > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-ink-subtle'}">{tasaAtencion}% atendidas</span>
+									</div>
+								</div>
+								<div class="h-1.5 bg-canvas-subtle rounded-full overflow-hidden">
+									<div class="h-full rounded-full bg-viking-500 transition-all" style:width="{pct}%"></div>
+								</div>
+								{#if docsInSpec.length > 0}
+									<div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
+										{#each docsInSpec as doc}
+											<span class="text-[10px] text-ink-muted">
+												{doc.name}: <span class="font-mono font-medium text-ink">{doc.atendidas}/{doc.count}</span>
+											</span>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</Card>
+
+			<!-- ── Card 4: Demografía de pacientes ── -->
+			<Card padding="lg">
+				<h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">Demografía de Pacientes</h3>
+				<div class="space-y-4">
+					<!-- Nuevos vs Retorno -->
 					<div>
 						<div class="flex items-center justify-between mb-1.5">
-							<span class="text-xs text-ink-muted">Pacientes nuevos vs retorno</span>
-							<span class="text-xs font-semibold text-ink">{firstTimeRate}% nuevos</span>
+							<span class="text-xs text-ink-muted">Nuevos vs Retorno</span>
+							<span class="text-xs font-semibold text-ink tabular-nums">{firstTimeRate}% primera vez</span>
 						</div>
-						<div class="flex h-2 rounded-full overflow-hidden">
+						<div class="flex h-2.5 rounded-full overflow-hidden gap-0.5">
 							{#if stats.firstTimeCount > 0}
-								<div
-									class="bg-viking-500 h-full"
-									style:width="{firstTimeRate}%"
-									title="Primera vez: {stats.firstTimeCount}"
-								></div>
+								<div class="bg-viking-500 rounded-full" style:width="{firstTimeRate}%" title="Primera vez: {stats.firstTimeCount}"></div>
 							{/if}
 							{#if stats.returningCount > 0}
-								<div
-									class="bg-iris-400 h-full"
-									style:width="{100 - firstTimeRate}%"
-									title="Retorno: {stats.returningCount}"
-								></div>
+								<div class="bg-iris-400 rounded-full" style:width="{100 - firstTimeRate}%" title="Retorno: {stats.returningCount}"></div>
 							{/if}
 						</div>
 						<div class="flex justify-between mt-1">
-							<span class="text-xs text-viking-600 dark:text-viking-400">Nuevos ({stats.firstTimeCount})</span>
-							<span class="text-xs text-iris-600 dark:text-iris-400">Retorno ({stats.returningCount})</span>
+							<span class="text-[11px] text-viking-600 dark:text-viking-400">Nuevos ({stats.firstTimeCount})</span>
+							<span class="text-[11px] text-iris-600 dark:text-iris-400">Retorno ({stats.returningCount})</span>
 						</div>
 					</div>
 
-					<!-- Tipo de paciente -->
+					<!-- Tipo de paciente (barras horizontales) -->
 					<div>
-						<span class="text-xs text-ink-muted block mb-1.5">Por tipo de paciente</span>
-						<div class="flex flex-wrap gap-1.5">
-							{#each Object.entries(stats.byPatientType) as [tipo, count] (tipo)}
-								<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-canvas-subtle text-ink border border-border/50">
-									{patientTypeLabels[tipo] ?? tipo}
-									<span class="font-mono font-bold text-ink">{count}</span>
-								</span>
-							{/each}
-						</div>
-					</div>
-
-					<!-- Hora pico y top especialidad -->
-					<div class="grid grid-cols-2 gap-2 pt-1 border-t border-border/50">
-						<div>
-							<span class="text-xs text-ink-subtle block">Hora pico</span>
-							<span class="text-sm font-semibold text-ink font-mono">{peakHour}</span>
-						</div>
-						<div>
-							<span class="text-xs text-ink-subtle block">Top especialidad</span>
-							<span class="text-sm font-semibold text-ink">{topSpecialty}</span>
-						</div>
-					</div>
-
-					<!-- Distribución por hora -->
-					{#if stats.peakHours.length >= 2}
-						<div>
-							<span class="text-xs text-ink-subtle block mb-1">Distribución horaria</span>
-							<div class="flex items-end gap-0.5 h-8">
-								{#each stats.peakHours as h (h.hour)}
-									{@const maxCount = Math.max(...stats.peakHours.map(x => x.count))}
-									{@const heightPct = maxCount > 0 ? (h.count / maxCount) * 100 : 0}
-									<div class="flex-1 flex flex-col items-center gap-0.5">
-										<div
-											class="w-full bg-viking-400 dark:bg-viking-600 rounded-sm min-h-[2px]"
-											style:height="{heightPct}%"
-											title="{h.hour}: {h.count} citas"
-										></div>
-										<span class="text-xs text-ink-subtle">{h.hour.split(':')[0]}</span>
+						<span class="text-xs text-ink-muted block mb-2">Por tipo de paciente</span>
+						{#if sortedPatientTypes.length === 0}
+							<p class="text-xs text-ink-subtle">Sin datos</p>
+						{:else}
+							<div class="space-y-1.5">
+								{#each sortedPatientTypes as [tipo, count]}
+									{@const widthPct = (count / maxPatientTypeCount) * 100}
+									<div class="flex items-center gap-2">
+										<span class="text-xs text-ink w-28 truncate">{patientTypeLabels[tipo] ?? tipo}</span>
+										<div class="flex-1 h-4 bg-canvas-subtle rounded overflow-hidden relative">
+											<div class="h-full bg-viking-200 dark:bg-viking-800 rounded transition-all" style:width="{widthPct}%"></div>
+											<span class="absolute inset-y-0 left-1.5 flex items-center text-[10px] font-mono font-semibold text-ink">{count}</span>
+										</div>
 									</div>
 								{/each}
 							</div>
-						</div>
-					{/if}
+						{/if}
+					</div>
 				</div>
 			</Card>
 		</div>
@@ -433,22 +561,7 @@
 			emptyMessage="No hay citas que coincidan con los filtros aplicados."
 		/>
 
-		<!-- Paginación -->
-		{#if data.citas.pagination.total > data.citas.pagination.page_size}
-			<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-t border-border">
-				<span class="text-xs text-ink-muted">
-					{(data.citas.pagination.page - 1) * data.citas.pagination.page_size + 1}–{Math.min(data.citas.pagination.page * data.citas.pagination.page_size, data.citas.pagination.total)} de {data.citas.pagination.total}
-				</span>
-				<div class="flex gap-2">
-					<Button variant="ghost" size="sm" disabled={data.citas.pagination.page <= 1} onclick={() => changePage(data.citas.pagination.page - 1)}>
-						Anterior
-					</Button>
-					<Button variant="ghost" size="sm" disabled={!data.citas.pagination.has_next} onclick={() => changePage(data.citas.pagination.page + 1)}>
-						Siguiente
-					</Button>
-				</div>
-			</div>
-		{/if}
+		{@render paginationBar()}
 	</Card>
 </div>
 

@@ -3,38 +3,60 @@ import { fail } from '@sveltejs/kit';
 import * as citasService from '$lib/server/citas.service.js';
 import * as historiasService from '$lib/server/historias.service.js';
 import * as prescriptionsService from '$lib/server/inventory/prescriptions.service.js';
+import { mockFlags } from '$lib/server/mock-flags.js';
 import { mockPacientes } from '$lib/server/mock/data.js';
+import type { Prescription } from '$shared/types/inventory.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
 	if (!user) return { citas: [], historias: [], recetas: [] };
 
-	const pacienteMock = mockPacientes.find(
-		(p) => `${p.nombre} ${p.apellido}` === user.name
-	);
+	let pacienteId = user.id;
 
-	if (!pacienteMock) return { citas: [], historias: [], recetas: [], pacienteNombre: user.name };
+	if (mockFlags.pacientes) {
+		const pacienteMock = mockPacientes.find(
+			(p) => `${p.nombre} ${p.apellido}` === user.name
+		);
+		if (!pacienteMock) return { citas: [], historias: [], recetas: [], pacienteNombre: user.name };
+		pacienteId = pacienteMock.id;
+	}
 
-	const [{ items: todasLasCitas }, historias, recetas] = await Promise.all([
-		citasService.getCitasByFilters({ search: pacienteMock.cedula, page_size: 100 }),
-		historiasService.findByPaciente(pacienteMock.id, { limit: 20 }),
-		prescriptionsService.getPrescriptionsByPatient(pacienteMock.id)
-	]);
+	try {
+		const [{ items: todasLasCitas }, historias, recetas] = await Promise.all([
+			citasService.getCitasByPatientId(pacienteId),
+			historiasService.findByPaciente(pacienteId, { limit: 20 }).catch(() => []),
+			prescriptionsService.getPrescriptionsByPatient(pacienteId).catch(() => [] as Prescription[])
+		]);
 
-	const citasPaciente = todasLasCitas
-		.filter((c) => c.paciente_id === pacienteMock.id)
-		.sort((a, b) => {
-			const dateComp = b.fecha.localeCompare(a.fecha);
-			if (dateComp !== 0) return dateComp;
-			return a.hora_inicio.localeCompare(b.hora_inicio);
+		const citasPaciente = todasLasCitas
+			.sort((a, b) => {
+				const dateComp = b.fecha.localeCompare(a.fecha);
+				if (dateComp !== 0) return dateComp;
+				return a.hora_inicio.localeCompare(b.hora_inicio);
+			});
+
+		// Enriquecer historias con nombres de doctor de las citas
+		const historiasEnriquecidas = historias.map(h => {
+			const citaRelacionada = citasPaciente.find(c =>
+				c.fecha === h.fecha && c.doctor?.especialidad?.nombre === h.especialidad
+			);
+			return {
+				...h,
+				doctor_nombre: citaRelacionada
+					? `${citaRelacionada.doctor.nombre} ${citaRelacionada.doctor.apellido}`
+					: h.doctor_nombre
+			};
 		});
 
-	return {
-		citas: citasPaciente,
-		historias,
-		recetas,
-		pacienteNombre: `${pacienteMock.nombre} ${pacienteMock.apellido}`
-	};
+		return {
+			citas: citasPaciente,
+			historias: historiasEnriquecidas,
+			recetas,
+			pacienteNombre: user.name
+		};
+	} catch {
+		return { citas: [], historias: [], recetas: [], pacienteNombre: user.name };
+	}
 };
 
 export const actions: Actions = {

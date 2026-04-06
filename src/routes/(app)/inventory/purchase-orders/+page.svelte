@@ -38,8 +38,62 @@
 		} catch { return iso; }
 	}
 
+	async function callAction(action: string, body: Record<string, unknown>) {
+		const res = await fetch('/inventory/purchase-orders', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action, ...body })
+		});
+		return res.json();
+	}
+
+	async function handleSend(row: PurchaseOrder) {
+		const data = await callAction('enviarOrden', { order_id: row.id });
+		if (data.status === 'success') {
+			toastSuccess('Orden enviada', `${row.order_number} fue enviada al proveedor.`);
+			await invalidateAll();
+		} else {
+			toastError('Error', data.message ?? 'No se pudo enviar la orden.');
+		}
+	}
+
+	async function handleReceiveSimple(row: PurchaseOrder) {
+		// Recepción rápida: recibir todo lo pendiente con lotes autogenerados
+		const items = row.items
+			.filter(it => it.quantity_received < it.quantity_ordered)
+			.map(it => ({
+				purchase_order_item_id: it.id,
+				quantity_received: it.quantity_ordered - it.quantity_received,
+				lot_number: `LOT-${row.order_number}-${it.medication?.code ?? it.id.slice(0, 6)}`,
+				expiration_date: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
+				unit_cost: it.unit_cost
+			}));
+		if (items.length === 0) {
+			toastWarning('Sin pendientes', 'Todos los ítems ya fueron recibidos.');
+			return;
+		}
+		// Abrir modal para que ingrese lotes y vencimientos
+		orderToReceive = { ...row };
+	}
+
 	const orderMenu: RowMenuItem<OrderRow>[] = [
-		{ label: 'Ver detalle', icon: 'view', onclick: (row) => openDetail(row as unknown as PurchaseOrder) }
+		{ label: 'Ver detalle', icon: 'view', onclick: (row) => openDetail(row as unknown as PurchaseOrder) },
+		{ label: 'Enviar a proveedor', icon: 'edit', onclick: (row) => {
+			const order = row as unknown as PurchaseOrder;
+			if (order.order_status !== 'draft') {
+				toastWarning('No permitido', 'Solo se pueden enviar órdenes en borrador.');
+				return;
+			}
+			handleSend(order);
+		}},
+		{ label: 'Registrar recepción', icon: 'edit', onclick: (row) => {
+			const order = row as unknown as PurchaseOrder;
+			if (order.order_status !== 'sent' && order.order_status !== 'partial') {
+				toastWarning('No permitido', 'Solo se pueden recibir órdenes enviadas.');
+				return;
+			}
+			orderToReceive = { ...order };
+		}}
 	];
 
 	const filteredOrders = $derived(() => {
@@ -57,11 +111,15 @@
 		return items;
 	});
 
-	function changePage(p: number) {
+	function changePage(p: number, ps?: number) {
 		const qs = new URLSearchParams($page.url.searchParams);
 		qs.set('page', String(p));
+		if (ps) qs.set('page_size', String(ps));
 		goto(`?${qs}`, { replaceState: true });
 	}
+
+	const pagination = $derived(data.orders);
+	const pageSizeOptions = [10, 25, 50, 100];
 
 	const statusLabels: Record<string, { label: string; classes: string }> = {
 		draft:     { label: 'Borrador',  classes: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' },
@@ -73,6 +131,36 @@
 
 
 </script>
+
+{#snippet paginationBar()}
+	{#if pagination.total > 0}
+		<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2.5 border-t border-border/30 bg-canvas-subtle/30">
+			<div class="flex items-center gap-3">
+				<p class="text-xs text-ink-muted">{((pagination.page - 1) * pagination.pageSize) + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} de {pagination.total}</p>
+				<div class="flex items-center gap-1.5">
+					<span class="text-xs text-ink-subtle">Mostrar</span>
+					<select class="text-xs border border-border/60 rounded-md px-1.5 py-1 bg-surface text-ink focus:outline-none focus:ring-1 focus:ring-viking-500/40" value={pagination.pageSize} onchange={(e) => changePage(1, Number((e.target as HTMLSelectElement).value))}>
+						{#each pageSizeOptions as size}<option value={size}>{size}</option>{/each}
+					</select>
+				</div>
+			</div>
+			{#if pagination.total > pagination.pageSize}
+				{@const pages = Math.ceil(pagination.total / pagination.pageSize)}
+				<div class="flex items-center gap-1">
+					<button type="button" disabled={pagination.page <= 1} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page - 1)}>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+					</button>
+					{#each Array.from({ length: Math.min(pages, 7) }, (_, i) => { const start = Math.max(1, Math.min(pagination.page - 3, pages - 6)); return start + i; }) as p}
+						<button type="button" class="w-7 h-7 rounded-md text-xs font-medium transition-colors {p === pagination.page ? 'bg-viking-600 text-white' : 'text-ink-muted hover:bg-canvas-subtle'}" onclick={() => changePage(p)}>{p}</button>
+					{/each}
+					<button type="button" disabled={!pagination.hasNext} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page + 1)}>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+					</button>
+				</div>
+			{/if}
+		</div>
+	{/if}
+{/snippet}
 
 <svelte:head>
 	<title>Órdenes de Compra — Inventario</title>
@@ -192,24 +280,11 @@
 			data={filteredOrders() as OrderRow[]}
 			rowKey="id"
 			rowMenu={orderMenu}
+			onRowClick={(row) => openDetail(row as unknown as PurchaseOrder)}
 			emptyMessage="No hay órdenes de compra registradas."
 		/>
 
-		{#if data.orders.total > data.orders.pageSize}
-			<div class="flex items-center justify-between px-4 py-3 border-t border-border">
-				<span class="text-sm text-ink-muted">
-					{(data.orders.page - 1) * data.orders.pageSize + 1}–{Math.min(
-						data.orders.page * data.orders.pageSize, data.orders.total
-					)} de {data.orders.total}
-				</span>
-				<div class="flex gap-2">
-					<Button variant="ghost" size="md" disabled={data.orders.page <= 1}
-						onclick={() => changePage(data.orders.page - 1)}>Anterior</Button>
-					<Button variant="ghost" size="md" disabled={!data.orders.hasNext}
-						onclick={() => changePage(data.orders.page + 1)}>Siguiente</Button>
-				</div>
-			</div>
-		{/if}
+		{@render paginationBar()}
 	</Card>
 </div>
 
@@ -322,33 +397,15 @@
 		<DialogFooter>
 			<Button type="button" variant="ghost" size="md" onclick={() => { orderDetail = null; }}>Cerrar</Button>
 			{#if order.order_status === 'draft'}
-				<form
-					method="POST"
-					action="?/enviarOrden"
-					use:enhance={() => {
-						return async ({ result, update }) => {
-							await update();
-							if (result.type === 'success') {
-								toastSuccess('Orden enviada', `La orden ${order.order_number} fue enviada al proveedor.`);
-							} else if (result.type === 'failure') {
-								toastError('Error al enviar', (result.data as { error?: string })?.error ?? 'No se pudo enviar la orden.');
-							}
-							orderDetail = null;
-							await invalidateAll();
-						};
-					}}
-				>
-					<input type="hidden" name="order_id" value={order.id} />
-					<Button type="submit" variant="soft" size="md">Enviar al proveedor</Button>
-				</form>
+				<Button type="button" variant="soft" size="md" onclick={async () => {
+					await handleSend(order);
+					orderDetail = null;
+				}}>
+					Enviar al proveedor
+				</Button>
 			{/if}
 			{#if order.order_status === 'sent' || order.order_status === 'partial'}
-				<Button
-					type="button"
-					variant="primary"
-					size="md"
-					onclick={() => { orderDetail = null; orderToReceive = order; }}
-				>
+				<Button type="button" variant="primary" size="md" onclick={() => { orderDetail = null; orderToReceive = order; }}>
 					Registrar recepción
 				</Button>
 			{/if}

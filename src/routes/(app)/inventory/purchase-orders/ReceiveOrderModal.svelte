@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import type { PurchaseOrder } from '$shared/types/inventory.js';
 	import Dialog from '$shared/components/dialog/Dialog.svelte';
@@ -7,6 +6,9 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Button from '$shared/components/button/Button.svelte';
+	import Input from '$shared/components/input/Input.svelte';
+	import DateInput from '$shared/components/input/DateInput.svelte';
+	import Badge from '$shared/components/badge/Badge.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 
 	let {
@@ -20,8 +22,11 @@
 	interface ReceiveDraft {
 		purchase_order_item_id: string;
 		medication_name: string;
+		medication_code: string;
+		pharmaceutical_form: string;
 		unit_measure: string;
 		quantity_ordered: number;
+		already_received: number;
 		quantity_received: number;
 		lot_number: string;
 		expiration_date: string;
@@ -30,150 +35,212 @@
 
 	let submitting = $state(false);
 
+	// Autogenerar número de lote basado en la orden
+	const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
 	let drafts = $state<ReceiveDraft[]>(
-		order.items.map((item) => ({
-			purchase_order_item_id: item.id,
-			medication_name: item.medication.generic_name,
-			unit_measure: item.medication.unit_measure,
-			quantity_ordered: item.quantity_ordered,
-			quantity_received: item.quantity_ordered - item.quantity_received,
-			lot_number: '',
-			expiration_date: '',
-			unit_cost: item.unit_cost
-		}))
+		order.items
+			.filter(item => item.quantity_received < item.quantity_ordered)
+			.map((item, idx) => ({
+				purchase_order_item_id: item.id,
+				medication_name: item.medication?.generic_name ?? 'Medicamento',
+				medication_code: item.medication?.code ?? '',
+				pharmaceutical_form: item.medication?.pharmaceutical_form ?? '',
+				unit_measure: item.medication?.unit_measure ?? 'Unidad',
+				quantity_ordered: item.quantity_ordered,
+				already_received: item.quantity_received,
+				quantity_received: item.quantity_ordered - item.quantity_received,
+				lot_number: `LOT-${order.order_number?.replace('OC-', '') ?? today}-${String(idx + 1).padStart(2, '0')}`,
+				expiration_date: '',
+				unit_cost: item.unit_cost ?? 0
+			}))
 	);
 
-	const serializedItems = $derived(
-		JSON.stringify(
-			drafts.map((d) => ({
-				purchase_order_item_id: d.purchase_order_item_id,
-				quantity_received: d.quantity_received,
-				lot_number: d.lot_number,
-				expiration_date: d.expiration_date,
-				unit_cost: d.unit_cost
-			}))
-		)
-	);
+	const totalItems = $derived(drafts.length);
+	const totalUnits = $derived(drafts.reduce((sum, d) => sum + d.quantity_received, 0));
+	const completedItems = $derived(drafts.filter(d => d.lot_number.trim() && d.expiration_date).length);
 
 	const isValid = $derived(
-		drafts.every(
+		drafts.length > 0 && drafts.every(
 			(d) =>
 				d.lot_number.trim().length > 0 &&
 				d.expiration_date.length > 0 &&
 				d.quantity_received > 0
 		)
 	);
+
+	async function handleSubmit() {
+		submitting = true;
+		try {
+			const res = await fetch('/inventory/purchase-orders', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'recibirOrden',
+					order_id: order.id,
+					items: drafts.map((d) => ({
+						purchase_order_item_id: d.purchase_order_item_id,
+						quantity_received: d.quantity_received,
+						lot_number: d.lot_number,
+						expiration_date: d.expiration_date,
+						unit_cost: d.unit_cost
+					}))
+				})
+			});
+			const data = await res.json();
+
+			if (data.status === 'success') {
+				toastSuccess('Recepción registrada', `${totalUnits} unidades de ${totalItems} medicamento(s) ingresados al inventario.`);
+				await invalidateAll();
+				onClose();
+			} else {
+				toastError('Error al registrar', data.message ?? 'No se pudo registrar la recepción.');
+			}
+		} catch {
+			toastError('Error', 'Error de conexión al registrar la recepción.');
+		} finally {
+			submitting = false;
+		}
+	}
 </script>
 
-<Dialog open={true} {onClose} size="lg">
+<Dialog open={true} {onClose} size="full">
 	<DialogHeader>
-		<p class="text-sm text-ink-muted font-normal">Orden {order.order_number}</p>
-		<h2 class="text-base font-semibold text-ink">Registrar Recepción</h2>
+		<div class="flex items-center gap-2">
+			<div class="w-8 h-8 rounded-lg bg-sage-100 dark:bg-sage-900/30 flex items-center justify-center">
+				<svg class="w-4 h-4 text-sage-600 dark:text-sage-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+				</svg>
+			</div>
+			<div>
+				<h2 class="text-base font-semibold text-ink">Registrar Recepción</h2>
+				<p class="text-xs text-ink-muted">Orden <span class="font-mono">{order.order_number}</span> · {order.supplier?.name ?? 'Proveedor'}</p>
+			</div>
+		</div>
 	</DialogHeader>
 
-	<form
-		method="POST"
-		action="?/recibirOrden"
-		use:enhance={() => {
-			submitting = true;
-			return async ({ result, update }) => {
-				submitting = false;
-				await update();
-				if (result.type === 'success') {
-					toastSuccess('Recepción registrada', `La recepción de la orden ${order.order_number} fue registrada correctamente.`);
-					await invalidateAll();
-					onClose();
-				} else if (result.type === 'failure') {
-					toastError('Error al registrar', (result.data as { error?: string })?.error ?? 'No se pudo registrar la recepción.');
-				}
-			};
-		}}
-	>
-		<input type="hidden" name="order_id" value={order.id} />
-		<input type="hidden" name="items" value={serializedItems} />
+	<DialogBody>
+		<div class="space-y-4">
+			<!-- Resumen -->
+			<div class="flex items-center gap-4 px-3 py-2.5 rounded-lg bg-canvas-subtle border border-border/40">
+				<div class="flex items-center gap-1.5">
+					<span class="text-xs text-ink-muted">Medicamentos:</span>
+					<span class="text-sm font-semibold text-ink">{totalItems}</span>
+				</div>
+				<div class="w-px h-4 bg-border/60"></div>
+				<div class="flex items-center gap-1.5">
+					<span class="text-xs text-ink-muted">Unidades a recibir:</span>
+					<span class="text-sm font-semibold text-ink">{totalUnits}</span>
+				</div>
+				<div class="w-px h-4 bg-border/60"></div>
+				<div class="flex items-center gap-1.5">
+					<span class="text-xs text-ink-muted">Completados:</span>
+					<span class="text-sm font-semibold {completedItems === totalItems ? 'text-sage-600 dark:text-sage-400' : 'text-ink'}">{completedItems}/{totalItems}</span>
+				</div>
+			</div>
 
-		<DialogBody>
-			<div class="space-y-4">
-				{#if drafts.length === 0}
-					<p class="text-sm text-ink-muted text-center py-4">Esta orden no tiene ítems registrados.</p>
-				{:else}
-					{#each drafts as draft, i (draft.purchase_order_item_id)}
-						<div class="rounded-lg border border-border bg-canvas-subtle p-3 space-y-3">
-							<div class="flex items-center justify-between">
-								<span class="text-sm font-medium text-ink">{draft.medication_name}</span>
-								<span class="text-sm text-ink-muted">
-									Pedido: {draft.quantity_ordered} {draft.unit_measure}
-								</span>
+			{#if drafts.length === 0}
+				<div class="text-center py-8">
+					<svg class="w-10 h-10 text-sage-400 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+					</svg>
+					<p class="text-sm font-medium text-ink">Todos los ítems ya fueron recibidos</p>
+					<p class="text-xs text-ink-muted mt-1">Esta orden está completa.</p>
+				</div>
+			{:else}
+				{#each drafts as draft, i (draft.purchase_order_item_id)}
+					{@const isComplete = draft.lot_number.trim() && draft.expiration_date && draft.quantity_received > 0}
+					<div class="rounded-xl border {isComplete ? 'border-sage-200 dark:border-sage-800 bg-sage-50/30 dark:bg-sage-900/10' : 'border-border bg-surface-elevated'} p-4 space-y-3 transition-colors">
+						<!-- Header del item -->
+						<div class="flex items-start justify-between">
+							<div class="flex items-center gap-2.5">
+								<div class="w-7 h-7 rounded-lg bg-viking-100 dark:bg-viking-900/30 flex items-center justify-center text-[10px] font-bold text-viking-700 dark:text-viking-300">
+									{i + 1}
+								</div>
+								<div>
+									<p class="text-sm font-semibold text-ink">{draft.medication_name}</p>
+									<p class="text-xs text-ink-muted">
+										{#if draft.medication_code}<span class="font-mono">{draft.medication_code}</span> · {/if}{draft.pharmaceutical_form}
+									</p>
+								</div>
 							</div>
-
-							<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-								<div class="col-span-2 sm:col-span-1">
-									<label for="recv-qty-{i}" class="block text-sm font-medium text-ink-muted mb-1">
-										Cant. recibida
-									</label>
-									<input
-										id="recv-qty-{i}"
-										type="number"
-										min="0"
-										max={draft.quantity_ordered}
-										bind:value={draft.quantity_received}
-										class="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-surface-elevated text-ink focus:outline-none focus:ring-2 focus:ring-iris-500/30 focus:border-iris-500"
-									/>
-								</div>
-								<div class="col-span-2 sm:col-span-1">
-									<label for="recv-lot-{i}" class="block text-sm font-medium text-ink-muted mb-1">
-										N° Lote <span class="text-red-500">*</span>
-									</label>
-									<input
-										id="recv-lot-{i}"
-										type="text"
-										bind:value={draft.lot_number}
-										placeholder="Ej: L2024-001"
-										class="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-surface-elevated text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-iris-500/30 focus:border-iris-500"
-									/>
-								</div>
-								<div class="col-span-2 sm:col-span-1">
-									<label for="recv-exp-{i}" class="block text-sm font-medium text-ink-muted mb-1">
-										Vencimiento <span class="text-red-500">*</span>
-									</label>
-									<input
-										id="recv-exp-{i}"
-										type="date"
-										bind:value={draft.expiration_date}
-										class="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-surface-elevated text-ink focus:outline-none focus:ring-2 focus:ring-iris-500/30 focus:border-iris-500"
-									/>
-								</div>
-								<div class="col-span-2 sm:col-span-1">
-									<label for="recv-cost-{i}" class="block text-sm font-medium text-ink-muted mb-1">
-										Costo unit.
-									</label>
-									<input
-										id="recv-cost-{i}"
-										type="number"
-										min="0"
-										step="0.01"
-										bind:value={draft.unit_cost}
-										class="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-surface-elevated text-ink focus:outline-none focus:ring-2 focus:ring-iris-500/30 focus:border-iris-500"
-									/>
-								</div>
+							<div class="text-right">
+								<p class="text-sm font-mono font-semibold text-ink">{draft.quantity_ordered} {draft.unit_measure}</p>
+								{#if draft.already_received > 0}
+									<p class="text-[10px] text-ink-muted">Ya recibidos: {draft.already_received}</p>
+								{/if}
 							</div>
 						</div>
-					{/each}
-				{/if}
-			</div>
-		</DialogBody>
 
-		<DialogFooter>
-			<Button type="button" variant="ghost" size="md" onclick={onClose}>Cancelar</Button>
-			<Button
-				type="submit"
-				variant="primary"
-				size="md"
-				isLoading={submitting}
-				disabled={!isValid || drafts.length === 0}
-			>
-				Confirmar recepción
-			</Button>
-		</DialogFooter>
-	</form>
+						<!-- Campos -->
+						<div class="grid grid-cols-3 gap-3">
+							<Input
+								label="Cantidad a recibir"
+								type="number"
+								bind:value={draft.quantity_received}
+								hint="Máx: {draft.quantity_ordered - draft.already_received}"
+							/>
+							<Input
+								label="N° de Lote *"
+								bind:value={draft.lot_number}
+								placeholder="LOT-2026-001"
+							/>
+							<Input
+								label="Costo unitario (Bs)"
+								type="number"
+								bind:value={draft.unit_cost}
+							/>
+						</div>
+						<div class="grid grid-cols-2 gap-3">
+							<DateInput
+								label="Fecha de vencimiento *"
+								bind:value={draft.expiration_date}
+								hint="Fecha impresa en el empaque"
+							/>
+							<div class="flex items-end pb-1">
+								{#if draft.expiration_date}
+									{@const daysLeft = Math.ceil((new Date(draft.expiration_date).getTime() - Date.now()) / 86400000)}
+									<div class="flex items-center gap-2 px-3 py-2 rounded-lg {daysLeft <= 90 ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800' : 'bg-sage-50 dark:bg-sage-900/20 border border-sage-200 dark:border-sage-800'}">
+										<svg class="w-4 h-4 {daysLeft <= 90 ? 'text-amber-500' : 'text-sage-500'}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+										</svg>
+										<span class="text-sm font-medium {daysLeft <= 90 ? 'text-amber-700 dark:text-amber-300' : 'text-sage-700 dark:text-sage-300'}">
+											{daysLeft <= 0 ? 'Vencido' : `${daysLeft} días de vida útil`}
+										</span>
+									</div>
+								{/if}
+							</div>
+						</div>
+
+						<!-- Status indicator -->
+						{#if isComplete}
+							<div class="flex items-center gap-1.5 text-xs text-sage-600 dark:text-sage-400">
+								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+								</svg>
+								Listo para recibir
+							</div>
+						{/if}
+					</div>
+				{/each}
+			{/if}
+		</div>
+	</DialogBody>
+
+	<DialogFooter>
+		<Button type="button" variant="ghost" size="md" onclick={onClose}>Cancelar</Button>
+		<Button
+			type="button"
+			variant="primary"
+			size="md"
+			isLoading={submitting}
+			disabled={!isValid}
+			onclick={handleSubmit}
+		>
+			<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+			</svg>
+			Confirmar recepción ({totalUnits} uds)
+		</Button>
+	</DialogFooter>
 </Dialog>

@@ -15,13 +15,15 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		date_from: url.searchParams.get('date_from') ?? undefined,
 		date_to: url.searchParams.get('date_to') ?? undefined,
 		page: Number(url.searchParams.get('page') ?? 1),
-		pageSize: 25
+		pageSize: [10, 25, 50, 100].includes(Number(url.searchParams.get('page_size'))) ? Number(url.searchParams.get('page_size')) : 25
 	};
 
 	// Si hay un número de receta para buscar, también cargamos la validación
 	const prescriptionNumber = url.searchParams.get('validate_prescription');
 	const [dispatches, validation] = await Promise.all([
-		dispatchesService.getDispatches(filters),
+		dispatchesService.getDispatches(filters).catch(() => ({
+			data: [], total: 0, page: 1, pageSize: 25, hasNext: false
+		})),
 		prescriptionNumber
 			? prescriptionsService.getPrescriptionByNumber(prescriptionNumber)
 				.then((p) => p ? dispatchesService.validateDispatch(p.id) : null)

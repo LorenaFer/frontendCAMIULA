@@ -1,40 +1,63 @@
 <script lang="ts">
-	import type { PageData, ActionData } from './$types';
-	import { enhance } from '$app/forms';
+	import type { PageData } from './$types';
 	import SchemaBuilder from '$shared/components/form-builder/SchemaBuilder.svelte';
 	import { FormBuilderStore } from '$shared/components/form-builder/FormBuilderStore.svelte.js';
 	import FormEngine from '$shared/components/form-engine/FormEngine.svelte';
 	import Button from '$shared/components/button/Button.svelte';
+	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
 
-	// Initialize store with existing schema or blank for new specialty
-	const store = new FormBuilderStore(
-		data.schema ?? {
-			id: '',
-			version: '1.0',
-			specialtyId: '',
-			specialtyName: data.specialtyName,
-			sections: []
-		}
-	);
+	// Initialize store — si el schema cargado es un fallback (otra especialidad),
+	// sobreescribir el nombre para que coincida con la especialidad que se edita
+	const loadedSchema = data.schema ?? {
+		id: '',
+		version: '1.0',
+		specialtyId: '',
+		specialtyName: data.specialtyName,
+		sections: []
+	};
 
-	// Hidden form data
-	let schemaJson = $state('');
+	// Si el schema es fallback de otra especialidad, mantener secciones pero corregir nombre
+	if (data.specialtyName && loadedSchema.specialtyName !== data.specialtyName) {
+		loadedSchema.specialtyName = data.specialtyName;
+		loadedSchema.specialtyId = data.specialtyName
+			.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+		loadedSchema.id = '';
+	}
+
+	const store = new FormBuilderStore(loadedSchema);
+
 	let saving = $state(false);
 
-	function handleSave() {
+	async function handleSave() {
 		const errors = store.getErrors();
 		if (errors.length > 0) {
-			alert('Errores:\n' + errors.join('\n'));
+			toastError('Errores en el formulario', errors.join(', '));
 			return;
 		}
-		schemaJson = JSON.stringify(store.toJSON());
-		// Tick for Svelte binding update
-		requestAnimationFrame(() => {
-			const hiddenForm = document.getElementById('schema-form') as HTMLFormElement;
-			hiddenForm?.requestSubmit();
-		});
+		saving = true;
+		try {
+			const fd = new FormData();
+			fd.set('schema', JSON.stringify(store.toJSON()));
+			const res = await fetch('?/guardarSchema', {
+				method: 'POST',
+				body: fd,
+				headers: { 'x-sveltekit-action': 'true' }
+			});
+			const text = await res.text();
+			const { deserialize } = await import('$app/forms');
+			const result = deserialize(text);
+			if (result.type === 'success') {
+				toastSuccess('Formulario guardado', `${data.specialtyName} actualizado correctamente.`);
+			} else if (result.type === 'failure') {
+				toastError('Error al guardar', (result.data as Record<string, string>)?.error ?? 'No se pudo guardar.');
+			}
+		} catch {
+			toastError('Error', 'Error de conexión al guardar.');
+		} finally {
+			saving = false;
+		}
 	}
 
 	// Noop save for preview FormEngine (read-only, never actually saves)
@@ -75,13 +98,6 @@
 		</div>
 	</div>
 
-	<!-- Success message -->
-	{#if form?.success}
-		<div class="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-300">
-			Formulario guardado correctamente.
-		</div>
-	{/if}
-
 	<!-- Split layout: Builder | Preview -->
 	<div class="builder-layout">
 		<!-- LEFT: Schema Builder -->
@@ -119,24 +135,6 @@
 		</div>
 	</div>
 
-	<!-- Hidden form for SvelteKit action -->
-	<form
-		id="schema-form"
-		method="POST"
-		action="?/guardarSchema"
-		class="hidden"
-		use:enhance={() => {
-			saving = true;
-			return ({ result }) => {
-				saving = false;
-				if (result.type === 'success') {
-					// Stay on page
-				}
-			};
-		}}
-	>
-		<input type="hidden" name="schema" value={schemaJson} />
-	</form>
 </div>
 
 <style>

@@ -12,9 +12,29 @@
 	let search = $state(data.search ?? '');
 
 	function doSearch() {
-		const qs = search.trim() ? `?search=${encodeURIComponent(search.trim())}` : '';
-		goto(`/patients${qs}`, { replaceState: true });
+		const qs = new URLSearchParams();
+		if (search.trim()) qs.set('search', search.trim());
+		qs.set('page', '1');
+		goto(`/patients?${qs}`, { replaceState: true });
 	}
+
+	function changePage(p: number, ps?: number) {
+		const qs = new URLSearchParams();
+		if (search.trim()) qs.set('search', search.trim());
+		qs.set('page', String(p));
+		if (ps) qs.set('page_size', String(ps));
+		else if (pagination.page_size !== 25) qs.set('page_size', String(pagination.page_size));
+		goto(`/patients?${qs}`, { replaceState: true });
+	}
+
+	function changePageSize(size: number) {
+		changePage(1, size);
+	}
+
+	const pagination = $derived(data.pagination);
+	const pageSizeOptions = [10, 25, 50, 100];
+
+	// Snippet no se puede definir en script, se define en template abajo
 
 	const relationLabels: Record<string, string> = {
 		P: 'Profesor', E: 'Empleado', O: 'Obrero', B: 'Estudiante',
@@ -22,6 +42,46 @@
 		empleado: 'Empleado', estudiante: 'Estudiante', profesor: 'Profesor', tercero: 'Tercero'
 	};
 </script>
+
+{#snippet paginationBar()}
+	{#if pagination.pages > 1 || pagination.page_size !== 25}
+		<div class="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2.5 border-b border-border/30 bg-canvas-subtle/30">
+			<div class="flex items-center gap-3">
+				<p class="text-xs text-ink-muted">
+					{((pagination.page - 1) * pagination.page_size) + 1}–{Math.min(pagination.page * pagination.page_size, pagination.total)} de {pagination.total}
+				</p>
+				<div class="flex items-center gap-1.5">
+					<span class="text-xs text-ink-subtle">Mostrar</span>
+					<select
+						class="text-xs border border-border/60 rounded-md px-1.5 py-1 bg-surface text-ink focus:outline-none focus:ring-1 focus:ring-viking-500/40"
+						value={pagination.page_size}
+						onchange={(e) => changePageSize(Number((e.target as HTMLSelectElement).value))}
+					>
+						{#each pageSizeOptions as size}
+							<option value={size}>{size}</option>
+						{/each}
+					</select>
+				</div>
+			</div>
+			<div class="flex items-center gap-1">
+				<button type="button" disabled={pagination.page <= 1} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page - 1)}>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+				</button>
+				{#each Array.from({ length: Math.min(pagination.pages, 7) }, (_, i) => {
+					const start = Math.max(1, Math.min(pagination.page - 3, pagination.pages - 6));
+					return start + i;
+				}) as p}
+					<button type="button" class="w-7 h-7 rounded-md text-xs font-medium transition-colors {p === pagination.page ? 'bg-viking-600 text-white' : 'text-ink-muted hover:bg-canvas-subtle'}" onclick={() => changePage(p)}>
+						{p}
+					</button>
+				{/each}
+				<button type="button" disabled={!pagination.has_next} class="px-2 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-ink-muted hover:bg-canvas-subtle" onclick={() => changePage(pagination.page + 1)}>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+				</button>
+			</div>
+		</div>
+	{/if}
+{/snippet}
 
 <svelte:head><title>Pacientes — Dashboard</title></svelte:head>
 
@@ -79,9 +139,12 @@
 		<div class="px-4 py-3 border-b border-border/60 flex items-center justify-between">
 			<h2 class="text-sm font-semibold text-ink">
 				{data.search ? `Resultados para "${data.search}"` : 'Todos los pacientes'}
-				<span class="text-ink-muted font-normal ml-1">({data.patients.length})</span>
+				<span class="text-ink-muted font-normal ml-1">({pagination.total})</span>
 			</h2>
 		</div>
+
+		<!-- Paginación superior -->
+		{@render paginationBar()}
 
 		{#if data.patients.length > 0}
 			<div class="divide-y divide-border/40">
@@ -120,20 +183,6 @@
 							{/if}
 						</div>
 
-						<!-- Stats -->
-						<div class="hidden md:flex items-center gap-4 shrink-0 text-xs text-ink-muted">
-							<div class="text-center">
-								<p class="font-bold text-ink tabular-nums">{patient.totalCitas}</p>
-								<p>Citas</p>
-							</div>
-							{#if patient.ultimaCita}
-								<div class="text-center">
-									<p class="font-medium text-ink">{patient.ultimaCita}</p>
-									<p>Última</p>
-								</div>
-							{/if}
-						</div>
-
 						<!-- Chevron -->
 						<svg class="w-4 h-4 text-ink-subtle shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 							<path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
@@ -149,5 +198,8 @@
 				/>
 			</div>
 		{/if}
+
+		<!-- Paginación inferior -->
+		{@render paginationBar()}
 	</Card>
 </div>
