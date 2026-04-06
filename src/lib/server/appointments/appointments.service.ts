@@ -1,8 +1,8 @@
-import { mockFlags } from './mock-flags.js';
-import { apiFetch } from './api.js';
-import { mockCitas, mockCitasConPaciente } from './mock/data.js';
-import type { Cita, CitaConPaciente, CitaEstado, AppointmentFilters, PaginatedResponse } from '$shared/types/appointments.js';
-import { mapAppointment, mapAppointmentToBackend, mapStatusToBackend, mapPagination } from './mappers.js';
+import { mockFlags } from '../mock-flags.js';
+import { apiFetch } from '../api.js';
+import { mockCitas, mockCitasConPaciente } from '../mock/data.js';
+import type { Cita, CitaConPaciente, CitaEstado, AppointmentFilters, PaginatedResponse } from '$domain/appointments/types.js';
+import { mapAppointment, mapAppointmentToBackend, mapStatusToBackend, mapPagination } from './appointments.mappers.js';
 
 type R = Record<string, unknown>;
 
@@ -83,10 +83,10 @@ export async function getCitasByFilters(
 	}
 
 	const qs = new URLSearchParams();
-	if (filters.fecha) qs.set('fecha', filters.fecha);
+	if (filters.fecha) qs.set('date_str', filters.fecha);
 	if (filters.doctor_id) qs.set('doctor_id', filters.doctor_id);
-	if (filters.especialidad_id) qs.set('especialidad_id', filters.especialidad_id);
-	if (filters.estado) qs.set('estado', filters.estado);
+	if (filters.especialidad_id) qs.set('specialty_id', filters.especialidad_id);
+	if (filters.estado) qs.set('status_filter', filters.estado);
 	if (filters.search) qs.set('q', filters.search);
 	qs.set('page', String(filters.page ?? 1));
 	qs.set('page_size', String(filters.page_size ?? 25));
@@ -120,7 +120,7 @@ export async function getCitasHoy(doctorId?: string): Promise<CitaConPaciente[]>
 			(c) => c.fecha === today && (!doctorId || c.doctor_id === doctorId)
 		);
 	}
-	const qs = new URLSearchParams({ fecha: today });
+	const qs = new URLSearchParams({ date_str: today });
 	if (doctorId) qs.set('doctor_id', doctorId);
 	const raw = await apiFetch<R | R[]>(`/appointments?${qs}`);
 	const items = Array.isArray(raw) ? raw : (raw.items as R[] ?? []);
@@ -134,7 +134,7 @@ export async function getCitasByDoctorMes(doctorId: string, year: number, month:
 			(c) => c.doctor_id === doctorId && c.fecha.startsWith(prefix) && c.estado !== 'cancelada'
 		);
 	}
-	const raw = await apiFetch<R | R[]>(`/appointments?doctor_id=${doctorId}&mes=${prefix}&excluir_canceladas=true`);
+	const raw = await apiFetch<R | R[]>(`/appointments?doctor_id=${doctorId}&month_str=${prefix}&exclude_cancelled=true`);
 	// Backend puede devolver array directo o paginado
 	const items = Array.isArray(raw) ? raw : (raw.items as R[] ?? []);
 	return items.map((r) => mapAppointment(r) as Cita);
@@ -146,7 +146,7 @@ export async function getCitasByDoctorFecha(doctorId: string, fecha: string): Pr
 			(c) => c.doctor_id === doctorId && c.fecha === fecha && c.estado !== 'cancelada'
 		);
 	}
-	const raw = await apiFetch<R | R[]>(`/appointments?doctor_id=${doctorId}&fecha=${fecha}&excluir_canceladas=true`);
+	const raw = await apiFetch<R | R[]>(`/appointments?doctor_id=${doctorId}&date_str=${fecha}&exclude_cancelled=true`);
 	const items = Array.isArray(raw) ? raw : (raw.items as R[] ?? []);
 	return items.map((r) => mapAppointment(r) as Cita);
 }
@@ -282,10 +282,10 @@ export async function getStats(filters: AppointmentFilters): Promise<CitasStats>
 
 	// API real — mapear snake_case → camelCase
 	const qs = new URLSearchParams();
-	if (filters.fecha) qs.set('fecha', filters.fecha);
+	if (filters.fecha) qs.set('date_str', filters.fecha);
 	if (filters.doctor_id) qs.set('doctor_id', filters.doctor_id);
-	if (filters.especialidad_id) qs.set('especialidad_id', filters.especialidad_id);
-	if (filters.estado) qs.set('estado', filters.estado);
+	if (filters.especialidad_id) qs.set('specialty_id', filters.especialidad_id);
+	if (filters.estado) qs.set('status_filter', filters.estado);
 	const raw = await apiFetch<R>(`/appointments/stats?${qs}`);
 	return {
 		total: Number(raw.total ?? 0),
@@ -319,7 +319,7 @@ export async function isSlotOccupied(doctorId: string, fecha: string, horaInicio
 		);
 	}
 	const res = await apiFetch<{ ocupado: boolean }>(
-		`/appointments/check-slot?doctor_id=${doctorId}&fecha=${fecha}&hora_inicio=${horaInicio}`
+		`/appointments/check-slot?doctor_id=${doctorId}&date_str=${fecha}&hora_inicio=${horaInicio}`
 	);
 	return res.ocupado;
 }

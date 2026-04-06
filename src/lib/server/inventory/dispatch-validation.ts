@@ -10,7 +10,7 @@ import type {
 	DispatchException,
 	DispatchValidation,
 	DispatchValidationItem
-} from '$shared/types/inventory.js';
+} from '$domain/inventory/types.js';
 
 /**
  * Valida si una receta puede ser despachada según límites mensuales,

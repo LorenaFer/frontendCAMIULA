@@ -11,7 +11,7 @@ import type {
 	MedicationFilters,
 	CreateMedicationInput,
 	InventoryPaginatedResponse
-} from '$shared/types/inventory.js';
+} from '$domain/inventory/types.js';
 
 export async function getMedications(
 	filters: MedicationFilters

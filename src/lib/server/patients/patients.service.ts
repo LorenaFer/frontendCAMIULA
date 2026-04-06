@@ -1,8 +1,8 @@
-import { mockFlags } from './mock-flags.js';
-import { apiFetch } from './api.js';
-import { mockPacientes, getNextNHM } from './mock/data.js';
-import type { Paciente, PacientePublic, DatosMedicos, RelacionUniversidad, Parentesco, Sexo, EstadoCivil, ContactoEmergencia } from '$shared/types/appointments.js';
-import { mapPatient, mapPatientPublic, mapPatientToBackend } from './mappers.js';
+import { mockFlags } from '../mock-flags.js';
+import { apiFetch } from '../api.js';
+import { mockPacientes, getNextNHM } from '../mock/data.js';
+import type { Paciente, PacientePublic, DatosMedicos, RelacionUniversidad, Parentesco, Sexo, EstadoCivil, ContactoEmergencia } from '$domain/patients/types.js';
+import { mapPatient, mapPatientPublic, mapPatientToBackend } from './patients.mappers.js';
 
 // ─── Tipos de paginación ────────────────────────────────────
 
@@ -121,7 +121,7 @@ export async function findByCedula(cedula: string): Promise<PacientePublic | nul
 		const p = mockPacientes.find((x) => x.cedula === cedula);
 		return p ? toPublic(p) : null;
 	}
-	const raw = await apiFetch<Record<string, unknown> | null>(`/patients?cedula=${encodeURIComponent(cedula)}`);
+	const raw = await apiFetch<Record<string, unknown> | null>(`/patients?dni=${encodeURIComponent(cedula)}`);
 	return raw ? mapPatientPublic(raw) : null;
 }
 
@@ -129,7 +129,7 @@ export async function findFullByCedula(cedula: string): Promise<Paciente | null>
 	if (mockFlags.pacientes) {
 		return mockPacientes.find((x) => x.cedula === cedula) ?? null;
 	}
-	const raw = await apiFetch<Record<string, unknown> | null>(`/patients/full?cedula=${encodeURIComponent(cedula)}`);
+	const raw = await apiFetch<Record<string, unknown> | null>(`/patients/full?dni=${encodeURIComponent(cedula)}`);
 	return raw ? mapPatient(raw) : null;
 }
 

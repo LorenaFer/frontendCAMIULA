@@ -10,7 +10,7 @@ import type {
 	BatchFilters,
 	StockItem,
 	InventoryPaginatedResponse
-} from '$shared/types/inventory.js';
+} from '$domain/inventory/types.js';
 
 export async function getBatches(
 	filters: BatchFilters

@@ -1,7 +1,7 @@
-import { mockFlags } from './mock-flags.js';
-import { apiFetch } from './api.js';
-import { mockSchemas, fallbackSchema } from './mock/schemas.js';
-import type { MedicalFormSchema } from '$shared/types/form-schema.js';
+import { mockFlags } from '../mock-flags.js';
+import { apiFetch } from '../api.js';
+import { mockSchemas, fallbackSchema } from '../mock/schemas.js';
+import type { MedicalFormSchema } from '$domain/medical-records/form-schema.js';
 
 /** Cache en memoria para schemas (cambian con poca frecuencia) */
 const schemaCache = new Map<string, MedicalFormSchema>();

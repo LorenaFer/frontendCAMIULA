@@ -10,7 +10,7 @@ import type {
 	SupplierOption,
 	CreateSupplierInput,
 	InventoryPaginatedResponse
-} from '$shared/types/inventory.js';
+} from '$domain/inventory/types.js';
 
 export async function getSuppliers(
 	page = 1,

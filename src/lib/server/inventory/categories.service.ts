@@ -7,7 +7,7 @@ import type {
 	MedicationCategory,
 	CreateCategoryInput,
 	InventoryPaginatedResponse
-} from '$shared/types/inventory.js';
+} from '$domain/inventory/types.js';
 
 export async function getCategories(
 	page = 1,

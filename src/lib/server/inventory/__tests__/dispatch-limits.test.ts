@@ -13,7 +13,7 @@ import type {
 	DispatchLimit,
 	DispatchException,
 	Batch
-} from '../../../shared/types/inventory.js';
+} from '$domain/inventory/types.js';
 import { validateDispatchLogic } from '../dispatch-validation.js';
 
 // ─── Utilidad para calcular daysLeft de un lote ──────────────────────────────

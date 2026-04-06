@@ -15,7 +15,7 @@ import type {
 	StockAlertsResponse,
 	StockAlertFilters,
 	InventoryPaginatedResponse
-} from '$shared/types/inventory.js';
+} from '$domain/inventory/types.js';
 
 export async function getStockReport(): Promise<StockReport> {
 	if (mockFlags.inventoryReports) {

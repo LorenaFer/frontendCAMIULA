@@ -1,4 +1,4 @@
-import { apiFetch } from './api.js';
+import { apiFetch } from '../api.js';
 
 export interface User {
 	id: string;

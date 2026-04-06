@@ -5,7 +5,7 @@
 import { mockFlags } from '../mock-flags.js';
 import { apiFetch } from '../api.js';
 import { mockPrescriptions, mockMedications } from '../mock/data.js';
-import type { Prescription, CreatePrescriptionInput } from '$shared/types/inventory.js';
+import type { Prescription, CreatePrescriptionInput } from '$domain/inventory/types.js';
 
 export async function getPrescriptionByAppointment(
 	appointmentId: string

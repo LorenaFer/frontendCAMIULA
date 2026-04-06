@@ -4,7 +4,8 @@
 // en una fecha dada, restando los ya ocupados.
 // ============================================================
 
-import type { DisponibilidadDoctor, TimeSlot, Cita } from '$shared/types/appointments.js';
+import type { DisponibilidadDoctor } from '$domain/staff/types.js';
+import type { TimeSlot, Cita } from '$domain/appointments/types.js';
 
 /** Convierte "HH:MM" a minutos desde medianoche */
 function toMinutes(time: string): number {

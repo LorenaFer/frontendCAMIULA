@@ -1,8 +1,8 @@
-import { mockFlags } from './mock-flags.js';
-import { apiFetch } from './api.js';
-import { mockHistorias, mockDoctores, mockCitas } from './mock/data.js';
-import type { HistoriaMedica, Evaluacion } from '$shared/types/appointments.js';
-import type { HistorialPrevioEntry } from '$shared/types/medical-records.js';
+import { mockFlags } from '../mock-flags.js';
+import { apiFetch } from '../api.js';
+import { mockHistorias, mockDoctores, mockCitas } from '../mock/data.js';
+import type { HistoriaMedica, Evaluacion } from '$domain/medical-records/types.js';
+import type { HistorialPrevioEntry } from '$domain/medical-records/types.js';
 
 export async function findByCita(citaId: string): Promise<HistoriaMedica | null> {
 	if (mockFlags.historias) {

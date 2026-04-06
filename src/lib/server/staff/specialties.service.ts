@@ -1,8 +1,8 @@
-import { mockFlags } from './mock-flags.js';
-import { apiFetch } from './api.js';
-import { mockEspecialidades } from './mock/data.js';
-import { mapSpecialty } from './mappers.js';
-import type { Especialidad } from '$shared/types/appointments.js';
+import { mockFlags } from '../mock-flags.js';
+import { apiFetch } from '../api.js';
+import { mockEspecialidades } from '../mock/data.js';
+import { mapSpecialty } from './staff.mappers.js';
+import type { Especialidad } from '$domain/staff/types.js';
 
 // ─── Mock mutable store ─────────────────────────────────────
 let mockStore = [...mockEspecialidades];

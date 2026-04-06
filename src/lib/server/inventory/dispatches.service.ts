@@ -17,7 +17,7 @@ import type {
 	DispatchValidation,
 	ExecuteDispatchInput,
 	InventoryPaginatedResponse
-} from '$shared/types/inventory.js';
+} from '$domain/inventory/types.js';
 
 export async function getDispatches(
 	filters: DispatchFilters

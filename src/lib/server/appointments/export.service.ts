@@ -3,7 +3,7 @@
 // Implementar con exceljs cuando el módulo de analistas esté activo.
 // ============================================================
 
-import type { CitaConPaciente } from '$shared/types/appointments.js';
+import type { CitaConPaciente } from '$domain/appointments/types.js';
 
 /**
  * Genera un buffer Excel con las citas proporcionadas.
