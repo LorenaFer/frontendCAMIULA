@@ -104,7 +104,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			if (relacion_univ === 'tercero' && titular_cedula) {
 				const titular = await pacientesService.findByCedula(titular_cedula);
 				if (!titular) return err('No se encontró el titular universitario con esa cédula', 404);
-				titular_nhm = titular.nhm;
+				titular_nhm = titular.nhm ?? undefined;
 			}
 
 			// Calcular edad si hay fecha de nacimiento

@@ -24,7 +24,7 @@ export interface ContactoEmergencia {
 
 export interface Paciente {
 	id: string;
-	nhm: number;
+	nhm: number | null;
 	cedula: string;
 	nombre: string;
 	apellido: string;

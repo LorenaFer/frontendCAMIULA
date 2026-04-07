@@ -99,7 +99,7 @@ export const actions: Actions = {
 			if (!titular) {
 				return fail(400, { field: 'titular_cedula', error: 'No se encontró el titular universitario con esa cédula' });
 			}
-			titular_nhm = titular.nhm;
+			titular_nhm = titular.nhm ?? undefined;
 		}
 
 		const paciente = await pacientesService.createPaciente({

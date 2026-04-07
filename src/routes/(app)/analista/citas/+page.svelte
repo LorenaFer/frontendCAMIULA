@@ -543,7 +543,7 @@
 				<div>
 					<p class="text-ink-muted">Paciente</p>
 					<p class="font-medium text-ink">{c.paciente.nombre} {c.paciente.apellido}</p>
-					<p class="text-xs text-ink-muted">NHM {c.paciente.nhm} · {c.paciente.cedula}</p>
+					<p class="text-xs text-ink-muted">NHM {c.paciente.nhm ?? '—'} · {c.paciente.cedula}</p>
 				</div>
 				<div>
 					<p class="text-ink-muted">Estado</p>

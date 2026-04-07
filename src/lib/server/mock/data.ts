@@ -419,7 +419,7 @@ export const mockHistorias: HistoriaMedica[] = [
 // ─── Helpers ─────────────────────────────────────────────────
 
 export function getNextNHM(): number {
-	return Math.max(...mockPacientes.map((p) => p.nhm)) + 1;
+	return Math.max(...mockPacientes.map((p) => p.nhm ?? 0)) + 1;
 }
 
 // ============================================================

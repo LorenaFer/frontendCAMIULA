@@ -67,7 +67,7 @@ export function mapAppointment(b: AnyRecord): CitaConPaciente {
 		created_by: '',
 		paciente: {
 			id: String(b.fk_patient_id),
-			nhm: 0,
+			nhm: b.patient_nhm != null ? Number(b.patient_nhm) : null,
 			cedula: String(b.patient_dni ?? b.patient_cedula ?? ''),
 			nombre: String(b.patient_name ?? '').split(' ')[0] ?? '',
 			apellido: String(b.patient_name ?? '').split(' ').slice(1).join(' ') ?? '',
