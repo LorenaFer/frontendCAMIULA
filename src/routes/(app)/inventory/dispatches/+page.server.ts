@@ -2,6 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import * as dispatchesService from '$lib/server/inventory/dispatches.service.js';
 import * as prescriptionsService from '$lib/server/inventory/prescriptions.service.js';
+import { ApiError } from '$lib/server/api.js';
 import { assertPermission, assertActionPermission } from '$lib/server/rbac.js';
 import { P } from '$shared/rbac-config.js';
 import type { DispatchFilters } from '$domain/inventory/types.js';
@@ -44,14 +45,18 @@ export const actions: Actions = {
 
 		try {
 			const prescription = await prescriptionsService.getPrescriptionByNumber(prescription_number);
-			if (!prescription) return fail(404, { error: 'Receta no encontrada' });
+			if (!prescription) return fail(404, { error: `No existe ninguna receta con el número "${prescription_number}".` });
 
 			const validation = await dispatchesService.validateDispatch(prescription.id);
 			return { validation, prescription };
 		} catch (e: unknown) {
+			if (e instanceof ApiError) {
+				return fail(e.status || 500, { error: e.detail });
+			}
 			const status = (e as { status?: number }).status;
-			if (status === 404) return fail(404, { error: 'Receta no encontrada' });
-			return fail(500, { error: 'Error al validar receta' });
+			const message = (e as Error).message;
+			if (status && message) return fail(status, { error: message });
+			return fail(500, { error: 'Error al validar receta. Intente nuevamente.' });
 		}
 	},
 
@@ -71,11 +76,14 @@ export const actions: Actions = {
 			});
 			return { dispatched: true, dispatch };
 		} catch (e: unknown) {
+			if (e instanceof ApiError) {
+				return fail(e.status || 500, { error: e.detail });
+			}
 			const msg = (e as Error).message ?? '';
 			if (msg.includes('backend real')) {
 				return fail(503, { error: 'El despacho requiere conexión al backend. Disponible en producción.' });
 			}
-			return fail(500, { error: 'Error al ejecutar despacho' });
+			return fail(500, { error: msg || 'Error al ejecutar despacho. Intente nuevamente.' });
 		}
 	},
 
@@ -92,9 +100,13 @@ export const actions: Actions = {
 			await dispatchesService.cancelDispatch(id, reason);
 			return { cancelled: true };
 		} catch (e: unknown) {
+			if (e instanceof ApiError) {
+				return fail(e.status || 500, { error: e.detail });
+			}
 			const status = (e as { status?: number }).status;
-			if (status === 404) return fail(404, { error: 'Despacho no encontrado' });
-			return fail(500, { error: 'Error al cancelar despacho' });
+			const message = (e as Error).message;
+			if (status && message) return fail(status, { error: message });
+			return fail(500, { error: 'Error al cancelar despacho. Intente nuevamente.' });
 		}
 	}
 };

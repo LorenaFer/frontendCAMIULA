@@ -338,8 +338,8 @@
 
 				<!-- Ítems despachados -->
 				<div>
-					<h3 class="text-sm font-semibold text-ink mb-2">Medicamentos despachados ({d.items.length})</h3>
-					{#if d.items.length === 0}
+					<h3 class="text-sm font-semibold text-ink mb-2">Medicamentos despachados ({d.items?.length ?? 0})</h3>
+					{#if !d.items || d.items.length === 0}
 						<p class="text-sm text-ink-muted py-3 text-center">Sin ítems.</p>
 					{:else}
 						<div class="space-y-2">
