@@ -347,14 +347,14 @@
 								<div class="bg-canvas-subtle rounded-lg border border-border p-3">
 									<div class="flex items-start justify-between">
 										<div>
-											<p class="text-sm font-medium text-ink">{item.medication.generic_name}</p>
-											<p class="text-sm text-ink-muted">{item.medication.pharmaceutical_form} · {item.medication.unit_measure}</p>
+											<p class="text-sm font-medium text-ink">{item.medication?.generic_name ?? '—'}</p>
+											<p class="text-sm text-ink-muted">{item.medication?.pharmaceutical_form ?? ''}{item.medication?.pharmaceutical_form && item.medication?.unit_measure ? ' · ' : ''}{item.medication?.unit_measure ?? ''}</p>
 										</div>
-										<p class="text-sm font-mono text-ink shrink-0">{item.quantity_dispatched} uds</p>
+										<p class="text-sm font-mono text-ink shrink-0">{item.quantity_dispatched ?? 0} uds</p>
 									</div>
 									<div class="mt-1.5 flex gap-4 text-sm text-ink-muted">
-										<span>Lote: <span class="font-mono text-ink">{item.lot_number}</span></span>
-										<span>Vence: <span class="text-ink">{item.expiration_date}</span></span>
+										<span>Lote: <span class="font-mono text-ink">{item.lot_number ?? '—'}</span></span>
+										<span>Vence: <span class="text-ink">{item.expiration_date ?? '—'}</span></span>
 									</div>
 								</div>
 							{/each}
