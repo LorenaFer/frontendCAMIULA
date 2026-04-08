@@ -79,6 +79,26 @@
 		goto(`?${qs}`, { replaceState: true });
 	}
 
+	type StatusFilter = 'all' | 'completed' | 'pending' | 'cancelled';
+	const activeStatus = $derived<StatusFilter>(
+		(($page.url.searchParams.get('status') as StatusFilter) ?? 'all')
+	);
+
+	function setStatusFilter(status: StatusFilter) {
+		const qs = new URLSearchParams($page.url.searchParams);
+		if (status === 'all') qs.delete('status');
+		else qs.set('status', status);
+		qs.set('page', '1');
+		goto(`?${qs}`, { replaceState: true });
+	}
+
+	const statusFilters: { value: StatusFilter; label: string }[] = [
+		{ value: 'all',       label: 'Todos' },
+		{ value: 'completed', label: 'Completados' },
+		{ value: 'pending',   label: 'Pendientes' },
+		{ value: 'cancelled', label: 'Cancelados' }
+	];
+
 	const pagination = $derived(data.dispatches);
 </script>
 
@@ -220,8 +240,26 @@
 
 	<!-- Historial de despachos -->
 	<Card padding="none">
-		<div class="px-4 py-3 border-b border-border">
+		<div class="px-4 py-3 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 			<h2 class="text-sm font-semibold text-ink">Historial de despachos</h2>
+			<div class="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por estado">
+				{#each statusFilters as f (f.value)}
+					{@const isActive = activeStatus === f.value}
+					<button
+						type="button"
+						onclick={() => setStatusFilter(f.value)}
+						aria-pressed={isActive}
+						class="
+							px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors
+							{isActive
+								? 'bg-viking-500 border-viking-500 text-white'
+								: 'bg-surface-elevated border-border text-ink-muted hover:text-ink hover:border-border-strong'}
+						"
+					>
+						{f.label}
+					</button>
+				{/each}
+			</div>
 		</div>
 		<DataTable
 			columns={[
