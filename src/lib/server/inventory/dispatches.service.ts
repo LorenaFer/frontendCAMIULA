@@ -66,7 +66,7 @@ export async function getDispatches(
 	qs.set('page_size', String(filters.pageSize ?? 25));
 
 	const raw = await apiFetch<Record<string, unknown>>(`/inventory/dispatches?${qs}`);
-	const items = (raw.items as Dispatch[]) ?? [];
+	const items = ((raw.items as Record<string, unknown>[]) ?? []).map(mapDispatchFromApi);
 	const pagination = raw.pagination as Record<string, number>;
 	return {
 		data: items,
@@ -74,6 +74,63 @@ export async function getDispatches(
 		page: pagination.page,
 		pageSize: pagination.page_size,
 		hasNext: pagination.page < pagination.pages
+	};
+}
+
+/**
+ * Normaliza los nombres de campo del backend FastAPI a los tipos del dominio.
+ * El backend usa snake_case con variantes (`patient_full_name`, `batch_number`, `medication_name`)
+ * mientras que la UI espera (`patient_name`, `lot_number`, `medication.generic_name`).
+ */
+function mapDispatchFromApi(raw: Record<string, unknown>): Dispatch {
+	const rawItems = (raw.items as Record<string, unknown>[]) ?? [];
+	return {
+		id: String(raw.id ?? ''),
+		fk_prescription_id: String(raw.fk_prescription_id ?? raw.prescription_id ?? ''),
+		prescription_number: String(raw.prescription_number ?? ''),
+		fk_patient_id: String(raw.fk_patient_id ?? raw.patient_id ?? ''),
+		patient_name: (raw.patient_name ?? raw.patient_full_name) as string | undefined,
+		fk_pharmacist_id: String(raw.fk_pharmacist_id ?? raw.pharmacist_id ?? ''),
+		pharmacist_name: (raw.pharmacist_name ?? raw.pharmacist_full_name) as string | undefined,
+		dispatch_date: String(raw.dispatch_date ?? ''),
+		notes: raw.notes as string | undefined,
+		dispatch_status: raw.dispatch_status as Dispatch['dispatch_status'],
+		items: rawItems.map(mapDispatchItemFromApi),
+		created_at: String(raw.created_at ?? '')
+	};
+}
+
+function mapDispatchItemFromApi(raw: Record<string, unknown>): Dispatch['items'][number] {
+	const medicationId = String(raw.fk_medication_id ?? raw.medication_id ?? '');
+	const genericName = String(
+		raw.generic_name
+		?? raw.medication_name
+		?? (raw.medication as Record<string, unknown> | undefined)?.generic_name
+		?? ''
+	);
+	const pharmaceuticalForm = String(
+		raw.pharmaceutical_form
+		?? (raw.medication as Record<string, unknown> | undefined)?.pharmaceutical_form
+		?? ''
+	);
+	const unitMeasure = String(
+		raw.unit_measure
+		?? (raw.medication as Record<string, unknown> | undefined)?.unit_measure
+		?? ''
+	);
+	return {
+		id: String(raw.id ?? ''),
+		fk_batch_id: String(raw.fk_batch_id ?? raw.batch_id ?? ''),
+		lot_number: String(raw.lot_number ?? raw.batch_number ?? ''),
+		expiration_date: String(raw.expiration_date ?? ''),
+		fk_medication_id: medicationId,
+		medication: {
+			id: medicationId,
+			generic_name: genericName,
+			pharmaceutical_form: pharmaceuticalForm,
+			unit_measure: unitMeasure
+		} as Dispatch['items'][number]['medication'],
+		quantity_dispatched: Number(raw.quantity_dispatched ?? 0)
 	};
 }
 
