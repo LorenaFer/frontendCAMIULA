@@ -4,38 +4,41 @@ import type { AuthUser } from '$shared/types/auth.js';
 import { getRequiredPermission } from '$lib/server/rbac.js';
 import { hasPermission } from '$shared/rbac-config.js';
 import { setRequestToken, apiFetch } from '$lib/server/api.js';
-import { setToken } from '$lib/server/auth.js';
+import {
+	getRefreshToken,
+	isExpiringSoon,
+	setRefreshToken,
+	setToken
+} from '$lib/server/auth.js';
 
 const AUTH_COOKIE = 'mock_auth';
 const TOKEN_COOKIE = 'auth_token';
 const PUBLIC_ROUTES = ['/login', '/logout', '/portal'];
 
-// Credenciales del service account para mock auth
-const SERVICE_EMAIL = 'admin@camiula.edu.ve';
-const SERVICE_PASSWORD = 'Admin2026!';
-
 export const handle: Handle = async ({ event, resolve }) => {
-	// 0. Set JWT token for all API calls in this request
+	// 0. Resolver access token: si está por expirar y hay refresh, rotarlo.
 	let token = event.cookies.get(TOKEN_COOKIE) ?? null;
+	const refresh = getRefreshToken(event.cookies);
 
-	// Auto-refresh: si hay sesión mock (no login real) pero no hay JWT, obtener uno del service account
-	// Solo para sesiones mock — el login real guarda su propio JWT
-	if (!token && event.cookies.get(AUTH_COOKIE)) {
-		// Verificar si la sesión fue creada por mock login (tiene IDs tipo staff-00X)
+	if (refresh && (!token || isExpiringSoon(token, 30))) {
 		try {
-			const sessionRaw = event.cookies.get(AUTH_COOKIE);
-			const session = sessionRaw ? JSON.parse(sessionRaw) : null;
-			const isMockSession = session?.id?.startsWith('staff-');
-
-			if (isMockSession) {
-				const tokenRes = await apiFetch<{ access_token: string; expires_in: number }>('/auth/login', {
+			const res = await apiFetch<{ access_token: string; refresh_token: string; expires_in: number }>(
+				'/auth/refresh',
+				{
 					method: 'POST',
-					body: JSON.stringify({ email: SERVICE_EMAIL, password: SERVICE_PASSWORD })
-				});
-				token = tokenRes.access_token;
-				setToken(event.cookies, token, tokenRes.expires_in);
-			}
-		} catch { /* silenciar */ }
+					body: JSON.stringify({ refresh_token: refresh })
+				}
+			);
+			setToken(event.cookies, res.access_token, res.expires_in);
+			setRefreshToken(event.cookies, res.refresh_token);
+			token = res.access_token;
+		} catch {
+			// Refresh falló — limpiar auth para forzar re-login
+			event.cookies.delete(TOKEN_COOKIE, { path: '/' });
+			event.cookies.delete('refresh_token', { path: '/' });
+			event.cookies.delete(AUTH_COOKIE, { path: '/' });
+			token = null;
+		}
 	}
 
 	setRequestToken(token);

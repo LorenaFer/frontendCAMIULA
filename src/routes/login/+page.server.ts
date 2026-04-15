@@ -3,7 +3,7 @@ import { redirect, fail } from '@sveltejs/kit';
 import type { AuthUser } from '$shared/types/auth.js';
 import { mockFlags } from '$lib/server/mock-flags.js';
 import { apiFetch, ApiError } from '$lib/server/api.js';
-import { setToken, setUserSession } from '$lib/server/auth.js';
+import { setRefreshToken, setToken, setUserSession } from '$lib/server/auth.js';
 
 // Mock staff credentials — solo cuando MOCK_AUTH=true
 const STAFF_CREDENTIALS: Array<{
@@ -49,7 +49,7 @@ export const actions: Actions = {
 		}
 
 		if (mockFlags.auth) {
-			// ── Mock login ──
+			// ── Mock login (solo dev) ──
 			const match = STAFF_CREDENTIALS.find(
 				(c) => c.username.toLowerCase() === username && c.password === password
 			);
@@ -57,30 +57,27 @@ export const actions: Actions = {
 				return fail(401, { error: 'Usuario o contraseña incorrectos.', username });
 			}
 			setUserSession(cookies, match.user);
-
-			// Intentar obtener JWT real del backend para que las API calls funcionen
-			// (best effort — si falla, el frontend sigue con mock data)
-			try {
-				const tokenRes = await apiFetch<{ access_token: string; expires_in: number }>('/auth/login', {
-					method: 'POST',
-					body: JSON.stringify({ email: 'admin@camiula.edu.ve', password: 'Admin2026!' })
-				});
-				setToken(cookies, tokenRes.access_token, tokenRes.expires_in);
-			} catch { /* silenciar — el JWT no es crítico para mock auth */ }
-
 			const home = match.user.role === 'doctor' ? '/doctor/citas' : '/';
 			redirect(303, home);
 		}
 
 		// ── Real backend login ──
 		try {
-			const tokenRes = await apiFetch<{ access_token: string; token_type: string; expires_in: number }>('/auth/login', {
+			const tokenRes = await apiFetch<{
+				access_token: string;
+				refresh_token: string;
+				token_type: string;
+				expires_in: number;
+			}>('/auth/login', {
 				method: 'POST',
 				body: JSON.stringify({ email: username, password })
 			});
 
-			// Guardar JWT token en cookie httpOnly
+			// Guardar access y refresh JWTs en cookies httpOnly
 			setToken(cookies, tokenRes.access_token, tokenRes.expires_in);
+			if (tokenRes.refresh_token) {
+				setRefreshToken(cookies, tokenRes.refresh_token);
+			}
 
 			// Obtener perfil del usuario para construir AuthUser
 			const profile = await apiFetch<{ id: string; email: string; full_name: string; roles: string[] }>('/users/me', {
