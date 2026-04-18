@@ -14,14 +14,12 @@
 		user,
 		navItems,
 		permissions,
-		notificationCount,
 		searchCategories = [],
 		recentSearches = [],
 		searchLoading = false,
 		onSearch,
 		onSearchSelect,
 		onSettingsClick,
-		onNotificationsClick,
 		onProfileClick,
 		onLogout
 	}: {
@@ -30,14 +28,12 @@
 		user: UserProfile;
 		navItems: NavItem[];
 		permissions?: string[];
-		notificationCount?: number;
 		searchCategories?: SearchCategory[];
 		recentSearches?: SearchResult[];
 		searchLoading?: boolean;
 		onSearch?: (query: string) => void;
 		onSearchSelect?: (result: SearchResult) => void;
 		onSettingsClick?: () => void;
-		onNotificationsClick?: () => void;
 		onProfileClick?: () => void;
 		onLogout?: () => void;
 	} = $props();
@@ -74,9 +70,7 @@
 
 	<div class="lg:ml-60 flex flex-col min-h-screen">
 		<Header
-			{notificationCount}
 			onSearchClick={() => (searchOpen = true)}
-			{onNotificationsClick}
 			onMenuClick={() => (sidebarOpen = true)}
 		/>
 

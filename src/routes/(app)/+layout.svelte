@@ -208,7 +208,6 @@
 			user={userProfile}
 			{navItems}
 			{permissions}
-			notificationCount={3}
 			{searchCategories}
 			{searchLoading}
 			onSearch={handleSearch}

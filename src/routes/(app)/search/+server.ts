@@ -113,12 +113,21 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	// ── Medicamentos (INVENTORY_READ) ──
 	if (hasPermission(role, P.INVENTORY_READ)) {
 		promises.push(
-			medicationsService.getMedications({ search: q, page: 1, pageSize: 5 })
+			medicationsService.getMedications({ search: q, page: 1, pageSize: 20 })
 				.then(res => {
-					if (res.data.length > 0) {
+					const ql = q.toLowerCase();
+					// Filter client-side so only medications whose name/code/form
+					// actually contain the query are shown (backend may return
+					// broader results or ignore the search parameter entirely).
+					const relevant = res.data.filter(m =>
+						m.generic_name.toLowerCase().includes(ql) ||
+						m.code.toLowerCase().includes(ql) ||
+						(m.pharmaceutical_form?.toLowerCase().includes(ql) ?? false)
+					).slice(0, 5);
+					if (relevant.length > 0) {
 						categories.push({
 							label: 'Medicamentos',
-							results: res.data.map(m => ({
+							results: relevant.map(m => ({
 								id: m.id,
 								title: m.generic_name,
 								subtitle: `${m.code} · ${m.pharmaceutical_form} · Stock: ${m.current_stock}`,
@@ -211,9 +220,15 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const ql = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 	const matchedModules = modules.filter(m => {
 		if (m.permission && !hasPermission(role, m.permission)) return false;
-		return m.title.toLowerCase().includes(ql) ||
-			m.subtitle.toLowerCase().includes(ql) ||
-			m.keywords.some(k => k.includes(ql) || ql.includes(k));
+		const titleMatch = m.title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(ql);
+		const subtitleMatch = m.subtitle.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(ql);
+		// k.includes(ql): keyword contains query (e.g. "med" matches "medicamento")
+		// ql.includes(k): query contains full keyword, only for keywords >= 4 chars
+		//   to avoid false positives from short substrings
+		const keywordMatch = m.keywords.some(k =>
+			k.includes(ql) || (k.length >= 4 && ql.includes(k))
+		);
+		return titleMatch || subtitleMatch || keywordMatch;
 	}).slice(0, 5);
 
 	await Promise.all(promises);
