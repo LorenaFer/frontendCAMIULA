@@ -14,9 +14,49 @@ concurrency:
   group: deploy-frontend
   cancel-in-progress: true
 
+# ─────────────────────────────────────────────────────────────
+# JOB 1: Quality Gates
+# Bloquea el deploy si algo falla:
+#   · TypeScript / Svelte type-check  (svelte-check)
+#   · Unit tests  (vitest)
+# ─────────────────────────────────────────────────────────────
 jobs:
+  quality-gates:
+    name: "🔍 Quality Gates"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # ── Gate 1: TypeScript + Svelte types ───────────────────
+      - name: "🔷 TypeScript & Svelte check"
+        run: npm run check
+        # Falla si hay errores de tipos en .svelte o .ts
+        # Equivalente a tsc --noEmit + svelte-check
+
+      # ── Gate 2: Unit tests ──────────────────────────────────
+      - name: "🧪 Unit tests (vitest)"
+        run: npm test
+        # Corre src/**/*.test.ts con vitest
+        # El deploy se bloquea si algún test falla
+
+# ─────────────────────────────────────────────────────────────
+# JOB 2: Deploy  (solo si quality-gates pasó)
+# ─────────────────────────────────────────────────────────────
   deploy:
-    name: Deploy a camiula.net
+    name: "🚀 Deploy a camiula.net"
+    needs: quality-gates
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -50,7 +90,7 @@ jobs:
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
             'cd /home/camiula/camiula && \
              docker compose -f docker-compose.prod.yml --env-file .env.prod \
-               up -d --build --no-deps frontend 2>&1'
+               up -d --build --force-recreate --no-deps frontend 2>&1'
 
       - name: Verificar que el frontend responde
         run: |
