@@ -21,7 +21,9 @@
 	import Textarea from '$shared/components/input/Textarea.svelte';
 	import DoctorAvailabilityCalendar from '../widgets/DoctorAvailabilityCalendar.svelte';
 	import TimeSlotPicker from '../widgets/TimeSlotPicker.svelte';
-	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
+	import WizardStepIdentification from './WizardStepIdentification.svelte';
+	import { toastError } from '$shared/components/toast/toast.svelte.js';
+	import * as bookingClient from '$domain/appointments/booking-client.js';
 
 	interface Props {
 		doctores: DoctorOption[];
@@ -136,19 +138,6 @@
 	function prev() { if (currentStep > 0) { currentStep--; formError = ''; } }
 
 
-	// ─── Helper: POST JSON al endpoint REST ──────────────────
-
-	async function api<T = unknown>(action: string, body: Record<string, unknown>): Promise<{ ok: boolean; data: T; message: string }> {
-		const res = await fetch('/agendar', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action, ...body })
-		});
-		const json = await res.json();
-		if (json.status === 'success') return { ok: true, data: json.data as T, message: json.message };
-		throw Object.assign(new Error(json.message ?? 'Error desconocido'), { httpStatus: res.status });
-	}
-
 	// ─── Paso 1: buscar paciente ──────────────────────────────
 
 	async function buscarPaciente() {
@@ -157,11 +146,11 @@
 		pacienteNoEncontrado = false;
 		loading = true;
 		try {
-			const { data } = await api<{ found: boolean; paciente: PacientePublic | null }>('buscarPaciente', { query: query.trim(), queryType: queryType });
-			if (data.found) {
-				paciente = data.paciente;
-				esNuevo = data.paciente?.es_nuevo ?? false;
-				currentStep = 1; // Ir a selección de doctor (antes era step 2)
+			const result = await bookingClient.buscarPaciente(query.trim(), queryType);
+			if (result.found) {
+				paciente = result.paciente;
+				esNuevo = result.paciente?.es_nuevo ?? false;
+				currentStep = 1;
 			} else {
 				pacienteNoEncontrado = true;
 			}
@@ -176,18 +165,7 @@
 
 	// ─── Paso 4: cargar slots (con caché + pre-fetch) ────────
 
-	const slotsCache = new Map<string, { slots: TimeSlot[]; duracion: 30 | 60 }>();
-
-	async function fetchSlotsForDate(date: string): Promise<{ slots: TimeSlot[]; duracion: 30 | 60 }> {
-		const cacheKey = `${selectedDoctorId}:${date}:${esNuevo}`;
-		if (slotsCache.has(cacheKey)) return slotsCache.get(cacheKey)!;
-
-		const { data } = await api<{ slots: TimeSlot[]; duracion: 30 | 60 }>('obtenerSlots', {
-			doctorId: selectedDoctorId, fecha: date, esNuevo
-		});
-		slotsCache.set(cacheKey, data);
-		return data;
-	}
+	const slotsClient = new bookingClient.SlotsClient();
 
 	async function cargarSlots(date: string) {
 		selectedDate = date;
@@ -197,7 +175,7 @@
 
 		loadingSlots = true;
 		try {
-			const result = await fetchSlotsForDate(date);
+			const result = await slotsClient.fetch(selectedDoctorId, date, esNuevo);
 			slots = result.slots;
 			slotDuracion = result.duracion;
 		} catch {
@@ -207,18 +185,10 @@
 		}
 	}
 
-	/** Pre-fetch slots de las primeras 3 fechas disponibles (fire & forget) */
-	function prefetchSlots() {
-		if (!selectedDoctorId || availableDates.length === 0) return;
-		const toFetch = availableDates.slice(0, 3);
-		for (const date of toFetch) {
-			fetchSlotsForDate(date).catch(() => {});
-		}
-	}
-
-	// Lanzar pre-fetch al llegar al paso de fecha/hora
 	$effect(() => {
-		if (currentStep === 2) prefetchSlots();
+		if (currentStep === 2 && selectedDoctorId && availableDates.length > 0) {
+			slotsClient.prefetch(selectedDoctorId, availableDates.slice(0, 3), esNuevo);
+		}
 	});
 
 	// ─── Paso 5: confirmar cita ───────────────────────────────
@@ -228,23 +198,25 @@
 			formError = 'Faltan datos para confirmar la cita';
 			return;
 		}
+		const slotObj = slots.find((s) => s.hora_inicio === selectedSlot);
+		if (!slotObj) { formError = 'Horario inválido'; return; }
+
 		formError = '';
 		loading = true;
 		try {
-			const slotObj = slots.find((s) => s.hora_inicio === selectedSlot);
-			if (!slotObj) { formError = 'Horario inválido'; return; }
-
-			const { data } = await api<{ redirectUrl: string }>('confirmarCita', {
-				pacienteId: paciente.id, doctorId: selectedDoctorId,
+			const result = await bookingClient.confirmarCita({
+				pacienteId: paciente.id,
+				doctorId: selectedDoctorId,
 				especialidadId: selectedEspecialidadId,
-				fecha: selectedDate, hora_inicio: slotObj.hora_inicio,
-				hora_fin: slotObj.hora_fin, duracion_min: slotDuracion,
+				fecha: selectedDate,
+				hora_inicio: slotObj.hora_inicio,
+				hora_fin: slotObj.hora_fin,
+				duracion_min: slotDuracion,
 				es_primera_vez: esNuevo,
 				motivo_consulta: motivoConsulta || undefined,
 				observaciones: observaciones || undefined
 			});
-			window.location.href = data.redirectUrl;
-			return;
+			window.location.href = result.redirectUrl;
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : 'Error de conexión. Intente nuevamente.';
 			formError = msg;
@@ -315,52 +287,14 @@
 
 					<!-- ── Paso 1: Identificación ── -->
 					{#if currentStep === 0}
-						<div class="space-y-4">
-							<p class="text-sm text-ink">Ingrese su cédula de identidad o número de historia médica.</p>
-
-							<Input
-								label="Cédula o NHM"
-								placeholder="Ej: V-12345678 o 1001"
-								bind:value={query}
-								oninput={() => { formError = ''; pacienteNoEncontrado = false; }}
-								inputSize="lg"
-							/>
-
-							{#if query.trim()}
-								<p class="text-xs text-ink-muted">
-									Buscando como: <strong>{queryType === 'nhm' ? 'N° de Historia Médica' : 'Cédula de identidad'}</strong>
-								</p>
-							{/if}
-
-							<Button variant="primary" fullWidth onclick={buscarPaciente} isLoading={loading}>
-								Continuar
-							</Button>
-
-							{#if pacienteNoEncontrado}
-								<div class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl space-y-3">
-									<div class="flex items-start gap-2.5">
-										<svg class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-										</svg>
-										<div>
-											<p class="text-sm font-semibold text-amber-800 dark:text-amber-200">Paciente no registrado</p>
-											<p class="text-xs text-amber-700 dark:text-amber-300 mt-1">
-												No se encontró un paciente con la cédula o NHM ingresado. El paciente debe registrarse primero a través del portal.
-											</p>
-										</div>
-									</div>
-									<a
-										href="/portal/registro"
-										class="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg bg-viking-600 text-white text-sm font-medium hover:bg-viking-700 transition-colors"
-									>
-										<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-										</svg>
-										Ir al portal de registro
-									</a>
-								</div>
-							{/if}
-						</div>
+						<WizardStepIdentification
+							bind:query
+							{queryType}
+							{loading}
+							{pacienteNoEncontrado}
+							onQueryChange={() => { formError = ''; pacienteNoEncontrado = false; }}
+							onSubmit={buscarPaciente}
+						/>
 
 					<!-- ── Paso 2: Doctor ── -->
 					{:else if currentStep === 1}
