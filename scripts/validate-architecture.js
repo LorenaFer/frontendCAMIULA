@@ -36,7 +36,17 @@
  * dominio. NUNCA: cambiar el aspecto del producto para callar un linter.
  * ============================================================
  *
+ * COMPLEMENTOS QUE ESTE VALIDADOR NO HACE (correr aparte):
+ *   • Duplicación de código (componentes casi-iguales):
+ *       npx jscpd src/ --min-lines 30 --min-tokens 100
+ *   • Cambios destructivos a UI (props/clases removidas en un PR):
+ *       git diff origin/main...HEAD -- '*.svelte' | \
+ *         grep -E '^-.*(variant|color|size|class|style)='
+ *   • Visual regression (look & feel del producto):
+ *       herramienta dedicada (Percy, Chromatic, Playwright screenshots)
+ *
  * Usage: node scripts/validate-architecture.js
+ *        node scripts/validate-architecture.js --ci   (skip TS/build)
  * Exit codes: 0 = success, 1 = violations found
  */
 
@@ -89,8 +99,25 @@ const CONFIG = {
     SCRIPT_LINES_WARN: 200,           // <script> con más de N líneas se sugiere extraer
     SCRIPT_RATIO_WARN: 0.6,           // <script> ocupa más del 60% del archivo
     ASYNC_FUNCS_WARN: 4,              // Más de N async funcs sugiere mover a client module
-    FLAT_COMPONENTS_MAX: 4            // > N archivos planos en components/ es ERROR (forzar sub-folders)
+    FLAT_COMPONENTS_MAX: 4,           // > N archivos planos en components/ es ERROR (forzar sub-folders)
+    PROPS_COUNT_WARN: 8,              // Props interface con > N campos sugiere prop drilling
+    PROPS_COUNT_MAX: 12,              // > N props es ERROR (composición / contexto)
+    FUNCTION_BODY_WARN: 50,           // Función con cuerpo > N líneas sugiere extraer a service/util
+    FUNCTION_BODY_MAX: 100,           // > N líneas es ERROR (lógica de negocio en componente)
+    IMPORT_DEPTH_MAX: 2               // Imports relativos con > N niveles arriba (../../../) son ERROR
   },
+
+  // Nombres genéricos prohibidos (señal de "no sabía cómo llamarlo").
+  // Los nombres de archivo deben describir el dominio que representan.
+  GENERIC_NAMES: new Set([
+    'Foo', 'Bar', 'Baz', 'Qux',
+    'Helper', 'Helpers', 'Util', 'Utils',
+    'Common', 'Misc', 'Stuff', 'Thing', 'Things',
+    'Wrapper', 'Container', 'Generic', 'Base', 'Default',
+    'Component', 'MyComponent', 'NewComponent',
+    'Test', 'TestComponent', 'Temp', 'Tmp', 'Demo', 'Example',
+    'Data', 'Info', 'Item' // Item solo si es bare; "PrescriptionItem" pasa
+  ]),
 
   // Suffixes que sugieren agrupar componentes en sub-carpetas
   COMPONENT_GROUP_SUFFIXES: ['Form', 'Dialog', 'Modal', 'View', 'List', 'Card', 'Item', 'Wizard', 'Section', 'Management', 'Table', 'Filters', 'Stats']
@@ -516,6 +543,380 @@ function validateComponentOrganization() {
 }
 
 /**
+ * Cualquier carpeta llamada `components/` debe contener únicamente archivos
+ * .svelte (o `index.ts`/`index.js` como barrel). Helpers, stores, types,
+ * validators NO son componentes — viven al lado de `components/`, no dentro.
+ *
+ * Esta regla aplica recursivamente: tanto `domain/X/components/` como
+ * `domain/X/<module>/components/` están sujetas. Catches el antipatrón
+ * donde un módulo (form-engine) dump helpers en su carpeta de componentes.
+ */
+function validateComponentsFolderPurity() {
+  const findings = [];
+  const pathsToCheck = [CONFIG.PATHS.FEATURES, CONFIG.PATHS.SHARED];
+
+  for (const pathToCheck of pathsToCheck) {
+    const fullPath = join(CONFIG.ROOT_DIR, pathToCheck);
+    const componentDirs = findComponentsDirs(fullPath);
+
+    for (const dir of componentDirs) {
+      let items;
+      try { items = readdirSync(dir); } catch { continue; }
+
+      for (const item of items) {
+        const itemPath = join(dir, item);
+        let stat;
+        try { stat = statSync(itemPath); } catch { continue; }
+
+        if (stat.isDirectory()) continue;        // sub-folders OK (forms/, dialogs/, etc.)
+        if (item.endsWith('.svelte')) continue;  // .svelte OK
+        if (item === 'index.ts' || item === 'index.js') continue;  // barrel OK
+
+        const relPath = relative(CONFIG.ROOT_DIR, itemPath);
+        findings.push({
+          severity: 'error',
+          message: `Non-component file in components/ folder — move to a sibling of components/ (helpers, stores, types belong outside): ${relPath}`
+        });
+      }
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * Recursivamente encuentra todas las carpetas `components/` bajo un root.
+ */
+function findComponentsDirs(root) {
+  const results = [];
+  function walk(dir) {
+    let items;
+    try { items = readdirSync(dir); } catch { return; }
+    for (const item of items) {
+      if (item.startsWith('.') || item === 'node_modules') continue;
+      const full = join(dir, item);
+      let stat;
+      try { stat = statSync(full); } catch { continue; }
+      if (!stat.isDirectory()) continue;
+      if (item === 'components') results.push(full);
+      walk(full);
+    }
+  }
+  walk(root);
+  return results;
+}
+
+/**
+ * Detecta imports relativos profundos (../../../...). El proyecto tiene
+ * aliases ($domain, $shared, $lib) — usar relativos profundos rompe la
+ * encapsulación de feature y dificulta refactor.
+ */
+function validateImportDepth() {
+  const findings = [];
+  const pathsToCheck = [CONFIG.PATHS.FEATURES, CONFIG.PATHS.SHARED, CONFIG.PATHS.ROUTES, CONFIG.PATHS.SERVER];
+  const maxDots = '../'.repeat(CONFIG.COMPONENT_LOGIC.IMPORT_DEPTH_MAX + 1);
+
+  for (const pathToCheck of pathsToCheck) {
+    const fullPath = join(CONFIG.ROOT_DIR, pathToCheck);
+    const files = getAllFiles(fullPath);
+
+    for (const file of files) {
+      let content;
+      try { content = readFileSync(file.path, 'utf8'); } catch { continue; }
+
+      // Match `from '...'` y `import('...')` paths
+      const importRegex = /(?:from|import)\s*\(?\s*['"`]([^'"`]+)['"`]/g;
+      let m;
+      const flagged = new Set();
+      while ((m = importRegex.exec(content)) !== null) {
+        const path = m[1];
+        if (path.includes(maxDots) && !flagged.has(path)) {
+          flagged.add(path);
+          findings.push({
+            severity: 'error',
+            message: `Deep relative import (${maxDots.match(/\.\.\//g).length}+ levels) — use $domain/$shared/$lib alias: ${file.relativePath} → ${path}`
+          });
+        }
+      }
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * Detecta prop drilling: Props interfaces o destructuring de $props con
+ * demasiados campos. > 8 = warning, > 12 = error. La señal: el componente
+ * está siendo usado como "pasamanos" — composición o context API ayudan.
+ */
+function validatePropDrilling() {
+  const findings = [];
+  // Skip shared/components: son primitivas (DataTable, FileUpload, DateInput)
+  // que legítimamente exponen APIs configurables. La regla aplica a domain
+  // y routes — donde la composición debería absorber la complejidad.
+  const pathsToCheck = [CONFIG.PATHS.FEATURES, CONFIG.PATHS.ROUTES];
+
+  for (const pathToCheck of pathsToCheck) {
+    const fullPath = join(CONFIG.ROOT_DIR, pathToCheck);
+    const files = getAllFiles(fullPath, ['.svelte']);
+
+    for (const file of files) {
+      let content;
+      try { content = readFileSync(file.path, 'utf8'); } catch { continue; }
+      const script = extractScriptContent(content);
+      if (!script) continue;
+
+      // Patrón A: `interface Props { ... }`
+      const interfaceMatch = script.match(/interface\s+Props\s*\{([\s\S]*?)\}/);
+      // Patrón B: tipo inline en $props: `}: { ... } = $props()`
+      const inlineMatch = script.match(/\}\s*:\s*\{([\s\S]*?)\}\s*=\s*\$props\(\)/);
+
+      const body = interfaceMatch ? interfaceMatch[1] : (inlineMatch ? inlineMatch[1] : null);
+      if (!body) continue;
+
+      // Cuenta líneas con `nombre:` (con o sin `?`) que no sean comentarios
+      const propCount = (body.match(/^\s*\w+\s*[?]?\s*:/gm) || []).length;
+
+      if (propCount > CONFIG.COMPONENT_LOGIC.PROPS_COUNT_MAX) {
+        findings.push({
+          severity: 'error',
+          message: `Component has ${propCount} props (> ${CONFIG.COMPONENT_LOGIC.PROPS_COUNT_MAX}) — refactor with composition (snippets) or context API: ${file.relativePath}`
+        });
+      } else if (propCount > CONFIG.COMPONENT_LOGIC.PROPS_COUNT_WARN) {
+        findings.push({
+          severity: 'warning',
+          message: `Component has ${propCount} props (> ${CONFIG.COMPONENT_LOGIC.PROPS_COUNT_WARN}) — possible prop drilling. Consider composition: ${file.relativePath}`
+        });
+      }
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * Encuentra funciones (function decl o arrow asignada a const) y devuelve
+ * pares {name, lines} con el conteo de líneas del cuerpo. Walker de braces
+ * — sin AST pero suficiente para heurística.
+ */
+function findFunctionsWithBodyLines(script) {
+  const results = [];
+  const fnStartRegex = /(?:^|\n)\s*(?:export\s+)?(?:async\s+)?(?:function\s+(\w+)|const\s+(\w+)\s*=\s*(?:async\s+)?(?:function\b|\([^)]*\)\s*=>))/gm;
+  let m;
+  while ((m = fnStartRegex.exec(script)) !== null) {
+    const name = m[1] || m[2];
+    const after = script.substring(m.index);
+    const braceIdx = after.indexOf('{');
+    if (braceIdx === -1) continue;
+
+    let depth = 0;
+    let endIdx = -1;
+    for (let i = braceIdx; i < after.length; i++) {
+      if (after[i] === '{') depth++;
+      else if (after[i] === '}') {
+        depth--;
+        if (depth === 0) { endIdx = i; break; }
+      }
+    }
+    if (endIdx === -1) continue;
+    const body = after.substring(braceIdx, endIdx + 1);
+    results.push({ name, lines: body.split('\n').length });
+  }
+  return results;
+}
+
+/**
+ * Detecta lógica de negocio dentro de componentes: funciones largas en
+ * <script>. > 50 líneas = warning, > 100 = error. La señal: la función
+ * es lo suficientemente compleja para merecer un service module.
+ */
+function validateBusinessLogicInComponents() {
+  const findings = [];
+  const pathsToCheck = [CONFIG.PATHS.FEATURES, CONFIG.PATHS.SHARED, CONFIG.PATHS.ROUTES];
+
+  for (const pathToCheck of pathsToCheck) {
+    const fullPath = join(CONFIG.ROOT_DIR, pathToCheck);
+    const files = getAllFiles(fullPath, ['.svelte']);
+
+    for (const file of files) {
+      let content;
+      try { content = readFileSync(file.path, 'utf8'); } catch { continue; }
+      const script = extractScriptContent(content);
+      if (!script) continue;
+
+      const fns = findFunctionsWithBodyLines(script);
+      for (const fn of fns) {
+        if (fn.lines > CONFIG.COMPONENT_LOGIC.FUNCTION_BODY_MAX) {
+          findings.push({
+            severity: 'error',
+            message: `Function "${fn.name}" has ${fn.lines} lines (> ${CONFIG.COMPONENT_LOGIC.FUNCTION_BODY_MAX}) — extract to a service or util module: ${file.relativePath}`
+          });
+        } else if (fn.lines > CONFIG.COMPONENT_LOGIC.FUNCTION_BODY_WARN) {
+          findings.push({
+            severity: 'warning',
+            message: `Function "${fn.name}" has ${fn.lines} lines (> ${CONFIG.COMPONENT_LOGIC.FUNCTION_BODY_WARN}) — consider extracting business logic: ${file.relativePath}`
+          });
+        }
+      }
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * Clasifica un import por tipo de bindings:
+ *   'type'  — todos los bindings son types (`import type {...}` o `{ type Foo, type Bar }`)
+ *   'value' — al menos un binding es runtime (default, namespace, o named sin `type`)
+ *   'mixed' — combina types y values (`{ type Foo, runtimeFn }` o `import Foo, { type Bar }`)
+ *   'side-effect' — `import 'x'` sin bindings (no aplica a este check)
+ */
+function classifyImport(specifierClause) {
+  const clause = specifierClause.trim();
+
+  // Top-level `type` keyword cubre todo el statement
+  if (/^type\s+/.test(clause)) return 'type';
+
+  // Sin braces: default o namespace, ambos value
+  if (!clause.includes('{')) return 'value';
+
+  // Hay named imports — analizar
+  const braceMatch = clause.match(/\{([^}]*)\}/);
+  if (!braceMatch) return 'value';
+
+  const beforeBrace = clause.substring(0, clause.indexOf('{')).replace(/,\s*$/, '').trim();
+  const hasDefaultOrNamespace = beforeBrace.length > 0;
+
+  const namedSpecs = braceMatch[1].split(',').map(s => s.trim()).filter(Boolean);
+  if (namedSpecs.length === 0) {
+    return hasDefaultOrNamespace ? 'value' : 'type';
+  }
+
+  const allTypePrefixed = namedSpecs.every(s => /^type\s+/.test(s));
+
+  if (hasDefaultOrNamespace) {
+    // Default/namespace siempre es value; named todos type → mixed
+    return allTypePrefixed ? 'mixed' : 'value';
+  }
+
+  if (allTypePrefixed) return 'type';
+
+  const someTypePrefixed = namedSpecs.some(s => /^type\s+/.test(s));
+  return someTypePrefixed ? 'mixed' : 'value';
+}
+
+/**
+ * Detecta acoplamiento entre features de dominio. Solo se permite
+ * `import type` cross-domain (contratos compartidos). Imports value
+ * cruzados son ERROR — usar composición o subir el código a shared/.
+ *
+ *   ✅  import type { Paciente } from '$domain/patients/types.js'
+ *   ❌  import MedicationSelector from '$domain/inventory/components/...'
+ *   ❌  import { type Foo, runtimeFn } from '$domain/...'  (mixed — separar)
+ *
+ * Routes y src/lib/server/ están exentos: routes son orquestadores
+ * (componen várias features) y server tiene su propia capa de validación
+ * (SvelteKit ya impide $lib/server/ en cliente).
+ */
+function validateCrossDomainImports() {
+  const findings = [];
+  const featuresPath = join(CONFIG.ROOT_DIR, CONFIG.PATHS.FEATURES);
+
+  let features;
+  try {
+    features = readdirSync(featuresPath).filter(f =>
+      statSync(join(featuresPath, f)).isDirectory()
+    );
+  } catch { return findings; }
+
+  for (const feature of features) {
+    const featureDir = join(featuresPath, feature);
+    const files = getAllFiles(featureDir);
+
+    for (const file of files) {
+      let content;
+      try { content = readFileSync(file.path, 'utf8'); } catch { continue; }
+
+      // Match `import <something> from '...'` (saltea side-effect imports)
+      const importStmtRegex = /^[ \t]*import\s+([\s\S]+?)\s+from\s+['"]([^'"]+)['"]/gm;
+      let m;
+      while ((m = importStmtRegex.exec(content)) !== null) {
+        const specifierClause = m[1];
+        const importPath = m[2];
+
+        // Solo nos interesan $domain/* aliases
+        const domainMatch = importPath.match(/^\$domain\/([^/]+)/);
+        if (!domainMatch) continue;
+        const importedFeature = domainMatch[1];
+
+        // Mismo feature: OK
+        if (importedFeature === feature) continue;
+
+        const kind = classifyImport(specifierClause);
+
+        if (kind === 'value') {
+          findings.push({
+            severity: 'error',
+            message: `Cross-domain VALUE import: domain/${feature} → $domain/${importedFeature} (only 'import type' allowed across features). Move shared component to shared/, compose via props/snippets, or import only types: ${file.relativePath}`
+          });
+        } else if (kind === 'mixed') {
+          findings.push({
+            severity: 'error',
+            message: `Cross-domain MIXED import: domain/${feature} → $domain/${importedFeature} (mixes types and values). Split into separate 'import type {...}' and 'import {...}' statements: ${file.relativePath}`
+          });
+        }
+        // 'type' o 'side-effect' → permitidos
+      }
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * Detecta nombres genéricos / lazy en archivos. El nombre debe describir
+ * el dominio. "Helper.svelte", "Utils.ts", "Foo.svelte" son señales de
+ * "no sabía cómo llamarlo" — bloqueador para newcomers que escanean el
+ * árbol buscando contexto.
+ */
+function validateSemanticNaming() {
+  const findings = [];
+  const pathsToCheck = [CONFIG.PATHS.FEATURES, CONFIG.PATHS.SHARED, CONFIG.PATHS.ROUTES, CONFIG.PATHS.SERVER];
+
+  for (const pathToCheck of pathsToCheck) {
+    const fullPath = join(CONFIG.ROOT_DIR, pathToCheck);
+    const files = getAllFiles(fullPath);
+
+    for (const file of files) {
+      // index.ts/index.js es legítimo (barrel exports)
+      if (file.name === 'index.ts' || file.name === 'index.js') continue;
+      // SvelteKit specials
+      if (file.name.startsWith('+') || file.name.startsWith('[') || file.name.includes('$types')) continue;
+      // mock data dirs son convención, no production code
+      if (file.relativePath.includes('/mock/')) continue;
+
+      const baseName = file.name
+        .replace(/\.svelte\.ts$/, '')
+        .replace(/\.(svelte|ts|js)$/, '');
+
+      // Para .ts/.js: convertir kebab-case a PascalCase para chequear
+      const normalized = baseName.includes('-')
+        ? baseName.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
+        : baseName.charAt(0).toUpperCase() + baseName.slice(1);
+
+      if (CONFIG.GENERIC_NAMES.has(normalized)) {
+        findings.push({
+          severity: 'error',
+          message: `Generic/lazy filename "${baseName}" — use a domain-meaningful name (e.g. "PatientRegistrationForm", not "Form"): ${file.relativePath}`
+        });
+      }
+    }
+  }
+
+  return findings;
+}
+
+/**
  * Validate TypeScript compilation
  */
 function validateTypeScriptCompilation() {
@@ -614,7 +1015,13 @@ function validateArchitecture() {
     { name: 'Shared Organization',    fn: validateSharedOrganization },
     { name: 'Component Sizes',        fn: validateComponentSizes },
     { name: 'Component Logic Weight', fn: validateComponentLogicWeight },
-    { name: 'Component Organization', fn: validateComponentOrganization }
+    { name: 'Component Organization', fn: validateComponentOrganization },
+    { name: 'Components Folder Purity', fn: validateComponentsFolderPurity },
+    { name: 'Import Depth',           fn: validateImportDepth },
+    { name: 'Cross-Domain Imports',   fn: validateCrossDomainImports },
+    { name: 'Prop Drilling',          fn: validatePropDrilling },
+    { name: 'Business Logic in Components', fn: validateBusinessLogicInComponents },
+    { name: 'Semantic Naming',        fn: validateSemanticNaming }
   ];
 
   const validations = CI_MODE

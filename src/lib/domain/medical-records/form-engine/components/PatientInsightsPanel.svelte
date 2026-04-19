@@ -2,8 +2,8 @@
 	import type { Paciente } from '$domain/patients/types.js';
 	import type { CitaConPaciente } from '$domain/appointments/types.js';
 	import type { HistorialPrevioEntry } from '$domain/medical-records/types.js';
-	import { computeAlerts, formatAge, formatRelacion } from './insight-helpers.js';
-	import type { PatientAlert } from './insight-helpers.js';
+	import { computeAlerts, formatAge, formatRelacion } from '../insight-helpers.js';
+	import type { PatientAlert } from '../insight-helpers.js';
 
 	interface Props {
 		paciente: Paciente;

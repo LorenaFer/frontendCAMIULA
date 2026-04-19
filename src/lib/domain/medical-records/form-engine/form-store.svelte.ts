@@ -1,5 +1,5 @@
 import type { MedicalFormSchema, FormFieldSchema } from '$domain/medical-records/form-schema.js';
-import { getNestedValue, setNestedValue, evaluateConditions } from './utils.js';
+import { getNestedValue, setNestedValue, evaluateConditions } from './field-helpers.js';
 import { validateFieldValue, validateAllFields } from './validators.js';
 
 type AutosaveCallback = (data: Record<string, unknown>) => Promise<void>;

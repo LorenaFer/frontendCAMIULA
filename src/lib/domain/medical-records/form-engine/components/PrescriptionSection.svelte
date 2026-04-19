@@ -1,8 +1,8 @@
 <script lang="ts">
 	import EditableTable from '$shared/components/table/EditableTable.svelte';
 	import Button from '$shared/components/button/Button.svelte';
-	import MedicationSelector from '$domain/inventory/components/widgets/MedicationSelector.svelte';
 	import Input from '$shared/components/input/Input.svelte';
+	import type { Snippet } from 'svelte';
 	import type { EditableColumn } from '$shared/components/table/types';
 	import type { MedicationOption } from '$domain/inventory/types.js';
 	import {
@@ -18,6 +18,13 @@
 		onchange: (items: PrescriptionItem[]) => void;
 		/** Medicamentos disponibles del inventario del hospital */
 		medicationOptions?: MedicationOption[];
+		/**
+		 * Snippet provisto por el route (orchestrator) para renderizar el
+		 * selector de medicamentos. Recibe `onAdd` que llama al handler
+		 * interno con el mapeo correcto (formToPresentation, source, etc).
+		 * Mantiene a este componente desacoplado del dominio inventory.
+		 */
+		medicationSelector?: Snippet<[{ onAdd: (med: MedicationOption) => void }]>;
 		/** Callback para emitir receta formal sin navegar */
 		onEmitRecipe?: (items: PrescriptionItem[]) => void;
 		/** Ya se emitió una receta para esta cita */
@@ -26,7 +33,7 @@
 		class?: string;
 	}
 
-	let { items, disabled = false, onchange, medicationOptions = [], onEmitRecipe, recipeEmitted = false, emitting = false, class: className = '' }: Props = $props();
+	let { items, disabled = false, onchange, medicationOptions = [], medicationSelector, onEmitRecipe, recipeEmitted = false, emitting = false, class: className = '' }: Props = $props();
 
 	let collapsed = $state(false);
 	let medSearch = $state('');
@@ -228,19 +235,13 @@
 	<!-- Content -->
 	{#if !collapsed}
 		<div class="px-5 pb-5 border-t border-border/50">
-			<!-- Agregar medicamento via MedicationSelector o texto libre -->
-			{#if !disabled && medicationOptions.length > 0}
+			<!-- Agregar medicamento via selector (snippet del orchestrator) o texto libre -->
+			{#if !disabled && medicationOptions.length > 0 && medicationSelector}
 				<div class="pt-4 pb-3 space-y-2">
 					<p class="text-xs font-semibold text-ink-muted uppercase tracking-wider">Agregar medicamento</p>
 					<div class="flex gap-2">
 						<div class="flex-1">
-							<MedicationSelector
-								options={medicationOptions}
-								selected={null}
-								onSelect={(med) => addFromInventory(med)}
-								onClear={() => {}}
-								placeholder="Buscar en inventario del hospital..."
-							/>
+							{@render medicationSelector({ onAdd: addFromInventory })}
 						</div>
 					</div>
 					{#if medSearch.trim()}

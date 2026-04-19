@@ -10,13 +10,21 @@
 
 	type EspRow = Especialidad & Record<string, unknown>;
 
-	interface Props {
-		espTotal: number;
-		espPaginated: Especialidad[];
-		espPage: number;
-		espPageSize: number;
-		getSchemaForEsp: (esp: Especialidad) => MedicalFormSchema | undefined;
+	export interface EspecialidadesPagination {
+		items: Especialidad[];
+		total: number;
+		page: number;
+		pageSize: number;
+	}
+
+	export interface EspecialidadesSchemaHelpers {
+		getForEsp: (esp: Especialidad) => MedicalFormSchema | undefined;
 		countFields: (schema: MedicalFormSchema) => number;
+	}
+
+	interface Props {
+		pagination: EspecialidadesPagination;
+		helpers: EspecialidadesSchemaHelpers;
 		onNew: () => void;
 		onEdit: (esp: Especialidad) => void;
 		onPageChange: (p: number) => void;
@@ -24,12 +32,8 @@
 	}
 
 	let {
-		espTotal,
-		espPaginated,
-		espPage,
-		espPageSize,
-		getSchemaForEsp,
-		countFields,
+		pagination,
+		helpers,
 		onNew,
 		onEdit,
 		onPageChange,
@@ -44,16 +48,16 @@
 {/snippet}
 
 {#snippet espSchemaCell(_v: unknown, row: EspRow)}
-	{@const schema = getSchemaForEsp(row as Especialidad)}
+	{@const schema = helpers.getForEsp(row as Especialidad)}
 	{#if schema}
-		<span class="text-xs text-ink-muted">{countFields(schema)} campos</span>
+		<span class="text-xs text-ink-muted">{helpers.countFields(schema)} campos</span>
 	{:else}
 		<span class="text-xs text-ink-subtle">—</span>
 	{/if}
 {/snippet}
 
 <div class="flex items-center justify-between">
-	<p class="text-sm text-ink-muted">{espTotal} especialidades registradas</p>
+	<p class="text-sm text-ink-muted">{pagination.total} especialidades registradas</p>
 	<Button variant="primary" size="sm" onclick={onNew}>+ Nueva Especialidad</Button>
 </div>
 
@@ -64,7 +68,7 @@
 			{ key: 'activo', header: 'Estado', width: '100px', align: 'center', render: espStatusCell },
 			{ key: 'id', header: 'Formulario', width: '120px', align: 'center', render: espSchemaCell }
 		] satisfies DataTableColumn<EspRow>[]}
-		data={espPaginated as EspRow[]}
+		data={pagination.items as EspRow[]}
 		rowKey="id"
 		rowMenu={[
 			{ label: 'Editar', icon: 'edit', onclick: (row) => onEdit(row as unknown as Especialidad) }
@@ -72,9 +76,9 @@
 		emptyMessage="No hay especialidades registradas."
 	/>
 	<PaginationBar
-		page={espPage}
-		total={espTotal}
-		pageSize={espPageSize}
+		page={pagination.page}
+		total={pagination.total}
+		pageSize={pagination.pageSize}
 		pageSizeOptions={[10, 25, 50]}
 		onPageChange={onPageChange}
 		onPageSizeChange={onPageSizeChange}

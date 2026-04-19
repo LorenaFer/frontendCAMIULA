@@ -50,13 +50,15 @@
 	// ─── Usuarios ────────────────────────────────────────────
 	let showUserDialog = $state(false);
 	let userSubmitting = $state(false);
-	let newUserEmail = $state('');
-	let newUserName = $state('');
-	let newUserPassword = $state('');
-	let newUserRole = $state('analista');
-	let newUserSpecialtyId = $state('');
+	let userForm = $state({
+		email: '',
+		name: '',
+		password: '',
+		role: 'analista',
+		specialtyId: ''
+	});
 
-	const isDoctor = $derived(newUserRole === 'doctor');
+	const isDoctor = $derived(userForm.role === 'doctor');
 	const specialtyOptions = $derived([
 		{ value: '', label: 'Seleccionar especialidad...' },
 		...realEspecialidades.filter((e: Especialidad) => e.activo).map((e: Especialidad) => ({ value: e.id, label: e.nombre }))
@@ -102,25 +104,25 @@
 	}
 
 	async function handleCreateUser() {
-		if (!newUserEmail || !newUserName || !newUserPassword) {
+		if (!userForm.email || !userForm.name || !userForm.password) {
 			toastError('Campos requeridos', 'Email, nombre y contraseña son obligatorios.');
 			return;
 		}
-		if (isDoctor && !newUserSpecialtyId) {
+		if (isDoctor && !userForm.specialtyId) {
 			toastError('Especialidad requerida', 'Debe seleccionar una especialidad para el doctor.');
 			return;
 		}
 		userSubmitting = true;
 		try {
 			const result = await callAction('crearUsuario', {
-				email: newUserEmail, full_name: newUserName,
-				password: newUserPassword, role: newUserRole,
-				specialty_id: isDoctor ? newUserSpecialtyId : undefined
+				email: userForm.email, full_name: userForm.name,
+				password: userForm.password, role: userForm.role,
+				specialty_id: isDoctor ? userForm.specialtyId : undefined
 			});
 			if (result.status === 'success') {
-				toastSuccess('Usuario creado', `${newUserName} fue registrado como ${newUserRole}.`);
+				toastSuccess('Usuario creado', `${userForm.name} fue registrado como ${userForm.role}.`);
 				showUserDialog = false;
-				newUserEmail = ''; newUserName = ''; newUserPassword = ''; newUserRole = 'analista'; newUserSpecialtyId = '';
+				userForm = { email: '', name: '', password: '', role: 'analista', specialtyId: '' };
 				await invalidateAll();
 			} else {
 				toastError('Error', result.message);
@@ -166,12 +168,8 @@
 
 	{#if activeTab === 'especialidades'}
 		<EspecialidadesTab
-			{espTotal}
-			{espPaginated}
-			{espPage}
-			{espPageSize}
-			{getSchemaForEsp}
-			{countFields}
+			pagination={{ items: espPaginated, total: espTotal, page: espPage, pageSize: espPageSize }}
+			helpers={{ getForEsp: getSchemaForEsp, countFields }}
 			onNew={openNewEsp}
 			onEdit={openEditEsp}
 			onPageChange={(p) => { espPage = p; }}
@@ -210,15 +208,10 @@
 
 <UsuarioDialog
 	open={showUserDialog}
-	{userSubmitting}
-	bind:newUserEmail
-	bind:newUserName
-	bind:newUserPassword
-	bind:newUserRole
-	bind:newUserSpecialtyId
+	submitting={userSubmitting}
+	bind:form={userForm}
 	{isDoctor}
-	{roleOptions}
-	{specialtyOptions}
+	options={{ roles: roleOptions, specialties: specialtyOptions }}
 	onClose={() => { showUserDialog = false; }}
 	onSubmit={handleCreateUser}
 />

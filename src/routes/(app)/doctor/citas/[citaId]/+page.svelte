@@ -5,12 +5,13 @@
 	import { browser } from '$app/environment';
 	import AppointmentStatusBadge from '$domain/appointments/components/widgets/AppointmentStatusBadge.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
-	import FormEngine from '$domain/medical-records/components/form-engine/FormEngine.svelte';
-	import ObservacionesSection from '$domain/medical-records/components/form-engine/ObservacionesSection.svelte';
-	import PrescriptionSection from '$domain/medical-records/components/form-engine/PrescriptionSection.svelte';
-	import ExamenesSection from '$domain/medical-records/components/form-engine/ExamenesSection.svelte';
-	import type { ExamenSolicitado } from '$domain/medical-records/components/form-engine/ExamenesSection.svelte';
-	import PatientInsightsPanel from '$domain/medical-records/components/form-engine/PatientInsightsPanel.svelte';
+	import FormEngine from '$domain/medical-records/form-engine/components/FormEngine.svelte';
+	import ObservacionesSection from '$domain/medical-records/form-engine/components/ObservacionesSection.svelte';
+	import PrescriptionSection from '$domain/medical-records/form-engine/components/PrescriptionSection.svelte';
+	import ExamenesSection from '$domain/medical-records/form-engine/components/ExamenesSection.svelte';
+	import type { ExamenSolicitado } from '$domain/medical-records/form-engine/components/ExamenesSection.svelte';
+	import PatientInsightsPanel from '$domain/medical-records/form-engine/components/PatientInsightsPanel.svelte';
+	import MedicationSelector from '$domain/inventory/components/widgets/MedicationSelector.svelte';
 	import type { PrescriptionItem } from '$domain/medical-records/prescription.js';
 	import { goto } from '$app/navigation';
 	import Button from '$shared/components/button/Button.svelte';
@@ -28,7 +29,7 @@
 	let saved = $state(false);
 	let showLeaveDialog = $state(false);
 	let pendingNavigation = $state<{ cancel: () => void; url?: URL; to?: { url: URL } } | null>(null);
-	let formEngineRef: { store: import('$domain/medical-records/components/form-engine/form-store.svelte.js').FormStore } | undefined;
+	let formEngineRef: { store: import('$domain/medical-records/form-engine/form-store.svelte.js').FormStore } | undefined;
 
 	// Estado para secciones universales (independientes del schema)
 	const evalData = (data.historia?.evaluacion ?? {}) as Record<string, unknown>;
@@ -277,7 +278,17 @@
 					onEmitRecipe={isReadonly ? undefined : handleEmitRecipe}
 					recipeEmitted={recipeEmitted}
 					emitting={emittingRecipe}
-				/>
+				>
+					{#snippet medicationSelector({ onAdd })}
+						<MedicationSelector
+							options={data.medicationOptions}
+							selected={null}
+							onSelect={onAdd}
+							onClear={() => {}}
+							placeholder="Buscar en inventario del hospital..."
+						/>
+					{/snippet}
+				</PrescriptionSection>
 			</div>
 
 			<!-- Botón finalizar cita (guardar + marcar atendida) -->

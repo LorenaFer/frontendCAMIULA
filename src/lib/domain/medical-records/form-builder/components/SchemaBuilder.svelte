@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { FormBuilderStore } from './form-builder-store.svelte.js';
+	import type { FormBuilderStore } from '../form-builder-store.svelte.js';
 	import SectionEditor from './SectionEditor.svelte';
 
 	interface Props {
