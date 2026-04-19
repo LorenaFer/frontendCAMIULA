@@ -1,56 +1,9 @@
 import type { PageServerLoad } from './$types';
 import { apiFetch } from '$lib/server/api.js';
+import type { EPI12Data, EPI13Data, EPI15Data } from '$domain/reports/types';
 
-export interface EPI12Data {
-	year: number;
-	week: number;
-	start_date: string;
-	end_date: string;
-	total_cases: number;
-	diseases: Array<{
-		cie10: string;
-		disease_name: string;
-		total: number;
-		age_groups: Record<string, { H: number; M: number }>;
-	}>;
-}
-
-export interface EPI13Data {
-	year: number;
-	week: number;
-	start_date: string;
-	end_date: string;
-	total_cases: number;
-	cases: Array<{
-		date: string;
-		patient_name: string;
-		age: number;
-		sex: string;
-		address: string;
-		disease: string;
-		cie10: string;
-	}>;
-}
-
-export interface EPI15Data {
-	year: number;
-	month: number;
-	month_name: string;
-	total_cases: number;
-	categories: Array<{
-		name: string;
-		subcategories: Array<{
-			name: string;
-			diseases: Array<{
-				order: number;
-				name: string;
-				cie10_range: string;
-				count: number;
-				accumulated: number;
-			}>;
-		}>;
-	}>;
-}
+// Re-export for backward compatibility (consumers may still import from this module)
+export type { EPI12Data, EPI13Data, EPI15Data } from '$domain/reports/types';
 
 function getISOWeek(date: Date): number {
 	const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
