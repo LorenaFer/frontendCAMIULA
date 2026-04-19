@@ -26,6 +26,7 @@ env:
 # JOB 1: Quality Gates
 # Bloquea el deploy si algo falla:
 #   · TypeScript / Svelte type-check  (svelte-check)
+#   · Screaming Architecture  (validate-architecture.js --ci)
 #   · Unit tests  (vitest)
 # ─────────────────────────────────────────────────────────────
 jobs:
@@ -53,7 +54,20 @@ jobs:
         # Falla si hay errores de tipos en .svelte o .ts
         # Equivalente a tsc --noEmit + svelte-check
 
-      # ── Gate 2: Unit tests ──────────────────────────────────
+      # ── Gate 2: Screaming Architecture ───────────────────────
+      - name: "🏛️  Validar arquitectura Screaming Architecture"
+        run: node scripts/validate-architecture.js --ci
+        # --ci omite TS/build (ya cubiertos por Gate 1 y el deploy job).
+        # Verifica:
+        #   · Feature organization (domain-driven, components/, types.ts)
+        #   · Routes sin lógica de negocio ni componentes sueltos
+        #   · Naming conventions (kebab-case / PascalCase)
+        #   · Shared components categorizados (no loose files)
+        #   · Tamaño máximo de componentes (500 líneas)
+        #   · Sin fetch() global ni class en componentes
+        #   · Máx. 4 componentes planos por feature (forzar sub-folders)
+
+      # ── Gate 3: Unit tests ──────────────────────────────────
       - name: "🧪 Unit tests (vitest)"
         run: npm test
         # Corre src/**/*.test.ts con vitest
