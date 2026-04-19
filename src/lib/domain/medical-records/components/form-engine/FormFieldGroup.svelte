@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { FormFieldGroup as FormFieldGroupType } from '$domain/medical-records/form-schema.js';
-	import type { FormStore } from './FormStore.svelte.js';
+	import type { FormStore } from './form-store.svelte.js';
 	import { evaluateConditions } from './utils.js';
 	import { getNestedValue } from './utils.js';
 	import FormField from './FormField.svelte';

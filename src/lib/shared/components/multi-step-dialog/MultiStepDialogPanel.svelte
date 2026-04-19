@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { getMultiStepDialogContext } from './multiStepDialogContext.js';
+	import { getMultiStepDialogContext } from './multi-step-dialog-context.js';
 
 	let {
 		step,

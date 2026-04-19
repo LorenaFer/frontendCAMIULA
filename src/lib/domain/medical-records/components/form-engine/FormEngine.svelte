@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { MedicalFormSchema } from '$domain/medical-records/form-schema.js';
-	import { FormStore } from './FormStore.svelte.js';
+	import { FormStore } from './form-store.svelte.js';
 	import FormSection from './FormSection.svelte';
 	import AutosaveIndicator from './AutosaveIndicator.svelte';
 	import { toastError } from '$shared/components/toast/toast.svelte.js';

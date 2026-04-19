@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
-	import { getMultiStepDialogContext } from './multiStepDialogContext.js';
+	import { getMultiStepDialogContext } from './multi-step-dialog-context.js';
 
 	let {
 		children,

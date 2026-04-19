@@ -28,7 +28,7 @@
 	let saved = $state(false);
 	let showLeaveDialog = $state(false);
 	let pendingNavigation = $state<{ cancel: () => void; url?: URL; to?: { url: URL } } | null>(null);
-	let formEngineRef: { store: import('$domain/medical-records/components/form-engine/FormStore.svelte.js').FormStore } | undefined;
+	let formEngineRef: { store: import('$domain/medical-records/components/form-engine/form-store.svelte.js').FormStore } | undefined;
 
 	// Estado para secciones universales (independientes del schema)
 	const evalData = (data.historia?.evaluacion ?? {}) as Record<string, unknown>;

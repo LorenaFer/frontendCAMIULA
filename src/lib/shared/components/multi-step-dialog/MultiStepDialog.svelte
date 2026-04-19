@@ -3,7 +3,7 @@
 	import Dialog from '$shared/components/dialog/Dialog.svelte';
 	import Stepper from '$shared/components/stepper/Stepper.svelte';
 	import type { Step } from '$shared/components/stepper/types.js';
-	import { setMultiStepDialogContext } from './multiStepDialogContext.js';
+	import { setMultiStepDialogContext } from './multi-step-dialog-context.js';
 
 	type StepperVariant = 'default' | 'compact' | 'dots' | 'none';
 
