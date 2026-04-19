@@ -701,6 +701,115 @@ function validateBusinessLogicInComponents() {
 }
 
 /**
+ * Clasifica un import por tipo de bindings:
+ *   'type'  — todos los bindings son types (`import type {...}` o `{ type Foo, type Bar }`)
+ *   'value' — al menos un binding es runtime (default, namespace, o named sin `type`)
+ *   'mixed' — combina types y values (`{ type Foo, runtimeFn }` o `import Foo, { type Bar }`)
+ *   'side-effect' — `import 'x'` sin bindings (no aplica a este check)
+ */
+function classifyImport(specifierClause) {
+  const clause = specifierClause.trim();
+
+  // Top-level `type` keyword cubre todo el statement
+  if (/^type\s+/.test(clause)) return 'type';
+
+  // Sin braces: default o namespace, ambos value
+  if (!clause.includes('{')) return 'value';
+
+  // Hay named imports — analizar
+  const braceMatch = clause.match(/\{([^}]*)\}/);
+  if (!braceMatch) return 'value';
+
+  const beforeBrace = clause.substring(0, clause.indexOf('{')).replace(/,\s*$/, '').trim();
+  const hasDefaultOrNamespace = beforeBrace.length > 0;
+
+  const namedSpecs = braceMatch[1].split(',').map(s => s.trim()).filter(Boolean);
+  if (namedSpecs.length === 0) {
+    return hasDefaultOrNamespace ? 'value' : 'type';
+  }
+
+  const allTypePrefixed = namedSpecs.every(s => /^type\s+/.test(s));
+
+  if (hasDefaultOrNamespace) {
+    // Default/namespace siempre es value; named todos type → mixed
+    return allTypePrefixed ? 'mixed' : 'value';
+  }
+
+  if (allTypePrefixed) return 'type';
+
+  const someTypePrefixed = namedSpecs.some(s => /^type\s+/.test(s));
+  return someTypePrefixed ? 'mixed' : 'value';
+}
+
+/**
+ * Detecta acoplamiento entre features de dominio. Solo se permite
+ * `import type` cross-domain (contratos compartidos). Imports value
+ * cruzados son ERROR — usar composición o subir el código a shared/.
+ *
+ *   ✅  import type { Paciente } from '$domain/patients/types.js'
+ *   ❌  import MedicationSelector from '$domain/inventory/components/...'
+ *   ❌  import { type Foo, runtimeFn } from '$domain/...'  (mixed — separar)
+ *
+ * Routes y src/lib/server/ están exentos: routes son orquestadores
+ * (componen várias features) y server tiene su propia capa de validación
+ * (SvelteKit ya impide $lib/server/ en cliente).
+ */
+function validateCrossDomainImports() {
+  const findings = [];
+  const featuresPath = join(CONFIG.ROOT_DIR, CONFIG.PATHS.FEATURES);
+
+  let features;
+  try {
+    features = readdirSync(featuresPath).filter(f =>
+      statSync(join(featuresPath, f)).isDirectory()
+    );
+  } catch { return findings; }
+
+  for (const feature of features) {
+    const featureDir = join(featuresPath, feature);
+    const files = getAllFiles(featureDir);
+
+    for (const file of files) {
+      let content;
+      try { content = readFileSync(file.path, 'utf8'); } catch { continue; }
+
+      // Match `import <something> from '...'` (saltea side-effect imports)
+      const importStmtRegex = /^[ \t]*import\s+([\s\S]+?)\s+from\s+['"]([^'"]+)['"]/gm;
+      let m;
+      while ((m = importStmtRegex.exec(content)) !== null) {
+        const specifierClause = m[1];
+        const importPath = m[2];
+
+        // Solo nos interesan $domain/* aliases
+        const domainMatch = importPath.match(/^\$domain\/([^/]+)/);
+        if (!domainMatch) continue;
+        const importedFeature = domainMatch[1];
+
+        // Mismo feature: OK
+        if (importedFeature === feature) continue;
+
+        const kind = classifyImport(specifierClause);
+
+        if (kind === 'value') {
+          findings.push({
+            severity: 'error',
+            message: `Cross-domain VALUE import: domain/${feature} → $domain/${importedFeature} (only 'import type' allowed across features). Move shared component to shared/, compose via props/snippets, or import only types: ${file.relativePath}`
+          });
+        } else if (kind === 'mixed') {
+          findings.push({
+            severity: 'error',
+            message: `Cross-domain MIXED import: domain/${feature} → $domain/${importedFeature} (mixes types and values). Split into separate 'import type {...}' and 'import {...}' statements: ${file.relativePath}`
+          });
+        }
+        // 'type' o 'side-effect' → permitidos
+      }
+    }
+  }
+
+  return findings;
+}
+
+/**
  * Detecta nombres genéricos / lazy en archivos. El nombre debe describir
  * el dominio. "Helper.svelte", "Utils.ts", "Foo.svelte" son señales de
  * "no sabía cómo llamarlo" — bloqueador para newcomers que escanean el
@@ -844,6 +953,7 @@ function validateArchitecture() {
     { name: 'Component Logic Weight', fn: validateComponentLogicWeight },
     { name: 'Component Organization', fn: validateComponentOrganization },
     { name: 'Import Depth',           fn: validateImportDepth },
+    { name: 'Cross-Domain Imports',   fn: validateCrossDomainImports },
     { name: 'Prop Drilling',          fn: validatePropDrilling },
     { name: 'Business Logic in Components', fn: validateBusinessLogicInComponents },
     { name: 'Semantic Naming',        fn: validateSemanticNaming }

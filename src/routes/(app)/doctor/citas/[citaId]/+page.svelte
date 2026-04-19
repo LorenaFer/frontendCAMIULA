@@ -11,6 +11,7 @@
 	import ExamenesSection from '$domain/medical-records/components/form-engine/ExamenesSection.svelte';
 	import type { ExamenSolicitado } from '$domain/medical-records/components/form-engine/ExamenesSection.svelte';
 	import PatientInsightsPanel from '$domain/medical-records/components/form-engine/PatientInsightsPanel.svelte';
+	import MedicationSelector from '$domain/inventory/components/widgets/MedicationSelector.svelte';
 	import type { PrescriptionItem } from '$domain/medical-records/prescription.js';
 	import { goto } from '$app/navigation';
 	import Button from '$shared/components/button/Button.svelte';
@@ -277,7 +278,17 @@
 					onEmitRecipe={isReadonly ? undefined : handleEmitRecipe}
 					recipeEmitted={recipeEmitted}
 					emitting={emittingRecipe}
-				/>
+				>
+					{#snippet medicationSelector({ onAdd })}
+						<MedicationSelector
+							options={data.medicationOptions}
+							selected={null}
+							onSelect={onAdd}
+							onClear={() => {}}
+							placeholder="Buscar en inventario del hospital..."
+						/>
+					{/snippet}
+				</PrescriptionSection>
 			</div>
 
 			<!-- Botón finalizar cita (guardar + marcar atendida) -->
