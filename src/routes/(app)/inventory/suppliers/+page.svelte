@@ -14,7 +14,7 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
-	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
+	import StatusBadge from '$domain/inventory/components/widgets/StatusBadge.svelte';
 	import PaginationBar from '$shared/components/table/PaginationBar.svelte';
 	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 

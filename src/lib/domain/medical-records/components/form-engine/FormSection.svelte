@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { FormSection as FormSectionType } from '$domain/medical-records/form-schema.js';
-	import type { FormStore } from './FormStore.svelte.js';
+	import type { FormStore } from './form-store.svelte.js';
 	import { evaluateConditions } from './utils.js';
 	import FormFieldGroup from './FormFieldGroup.svelte';
 

@@ -3,7 +3,7 @@
 	import { enhance, deserialize } from '$app/forms';
 	import { beforeNavigate } from '$app/navigation';
 	import { browser } from '$app/environment';
-	import AppointmentStatusBadge from '$domain/appointments/components/AppointmentStatusBadge.svelte';
+	import AppointmentStatusBadge from '$domain/appointments/components/widgets/AppointmentStatusBadge.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 	import FormEngine from '$domain/medical-records/components/form-engine/FormEngine.svelte';
 	import ObservacionesSection from '$domain/medical-records/components/form-engine/ObservacionesSection.svelte';
@@ -28,7 +28,7 @@
 	let saved = $state(false);
 	let showLeaveDialog = $state(false);
 	let pendingNavigation = $state<{ cancel: () => void; url?: URL; to?: { url: URL } } | null>(null);
-	let formEngineRef: { store: import('$domain/medical-records/components/form-engine/FormStore.svelte.js').FormStore } | undefined;
+	let formEngineRef: { store: import('$domain/medical-records/components/form-engine/form-store.svelte.js').FormStore } | undefined;
 
 	// Estado para secciones universales (independientes del schema)
 	const evalData = (data.historia?.evaluacion ?? {}) as Record<string, unknown>;

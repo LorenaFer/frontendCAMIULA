@@ -2,24 +2,16 @@
 	import type { PageData, ActionData } from './$types';
 	import type { Especialidad } from '$domain/staff/types.js';
 	import type { MedicalFormSchema } from '$domain/medical-records/form-schema.js';
-	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
 	import type { User } from '$lib/server/admin/users.service.js';
-	import { enhance } from '$app/forms';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
-	import Card from '$shared/components/card/Card.svelte';
-	import Button from '$shared/components/button/Button.svelte';
-	import Badge from '$shared/components/badge/Badge.svelte';
-	import Input from '$shared/components/input/Input.svelte';
-	import Select from '$shared/components/select/Select.svelte';
-	import DataTable from '$shared/components/table/DataTable.svelte';
-	import Dialog from '$shared/components/dialog/Dialog.svelte';
-	import DialogHeader from '$shared/components/dialog/DialogHeader.svelte';
-	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
-	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 	import { TabGroup } from '$shared/components/tabs';
-	import PaginationBar from '$shared/components/table/PaginationBar.svelte';
+	import EspecialidadesTab from '$domain/admin/components/tabs/EspecialidadesTab.svelte';
+	import FormulariosTab from '$domain/admin/components/tabs/FormulariosTab.svelte';
+	import UsuariosTab from '$domain/admin/components/tabs/UsuariosTab.svelte';
+	import EspecialidadDialog from '$domain/admin/components/dialogs/EspecialidadDialog.svelte';
+	import UsuarioDialog from '$domain/admin/components/dialogs/UsuarioDialog.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -30,8 +22,6 @@
 	let showEspDialog = $state(false);
 	let editingEsp = $state<Especialidad | null>(null);
 	let nombreInput = $state('');
-
-	type EspRow = Especialidad & Record<string, unknown>;
 
 	function openNewEsp() { editingEsp = null; nombreInput = ''; showEspDialog = true; }
 	function openEditEsp(esp: Especialidad) { editingEsp = esp; nombreInput = esp.nombre; showEspDialog = true; }
@@ -46,7 +36,6 @@
 	let espPage = $state(1);
 	let espPageSize = $state(10);
 	const espTotal = $derived(realEspecialidades.length);
-	const espPages = $derived(Math.ceil(espTotal / espPageSize));
 	const espPaginated = $derived(realEspecialidades.slice((espPage - 1) * espPageSize, espPage * espPageSize));
 
 	function getSchemaForEsp(esp: Especialidad): MedicalFormSchema | undefined {
@@ -72,8 +61,6 @@
 		{ value: '', label: 'Seleccionar especialidad...' },
 		...realEspecialidades.filter((e: Especialidad) => e.activo).map((e: Especialidad) => ({ value: e.id, label: e.nombre }))
 	]);
-
-	type UserRow = User & Record<string, unknown>;
 
 	const roleLabels: Record<string, { label: string; variant: 'info' | 'success' | 'warning' | 'danger' }> = {
 		administrador: { label: 'Admin', variant: 'danger' },
@@ -154,48 +141,7 @@
 			toastError('Error', result.message);
 		}
 	}
-
-	async function handleRemoveRole(userId: string, roleName: string) {
-		const result = await callAction('removerRol', { user_id: userId, role_name: roleName });
-		if (result.status === 'success') {
-			toastSuccess('Rol removido', `Rol ${roleName} removido correctamente.`);
-			await invalidateAll();
-		} else {
-			toastError('Error', result.message);
-		}
-	}
 </script>
-
-<!-- Snippets for DataTable -->
-{#snippet espStatusCell(_v: unknown, row: EspRow)}
-	<Badge variant={row.activo ? 'success' : 'danger'} style="soft" size="xs">
-		{row.activo ? 'Activo' : 'Inactivo'}
-	</Badge>
-{/snippet}
-
-{#snippet espSchemaCell(_v: unknown, row: EspRow)}
-	{@const schema = getSchemaForEsp(row as Especialidad)}
-	{#if schema}
-		<span class="text-xs text-ink-muted">{countFields(schema)} campos</span>
-	{:else}
-		<span class="text-xs text-ink-subtle">—</span>
-	{/if}
-{/snippet}
-
-{#snippet userRolesCell(_v: unknown, row: UserRow)}
-	<div class="flex flex-wrap gap-1">
-		{#each (row.roles as string[]) as role}
-			{@const r = roleLabels[role] ?? { label: role, variant: 'info' as const }}
-			<Badge variant={r.variant} style="soft" size="xs">{r.label}</Badge>
-		{/each}
-	</div>
-{/snippet}
-
-{#snippet userStatusCell(_v: unknown, row: UserRow)}
-	<Badge variant={row.user_status === 'ACTIVE' ? 'success' : 'danger'} style="soft" size="xs">
-		{row.user_status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
-	</Badge>
-{/snippet}
 
 <svelte:head>
 	<title>Configuración</title>
@@ -218,204 +164,61 @@
 		variant="underline"
 	/>
 
-	<!-- ═══ TAB: Especialidades ═══ -->
 	{#if activeTab === 'especialidades'}
-		<div class="flex items-center justify-between">
-			<p class="text-sm text-ink-muted">{espTotal} especialidades registradas</p>
-			<Button variant="primary" size="sm" onclick={openNewEsp}>+ Nueva Especialidad</Button>
-		</div>
-
-		<Card padding="none">
-			<DataTable
-				columns={[
-					{ key: 'nombre', header: 'Nombre' },
-					{ key: 'activo', header: 'Estado', width: '100px', align: 'center', render: espStatusCell },
-					{ key: 'id', header: 'Formulario', width: '120px', align: 'center', render: espSchemaCell }
-				] satisfies DataTableColumn<EspRow>[]}
-				data={espPaginated as EspRow[]}
-				rowKey="id"
-				rowMenu={[
-					{ label: 'Editar', icon: 'edit', onclick: (row) => openEditEsp(row as unknown as Especialidad) }
-				] satisfies RowMenuItem<EspRow>[]}
-				emptyMessage="No hay especialidades registradas."
-			/>
-			<PaginationBar
-				page={espPage}
-				total={espTotal}
-				pageSize={espPageSize}
-				pageSizeOptions={[10, 25, 50]}
-				onPageChange={(p) => { espPage = p; }}
-				onPageSizeChange={(ps) => { espPageSize = ps; espPage = 1; }}
-			/>
-		</Card>
+		<EspecialidadesTab
+			{espTotal}
+			{espPaginated}
+			{espPage}
+			{espPageSize}
+			{getSchemaForEsp}
+			{countFields}
+			onNew={openNewEsp}
+			onEdit={openEditEsp}
+			onPageChange={(p) => { espPage = p; }}
+			onPageSizeChange={(ps) => { espPageSize = ps; espPage = 1; }}
+		/>
 	{/if}
 
-	<!-- ═══ TAB: Formularios HMD ═══ -->
 	{#if activeTab === 'formularios'}
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-			{#each realEspecialidades.filter((e: Especialidad) => e.activo) as esp (esp.id)}
-				{@const schema = getSchemaForEsp(esp)}
-				<a
-					href="/admin/configuracion/form-builder?specialty={encodeURIComponent(esp.nombre)}"
-					class="block bg-surface rounded-xl border border-border/60 p-5 shadow-[var(--shadow-1)]
-						hover:border-viking-300 dark:hover:border-viking-700 hover:shadow-[var(--shadow-2)] transition-all group"
-				>
-					<div class="flex items-start justify-between mb-3">
-						<h3 class="text-sm font-semibold text-ink group-hover:text-viking-600 transition-colors">{esp.nombre}</h3>
-						<svg class="w-4 h-4 text-ink-subtle group-hover:text-viking-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-							<path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-						</svg>
-					</div>
-					{#if schema}
-						<div class="space-y-1.5">
-							<div class="flex items-center gap-2 text-xs text-ink-muted">
-								<span>{schema.sections.length} secciones</span>
-								<span class="text-border">|</span>
-								<span>{countFields(schema)} campos</span>
-							</div>
-							<div class="flex items-center gap-1.5">
-								<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-								<span class="text-xs text-emerald-600 dark:text-emerald-400">Formulario configurado</span>
-							</div>
-						</div>
-					{:else}
-						<div class="flex items-center gap-1.5">
-							<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-							<span class="text-xs text-amber-600 dark:text-amber-400">Sin formulario — usa Medicina General</span>
-						</div>
-					{/if}
-				</a>
-			{/each}
-		</div>
+		<FormulariosTab
+			especialidades={realEspecialidades}
+			{getSchemaForEsp}
+			{countFields}
+		/>
 	{/if}
 
-	<!-- ═══ TAB: Usuarios ═══ -->
 	{#if activeTab === 'usuarios'}
-		<div class="flex items-center justify-between">
-			<p class="text-sm text-ink-muted">{userTotal} usuarios registrados</p>
-			<Button variant="primary" size="sm" onclick={() => { showUserDialog = true; }}>+ Nuevo Usuario</Button>
-		</div>
-
-		{#if userItems.length === 0 && userPagination.total === 0}
-			<Card padding="lg">
-				<div class="text-center py-8">
-					<svg class="w-12 h-12 text-ink-subtle mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
-					</svg>
-					<p class="text-sm font-medium text-ink">Sin acceso a usuarios</p>
-					<p class="text-xs text-ink-muted mt-1">El endpoint de usuarios requiere permisos de administrador en el backend.</p>
-				</div>
-			</Card>
-		{:else}
-			<Card padding="none">
-				<DataTable
-					columns={[
-						{ key: 'full_name', header: 'Nombre' },
-						{ key: 'email', header: 'Email' },
-						{ key: 'roles', header: 'Roles', width: '200px', render: userRolesCell },
-						{ key: 'user_status', header: 'Estado', width: '100px', align: 'center', render: userStatusCell }
-					] satisfies DataTableColumn<UserRow>[]}
-					data={userItems as UserRow[]}
-					rowKey="id"
-					rowMenu={[
-						{ label: 'Asignar Admin', icon: 'edit', onclick: (row) => handleAssignRole(row.id as string, 'administrador') },
-						{ label: 'Asignar Doctor', icon: 'edit', onclick: (row) => handleAssignRole(row.id as string, 'doctor') },
-						{ label: 'Asignar Analista', icon: 'edit', onclick: (row) => handleAssignRole(row.id as string, 'analista') },
-						{ label: 'Asignar Farmacéutico', icon: 'edit', onclick: (row) => handleAssignRole(row.id as string, 'farmaceutico') }
-					] satisfies RowMenuItem<UserRow>[]}
-					emptyMessage="No hay usuarios registrados."
-				/>
-				<PaginationBar
-					page={userPagination.page}
-					total={userPagination.total}
-					pageSize={userPagination.page_size}
-					pageSizeOptions={[10, 25, 50]}
-					onPageChange={(p) => changeUserPage(p)}
-					onPageSizeChange={(ps) => changeUserPage(1, ps)}
-				/>
-			</Card>
-		{/if}
+		<UsuariosTab
+			{userItems}
+			{userPagination}
+			{userTotal}
+			{roleLabels}
+			onNew={() => { showUserDialog = true; }}
+			onAssignRole={handleAssignRole}
+			onPageChange={(p) => changeUserPage(p)}
+			onPageSizeChange={(ps) => changeUserPage(1, ps)}
+		/>
 	{/if}
 </div>
 
-<!-- Dialog: Nueva / Editar Especialidad -->
-<Dialog open={showEspDialog} onClose={closeEspDialog} size="sm">
-	<DialogHeader>
-		<h2 class="text-base font-semibold text-ink">
-			{editingEsp ? 'Editar Especialidad' : 'Nueva Especialidad'}
-		</h2>
-	</DialogHeader>
-	<form
-		method="POST"
-		action="?/guardarEspecialidad"
-		use:enhance={() => {
-			return ({ result }) => {
-				if (result.type === 'success') {
-					toastSuccess('Guardado', editingEsp ? 'Especialidad actualizada.' : 'Especialidad creada.');
-					closeEspDialog();
-					invalidateAll();
-				}
-			};
-		}}
-	>
-		<DialogBody>
-			{#if editingEsp}
-				<input type="hidden" name="id" value={editingEsp.id} />
-			{/if}
-			<Input
-				name="nombre"
-				label="Nombre de la especialidad"
-				bind:value={nombreInput}
-				placeholder="Ej: Cardiología"
-			/>
-		</DialogBody>
-		<DialogFooter>
-			<Button type="button" variant="ghost" size="md" onclick={closeEspDialog}>Cancelar</Button>
-			<Button type="submit" variant="primary" size="md" disabled={!nombreInput.trim()}>
-				{editingEsp ? 'Guardar cambios' : 'Crear especialidad'}
-			</Button>
-		</DialogFooter>
-	</form>
-</Dialog>
+<EspecialidadDialog
+	open={showEspDialog}
+	{editingEsp}
+	bind:nombreInput
+	onClose={closeEspDialog}
+/>
 
-<!-- Dialog: Nuevo Usuario -->
-<Dialog open={showUserDialog} onClose={() => { showUserDialog = false; }} size="md">
-	<DialogHeader>
-		<h2 class="text-base font-semibold text-ink">Nuevo Usuario</h2>
-		<p class="text-xs text-ink-muted">Crear cuenta de staff (analista, doctor, farmacéutico, admin)</p>
-	</DialogHeader>
-	<DialogBody>
-		<div class="space-y-3">
-			<Input label="Nombre completo *" bind:value={newUserName} placeholder="Dr. Juan Pérez" />
-			<Input label="Email *" type="email" bind:value={newUserEmail} placeholder="juan.perez@camiula.edu.ve" />
-			<Input label="Contraseña *" type="password" bind:value={newUserPassword} placeholder="Mínimo 8 caracteres" hint="Mínimo 8 caracteres" />
-			<Select
-				label="Rol"
-				options={[{ value: '', label: 'Seleccionar rol...' }, ...roleOptions]}
-				value={newUserRole}
-				onchange={(v) => { if (typeof v === 'string') { newUserRole = v; newUserSpecialtyId = ''; } }}
-			/>
-			{#if isDoctor}
-				<Select
-					label="Especialidad *"
-					options={specialtyOptions}
-					value={newUserSpecialtyId}
-					onchange={(v) => { if (typeof v === 'string') newUserSpecialtyId = v; }}
-				/>
-			{/if}
-		</div>
-	</DialogBody>
-	<DialogFooter>
-		<Button type="button" variant="ghost" size="md" onclick={() => { showUserDialog = false; }}>Cancelar</Button>
-		<Button
-			type="button"
-			variant="primary"
-			size="md"
-			isLoading={userSubmitting}
-			disabled={!newUserEmail || !newUserName || !newUserPassword || (isDoctor && !newUserSpecialtyId)}
-			onclick={handleCreateUser}
-		>
-			Crear usuario
-		</Button>
-	</DialogFooter>
-</Dialog>
+<UsuarioDialog
+	open={showUserDialog}
+	{userSubmitting}
+	bind:newUserEmail
+	bind:newUserName
+	bind:newUserPassword
+	bind:newUserRole
+	bind:newUserSpecialtyId
+	{isDoctor}
+	{roleOptions}
+	{specialtyOptions}
+	onClose={() => { showUserDialog = false; }}
+	onSubmit={handleCreateUser}
+/>

@@ -5,8 +5,8 @@
 	import Header from './Header.svelte';
 	import SearchDialog from '$shared/components/search-dialog/SearchDialog.svelte';
 	import type { NavItem, UserProfile } from '$shared/types/navigation';
-	import type { SearchResult, SearchCategory } from './navUtils';
-	import { filterNavItemsByPermissions } from './navUtils';
+	import type { SearchResult, SearchCategory } from './nav-utils';
+	import { filterNavItemsByPermissions } from './nav-utils';
 
 	let {
 		children,

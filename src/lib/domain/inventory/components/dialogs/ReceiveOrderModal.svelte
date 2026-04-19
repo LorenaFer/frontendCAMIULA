@@ -10,6 +10,7 @@
 	import DateInput from '$shared/components/input/DateInput.svelte';
 	import Badge from '$shared/components/badge/Badge.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
+	import { receivePurchaseOrder } from '$domain/inventory/inventory-client.js';
 
 	let {
 		order,
@@ -72,32 +73,22 @@
 	async function handleSubmit() {
 		submitting = true;
 		try {
-			const res = await fetch('/inventory/purchase-orders', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'recibirOrden',
-					order_id: order.id,
-					items: drafts.map((d) => ({
-						purchase_order_item_id: d.purchase_order_item_id,
-						quantity_received: d.quantity_received,
-						lot_number: d.lot_number,
-						expiration_date: d.expiration_date,
-						unit_cost: d.unit_cost
-					}))
-				})
+			await receivePurchaseOrder({
+				order_id: order.id,
+				items: drafts.map((d) => ({
+					purchase_order_item_id: d.purchase_order_item_id,
+					quantity_received: d.quantity_received,
+					lot_number: d.lot_number,
+					expiration_date: d.expiration_date,
+					unit_cost: d.unit_cost
+				}))
 			});
-			const data = await res.json();
-
-			if (data.status === 'success') {
-				toastSuccess('Recepción registrada', `${totalUnits} unidades de ${totalItems} medicamento(s) ingresados al inventario.`);
-				await invalidateAll();
-				onClose();
-			} else {
-				toastError('Error al registrar', data.message ?? 'No se pudo registrar la recepción.');
-			}
-		} catch {
-			toastError('Error', 'Error de conexión al registrar la recepción.');
+			toastSuccess('Recepción registrada', `${totalUnits} unidades de ${totalItems} medicamento(s) ingresados al inventario.`);
+			await invalidateAll();
+			onClose();
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : 'Error de conexión al registrar la recepción.';
+			toastError('Error al registrar', msg);
 		} finally {
 			submitting = false;
 		}

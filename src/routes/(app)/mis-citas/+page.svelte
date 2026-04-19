@@ -3,7 +3,7 @@
 	import type { CitaConPaciente } from '$domain/appointments/types.js';
 	import type { HistorialPrevioEntry } from '$domain/medical-records/types.js';
 	import type { Prescription } from '$domain/inventory/types.js';
-	import AppointmentStatusBadge from '$domain/appointments/components/AppointmentStatusBadge.svelte';
+	import AppointmentStatusBadge from '$domain/appointments/components/widgets/AppointmentStatusBadge.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import Dialog from '$shared/components/dialog/Dialog.svelte';
 	import DialogHeader from '$shared/components/dialog/DialogHeader.svelte';

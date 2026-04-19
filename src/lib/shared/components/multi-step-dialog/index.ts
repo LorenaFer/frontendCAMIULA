@@ -5,5 +5,5 @@ export { default as MultiStepDialogDescription } from './MultiStepDialogDescript
 export { default as MultiStepDialogBody } from './MultiStepDialogBody.svelte';
 export { default as MultiStepDialogFooter } from './MultiStepDialogFooter.svelte';
 export { default as MultiStepDialogPanel } from './MultiStepDialogPanel.svelte';
-export { getMultiStepDialogContext, setMultiStepDialogContext } from './multiStepDialogContext.js';
-export type { MultiStepDialogContextValue } from './multiStepDialogContext.js';
+export { getMultiStepDialogContext, setMultiStepDialogContext } from './multi-step-dialog-context.js';
+export type { MultiStepDialogContextValue } from './multi-step-dialog-context.js';

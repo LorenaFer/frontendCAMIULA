@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import type { SupplierOption, MedicationOption } from '$domain/inventory/types.js';
-	import MedicationSelector from '$domain/inventory/components/MedicationSelector.svelte';
+	import MedicationSelector from '$domain/inventory/components/widgets/MedicationSelector.svelte';
 	import Button from '$shared/components/button/Button.svelte';
 	import Select from '$shared/components/select/Select.svelte';
 	import DateInput from '$shared/components/input/DateInput.svelte';

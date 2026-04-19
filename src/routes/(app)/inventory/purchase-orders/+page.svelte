@@ -14,10 +14,10 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
-	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
+	import StatusBadge from '$domain/inventory/components/widgets/StatusBadge.svelte';
 	import PaginationBar from '$shared/components/table/PaginationBar.svelte';
-	import NewOrderForm from './NewOrderForm.svelte';
-	import ReceiveOrderModal from './ReceiveOrderModal.svelte';
+	import NewOrderForm from '$domain/inventory/components/forms/NewOrderForm.svelte';
+	import ReceiveOrderModal from '$domain/inventory/components/dialogs/ReceiveOrderModal.svelte';
 	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

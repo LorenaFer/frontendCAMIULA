@@ -12,9 +12,9 @@
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
 	import { TabGroup } from '$shared/components/tabs';
 	import PaginationBar from '$shared/components/table/PaginationBar.svelte';
-	import StockIndicator from '$domain/inventory/components/StockIndicator.svelte';
-	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
-	import BatchTag from '$domain/inventory/components/BatchTag.svelte';
+	import StockIndicator from '$domain/inventory/components/widgets/StockIndicator.svelte';
+	import StatusBadge from '$domain/inventory/components/widgets/StatusBadge.svelte';
+	import BatchTag from '$domain/inventory/components/widgets/BatchTag.svelte';
 
 	let { data }: { data: PageData } = $props();
 
