@@ -16,28 +16,36 @@
 		stock: number;
 	}
 
+	export interface FormDistributionStats {
+		items: FormBucket[];
+		max: number;
+	}
+
+	export interface ConsumptionStats {
+		items: ConsumptionItem[];
+		max: number;
+		period: string;
+	}
+
+	export interface ExpirationStats {
+		report: ExpirationReport;
+		count: number;
+	}
+
 	interface Props {
 		allItems: StockItem[];
 		alertDistribution: AlertSegment[];
-		byForm: FormBucket[];
-		maxFormCount: number;
-		topConsumed: ConsumptionItem[];
-		maxConsumed: number;
-		consumptionPeriod: string;
-		expiration: ExpirationReport;
-		expiringBatches: number;
+		formStats: FormDistributionStats;
+		consumption: ConsumptionStats;
+		expirationStats: ExpirationStats;
 	}
 
 	let {
 		allItems,
 		alertDistribution,
-		byForm,
-		maxFormCount,
-		topConsumed,
-		maxConsumed,
-		consumptionPeriod,
-		expiration,
-		expiringBatches
+		formStats,
+		consumption,
+		expirationStats
 	}: Props = $props();
 </script>
 
@@ -87,10 +95,10 @@
 	<!-- Distribución por forma farmacéutica -->
 	<Card padding="lg">
 		<h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">Por Forma Farmacéutica</h3>
-		{#if byForm.length > 0}
+		{#if formStats.items.length > 0}
 			<div class="space-y-2">
-				{#each byForm.slice(0, 8) as item}
-					{@const widthPct = (item.count / maxFormCount) * 100}
+				{#each formStats.items.slice(0, 8) as item}
+					{@const widthPct = (item.count / formStats.max) * 100}
 					<div class="flex items-center gap-2">
 						<span class="text-xs text-ink w-24 truncate shrink-0">{item.form}</span>
 						<div class="flex-1 h-5 bg-canvas-subtle rounded overflow-hidden relative">
@@ -110,14 +118,14 @@
 	<Card padding="lg">
 		<div class="flex items-center justify-between mb-3">
 			<h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider">Top Consumo del Mes</h3>
-			{#if consumptionPeriod}
-				<Badge variant="info" style="soft" size="xs">{consumptionPeriod}</Badge>
+			{#if consumption.period}
+				<Badge variant="info" style="soft" size="xs">{consumption.period}</Badge>
 			{/if}
 		</div>
-		{#if topConsumed.length > 0}
+		{#if consumption.items.length > 0}
 			<div class="space-y-2.5">
-				{#each topConsumed as item, i}
-					{@const widthPct = (item.total_dispatched / maxConsumed) * 100}
+				{#each consumption.items as item, i}
+					{@const widthPct = (item.total_dispatched / consumption.max) * 100}
 					<div>
 						<div class="flex items-center justify-between mb-0.5">
 							<span class="text-xs text-ink font-medium truncate flex-1">
@@ -141,13 +149,13 @@
 	<Card padding="lg">
 		<div class="flex items-center justify-between mb-3">
 			<h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider">Vencimientos Próximos</h3>
-			{#if expiringBatches > 0}
-				<span class="text-xs font-semibold text-amber-600 dark:text-amber-400">{expiringBatches} lotes</span>
+			{#if expirationStats.count > 0}
+				<span class="text-xs font-semibold text-amber-600 dark:text-amber-400">{expirationStats.count} lotes</span>
 			{/if}
 		</div>
-		{#if expiration.batches.length > 0}
+		{#if expirationStats.report.batches.length > 0}
 			<div class="space-y-1.5">
-				{#each expiration.batches.slice(0, 6) as batch}
+				{#each expirationStats.report.batches.slice(0, 6) as batch}
 					{@const daysLeft = Math.ceil((new Date(batch.expiration_date).getTime() - Date.now()) / 86400000)}
 					<div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg {daysLeft <= 0 ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' : daysLeft <= 30 ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800' : 'bg-canvas-subtle border border-border/40'}">
 						<span class="text-xs text-ink flex-1 truncate">{batch.medication?.generic_name ?? batch.lot_number}</span>
@@ -157,9 +165,9 @@
 						</span>
 					</div>
 				{/each}
-				{#if expiration.batches.length > 6}
+				{#if expirationStats.report.batches.length > 6}
 					<a href="/inventory/batches?alert=expiring" class="block text-center text-xs text-viking-600 dark:text-viking-400 hover:underline pt-1">
-						Ver todos ({expiration.batches.length})
+						Ver todos ({expirationStats.report.batches.length})
 					</a>
 				{/if}
 			</div>

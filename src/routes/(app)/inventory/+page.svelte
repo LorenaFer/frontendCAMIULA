@@ -189,13 +189,9 @@
 		<InventoryDashboard
 			{allItems}
 			{alertDistribution}
-			{byForm}
-			{maxFormCount}
-			{topConsumed}
-			{maxConsumed}
-			consumptionPeriod={consumption.period}
-			{expiration}
-			{expiringBatches}
+			formStats={{ items: byForm, max: maxFormCount }}
+			consumption={{ items: topConsumed, max: maxConsumed, period: consumption.period }}
+			expirationStats={{ report: expiration, count: expiringBatches }}
 		/>
 	{/if}
 

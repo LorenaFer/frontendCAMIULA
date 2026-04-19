@@ -9,32 +9,35 @@
 
 	interface SelectOption { value: string; label: string }
 
+	export interface UsuarioForm {
+		email: string;
+		name: string;
+		password: string;
+		role: string;
+		specialtyId: string;
+	}
+
+	export interface UsuarioDialogOptions {
+		roles: SelectOption[];
+		specialties: SelectOption[];
+	}
+
 	interface Props {
 		open: boolean;
-		userSubmitting: boolean;
-		newUserEmail: string;
-		newUserName: string;
-		newUserPassword: string;
-		newUserRole: string;
-		newUserSpecialtyId: string;
+		submitting: boolean;
+		form: UsuarioForm;
 		isDoctor: boolean;
-		roleOptions: SelectOption[];
-		specialtyOptions: SelectOption[];
+		options: UsuarioDialogOptions;
 		onClose: () => void;
 		onSubmit: () => void;
 	}
 
 	let {
 		open,
-		userSubmitting,
-		newUserEmail = $bindable(),
-		newUserName = $bindable(),
-		newUserPassword = $bindable(),
-		newUserRole = $bindable(),
-		newUserSpecialtyId = $bindable(),
+		submitting,
+		form = $bindable(),
 		isDoctor,
-		roleOptions,
-		specialtyOptions,
+		options,
 		onClose,
 		onSubmit
 	}: Props = $props();
@@ -47,21 +50,21 @@
 	</DialogHeader>
 	<DialogBody>
 		<div class="space-y-3">
-			<Input label="Nombre completo *" bind:value={newUserName} placeholder="Dr. Juan Pérez" />
-			<Input label="Email *" type="email" bind:value={newUserEmail} placeholder="juan.perez@camiula.edu.ve" />
-			<Input label="Contraseña *" type="password" bind:value={newUserPassword} placeholder="Mínimo 8 caracteres" hint="Mínimo 8 caracteres" />
+			<Input label="Nombre completo *" bind:value={form.name} placeholder="Dr. Juan Pérez" />
+			<Input label="Email *" type="email" bind:value={form.email} placeholder="juan.perez@camiula.edu.ve" />
+			<Input label="Contraseña *" type="password" bind:value={form.password} placeholder="Mínimo 8 caracteres" hint="Mínimo 8 caracteres" />
 			<Select
 				label="Rol"
-				options={[{ value: '', label: 'Seleccionar rol...' }, ...roleOptions]}
-				value={newUserRole}
-				onchange={(v) => { if (typeof v === 'string') { newUserRole = v; newUserSpecialtyId = ''; } }}
+				options={[{ value: '', label: 'Seleccionar rol...' }, ...options.roles]}
+				value={form.role}
+				onchange={(v) => { if (typeof v === 'string') { form.role = v; form.specialtyId = ''; } }}
 			/>
 			{#if isDoctor}
 				<Select
 					label="Especialidad *"
-					options={specialtyOptions}
-					value={newUserSpecialtyId}
-					onchange={(v) => { if (typeof v === 'string') newUserSpecialtyId = v; }}
+					options={options.specialties}
+					value={form.specialtyId}
+					onchange={(v) => { if (typeof v === 'string') form.specialtyId = v; }}
 				/>
 			{/if}
 		</div>
@@ -72,8 +75,8 @@
 			type="button"
 			variant="primary"
 			size="md"
-			isLoading={userSubmitting}
-			disabled={!newUserEmail || !newUserName || !newUserPassword || (isDoctor && !newUserSpecialtyId)}
+			isLoading={submitting}
+			disabled={!form.email || !form.name || !form.password || (isDoctor && !form.specialtyId)}
 			onclick={onSubmit}
 		>
 			Crear usuario

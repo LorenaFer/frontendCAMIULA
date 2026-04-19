@@ -2,7 +2,7 @@
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
-	import type { MedicationOption, PrescriptionItemDraft } from '$domain/inventory/types.js';
+	import type { PrescriptionItemDraft } from '$domain/inventory/types.js';
 	import Card from '$shared/components/card/Card.svelte';
 	import PrescriptionForm from '$domain/inventory/components/forms/PrescriptionForm.svelte';
 
@@ -31,39 +31,6 @@
 			  ? { error: (form as { error: string }).error }
 			  : null
 	);
-
-	function handleAddItem(med: MedicationOption) {
-		items = [
-			...items,
-			{
-				medication_id: med.id,
-				medication_name: med.generic_name,
-				pharmaceutical_form: med.pharmaceutical_form,
-				unit_measure: med.unit_measure,
-				quantity_prescribed: 1,
-				dosage_instructions: '',
-				duration_days: 7
-			}
-		];
-	}
-
-	function handleRemoveItem(medicationId: string) {
-		items = items.filter((i) => i.medication_id !== medicationId);
-	}
-
-	function handleItemChange(
-		medicationId: string,
-		field: keyof Omit<PrescriptionItemDraft, 'medication_id' | 'medication_name' | 'pharmaceutical_form' | 'unit_measure'>,
-		value: string | number
-	) {
-		items = items.map((i) =>
-			i.medication_id === medicationId ? { ...i, [field]: value } : i
-		);
-	}
-
-	function handleNotesChange(value: string) {
-		notes = value;
-	}
 
 	// La receta ya existe — no permitir nueva emisión
 	const alreadyIssued = $derived(data.existingPrescription !== null);
@@ -126,14 +93,10 @@
 
 				<PrescriptionForm
 					medicationOptions={data.medicationOptions}
-					{items}
-					{notes}
+					bind:items
+					bind:notes
 					{submitting}
 					{submitResult}
-					onAddItem={handleAddItem}
-					onRemoveItem={handleRemoveItem}
-					onItemChange={handleItemChange}
-					onNotesChange={handleNotesChange}
 					onSubmit={() => {}}
 				/>
 			</form>

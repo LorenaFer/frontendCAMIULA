@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { MedicationOption, PrescriptionItemDraft } from '$domain/inventory/types.js';
 	import Button from '$shared/components/button/Button.svelte';
-	import Input from '$shared/components/input/Input.svelte';
 
 	interface SubmitResult {
 		success?: boolean;
@@ -15,23 +14,15 @@
 		notes: string;
 		submitting: boolean;
 		submitResult: SubmitResult | null;
-		onAddItem: (medication: MedicationOption) => void;
-		onRemoveItem: (medicationId: string) => void;
-		onItemChange: (medicationId: string, field: keyof Omit<PrescriptionItemDraft, 'medication_id' | 'medication_name' | 'pharmaceutical_form' | 'unit_measure'>, value: string | number) => void;
-		onNotesChange: (value: string) => void;
 		onSubmit: () => void;
 	}
 
 	let {
 		medicationOptions,
-		items,
-		notes,
+		items = $bindable(),
+		notes = $bindable(),
 		submitting,
 		submitResult,
-		onAddItem,
-		onRemoveItem,
-		onItemChange,
-		onNotesChange,
 		onSubmit
 	}: Props = $props();
 
@@ -52,10 +43,35 @@
 
 	const alreadyAdded = $derived(new Set(items.map((i) => i.medication_id)));
 
-	function selectMedication(med: MedicationOption) {
+	function addItem(med: MedicationOption) {
 		if (alreadyAdded.has(med.id)) return;
-		onAddItem(med);
+		items = [
+			...items,
+			{
+				medication_id: med.id,
+				medication_name: med.generic_name,
+				pharmaceutical_form: med.pharmaceutical_form,
+				unit_measure: med.unit_measure,
+				quantity_prescribed: 1,
+				dosage_instructions: '',
+				duration_days: 7
+			}
+		];
 		medSearch = '';
+	}
+
+	function removeItem(medicationId: string) {
+		items = items.filter((i) => i.medication_id !== medicationId);
+	}
+
+	function changeItemField(
+		medicationId: string,
+		field: keyof Omit<PrescriptionItemDraft, 'medication_id' | 'medication_name' | 'pharmaceutical_form' | 'unit_measure'>,
+		value: string | number
+	) {
+		items = items.map((i) =>
+			i.medication_id === medicationId ? { ...i, [field]: value } : i
+		);
 	}
 </script>
 
@@ -87,7 +103,7 @@
 					<li>
 						<button
 							type="button"
-							onclick={() => selectMedication(med)}
+							onclick={() => addItem(med)}
 							disabled={alreadyAdded.has(med.id) || submitting}
 							class="w-full flex items-center justify-between px-3 py-2.5 text-sm
 							       hover:bg-canvas-subtle/70 transition-colors text-left
@@ -124,7 +140,7 @@
 							</div>
 							<button
 								type="button"
-								onclick={() => onRemoveItem(item.medication_id)}
+								onclick={() => removeItem(item.medication_id)}
 								disabled={submitting}
 								class="text-ink-subtle hover:text-red-600 transition-colors p-1 rounded
 								       disabled:pointer-events-none"
@@ -148,7 +164,7 @@
 									min="1"
 									value={item.quantity_prescribed}
 									oninput={(e) =>
-										onItemChange(
+										changeItemField(
 											item.medication_id,
 											'quantity_prescribed',
 											Math.max(1, parseInt((e.target as HTMLInputElement).value) || 1)
@@ -174,7 +190,7 @@
 									min="1"
 									value={item.duration_days}
 									oninput={(e) =>
-										onItemChange(
+										changeItemField(
 											item.medication_id,
 											'duration_days',
 											Math.max(1, parseInt((e.target as HTMLInputElement).value) || 1)
@@ -200,7 +216,7 @@
 									placeholder="ej: 1 cápsula cada 8 horas"
 									value={item.dosage_instructions}
 									oninput={(e) =>
-										onItemChange(
+										changeItemField(
 											item.medication_id,
 											'dosage_instructions',
 											(e.target as HTMLInputElement).value
@@ -232,8 +248,7 @@
 			id="prescription-notes"
 			rows="2"
 			placeholder="Indicaciones adicionales para el paciente..."
-			value={notes}
-			oninput={(e) => onNotesChange((e.target as HTMLTextAreaElement).value)}
+			bind:value={notes}
 			disabled={submitting}
 			class="w-full px-3 py-2 text-sm rounded-lg border border-border
 			       bg-surface-elevated text-ink placeholder:text-ink-subtle
