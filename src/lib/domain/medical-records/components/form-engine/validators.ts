@@ -1,5 +1,5 @@
 import type { FieldValidation, FormFieldSchema, FormSection } from '$domain/medical-records/form-schema.js';
-import { evaluateConditions } from './utils.js';
+import { evaluateConditions } from './field-helpers.js';
 
 /**
  * Valida un valor contra las reglas de FieldValidation.

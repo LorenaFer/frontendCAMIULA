@@ -5,5 +5,5 @@ export { default as FormField } from './FormField.svelte';
 export { default as AutosaveIndicator } from './AutosaveIndicator.svelte';
 export { FormStore } from './form-store.svelte.js';
 export * from './types.js';
-export { getNestedValue, setNestedValue, evaluateConditions } from './utils.js';
+export { getNestedValue, setNestedValue, evaluateConditions } from './field-helpers.js';
 export { validateFieldValue, validateAllFields } from './validators.js';
