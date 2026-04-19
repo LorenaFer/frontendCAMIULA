@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { FormFieldGroup, FormFieldSchema, FieldType } from '$domain/medical-records/form-schema.js';
-	import type { FormBuilderStore } from './form-builder-store.svelte.js';
+	import type { FormBuilderStore } from '../form-builder-store.svelte.js';
 	import FieldEditor from './FieldEditor.svelte';
 	import FieldTypeSelector from './FieldTypeSelector.svelte';
 

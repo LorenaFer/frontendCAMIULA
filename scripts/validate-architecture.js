@@ -543,6 +543,70 @@ function validateComponentOrganization() {
 }
 
 /**
+ * Cualquier carpeta llamada `components/` debe contener únicamente archivos
+ * .svelte (o `index.ts`/`index.js` como barrel). Helpers, stores, types,
+ * validators NO son componentes — viven al lado de `components/`, no dentro.
+ *
+ * Esta regla aplica recursivamente: tanto `domain/X/components/` como
+ * `domain/X/<module>/components/` están sujetas. Catches el antipatrón
+ * donde un módulo (form-engine) dump helpers en su carpeta de componentes.
+ */
+function validateComponentsFolderPurity() {
+  const findings = [];
+  const pathsToCheck = [CONFIG.PATHS.FEATURES, CONFIG.PATHS.SHARED];
+
+  for (const pathToCheck of pathsToCheck) {
+    const fullPath = join(CONFIG.ROOT_DIR, pathToCheck);
+    const componentDirs = findComponentsDirs(fullPath);
+
+    for (const dir of componentDirs) {
+      let items;
+      try { items = readdirSync(dir); } catch { continue; }
+
+      for (const item of items) {
+        const itemPath = join(dir, item);
+        let stat;
+        try { stat = statSync(itemPath); } catch { continue; }
+
+        if (stat.isDirectory()) continue;        // sub-folders OK (forms/, dialogs/, etc.)
+        if (item.endsWith('.svelte')) continue;  // .svelte OK
+        if (item === 'index.ts' || item === 'index.js') continue;  // barrel OK
+
+        const relPath = relative(CONFIG.ROOT_DIR, itemPath);
+        findings.push({
+          severity: 'error',
+          message: `Non-component file in components/ folder — move to a sibling of components/ (helpers, stores, types belong outside): ${relPath}`
+        });
+      }
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * Recursivamente encuentra todas las carpetas `components/` bajo un root.
+ */
+function findComponentsDirs(root) {
+  const results = [];
+  function walk(dir) {
+    let items;
+    try { items = readdirSync(dir); } catch { return; }
+    for (const item of items) {
+      if (item.startsWith('.') || item === 'node_modules') continue;
+      const full = join(dir, item);
+      let stat;
+      try { stat = statSync(full); } catch { continue; }
+      if (!stat.isDirectory()) continue;
+      if (item === 'components') results.push(full);
+      walk(full);
+    }
+  }
+  walk(root);
+  return results;
+}
+
+/**
  * Detecta imports relativos profundos (../../../...). El proyecto tiene
  * aliases ($domain, $shared, $lib) — usar relativos profundos rompe la
  * encapsulación de feature y dificulta refactor.
@@ -952,6 +1016,7 @@ function validateArchitecture() {
     { name: 'Component Sizes',        fn: validateComponentSizes },
     { name: 'Component Logic Weight', fn: validateComponentLogicWeight },
     { name: 'Component Organization', fn: validateComponentOrganization },
+    { name: 'Components Folder Purity', fn: validateComponentsFolderPurity },
     { name: 'Import Depth',           fn: validateImportDepth },
     { name: 'Cross-Domain Imports',   fn: validateCrossDomainImports },
     { name: 'Prop Drilling',          fn: validatePropDrilling },

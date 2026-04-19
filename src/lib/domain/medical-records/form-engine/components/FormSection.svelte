@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { FormSection as FormSectionType } from '$domain/medical-records/form-schema.js';
-	import type { FormStore } from './form-store.svelte.js';
-	import { evaluateConditions } from './field-helpers.js';
+	import type { FormStore } from '../form-store.svelte.js';
+	import { evaluateConditions } from '../field-helpers.js';
 	import FormFieldGroup from './FormFieldGroup.svelte';
 
 	interface Props {
