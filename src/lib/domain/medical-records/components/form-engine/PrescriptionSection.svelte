@@ -1,7 +1,7 @@
 <script lang="ts">
 	import EditableTable from '$shared/components/table/EditableTable.svelte';
 	import Button from '$shared/components/button/Button.svelte';
-	import MedicationSelector from '$domain/inventory/components/MedicationSelector.svelte';
+	import MedicationSelector from '$domain/inventory/components/widgets/MedicationSelector.svelte';
 	import Input from '$shared/components/input/Input.svelte';
 	import type { EditableColumn } from '$shared/components/table/types';
 	import type { MedicationOption } from '$domain/inventory/types.js';

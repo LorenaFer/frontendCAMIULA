@@ -4,7 +4,7 @@
 	import { page } from '$app/stores';
 	import type { MedicationOption, PrescriptionItemDraft } from '$domain/inventory/types.js';
 	import Card from '$shared/components/card/Card.svelte';
-	import PrescriptionForm from '$domain/inventory/components/PrescriptionForm.svelte';
+	import PrescriptionForm from '$domain/inventory/components/forms/PrescriptionForm.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

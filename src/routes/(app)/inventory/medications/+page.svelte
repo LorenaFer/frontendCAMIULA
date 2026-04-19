@@ -14,9 +14,9 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
-	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
-	import StockIndicator from '$domain/inventory/components/StockIndicator.svelte';
-	import InventoryFilters from '$domain/inventory/components/InventoryFilters.svelte';
+	import StatusBadge from '$domain/inventory/components/widgets/StatusBadge.svelte';
+	import StockIndicator from '$domain/inventory/components/widgets/StockIndicator.svelte';
+	import InventoryFilters from '$domain/inventory/components/filters/InventoryFilters.svelte';
 	import { toastSuccess, toastError, toastWarning } from '$shared/components/toast/toast.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

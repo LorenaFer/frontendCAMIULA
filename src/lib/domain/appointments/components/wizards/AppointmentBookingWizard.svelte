@@ -19,8 +19,8 @@
 	import Input from '$shared/components/input/Input.svelte';
 	import Select from '$shared/components/select/Select.svelte';
 	import Textarea from '$shared/components/input/Textarea.svelte';
-	import DoctorAvailabilityCalendar from './DoctorAvailabilityCalendar.svelte';
-	import TimeSlotPicker from './TimeSlotPicker.svelte';
+	import DoctorAvailabilityCalendar from '../widgets/DoctorAvailabilityCalendar.svelte';
+	import TimeSlotPicker from '../widgets/TimeSlotPicker.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 
 	interface Props {

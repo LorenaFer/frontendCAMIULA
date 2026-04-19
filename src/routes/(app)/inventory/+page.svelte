@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import StockIndicator from '$domain/inventory/components/StockIndicator.svelte';
-	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
+	import StockIndicator from '$domain/inventory/components/widgets/StockIndicator.svelte';
+	import StatusBadge from '$domain/inventory/components/widgets/StatusBadge.svelte';
 	import Card from '$shared/components/card/Card.svelte';
 	import StatCard from '$shared/components/card/StatCard.svelte';
 	import Badge from '$shared/components/badge/Badge.svelte';

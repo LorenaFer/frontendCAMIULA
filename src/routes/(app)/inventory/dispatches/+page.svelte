@@ -14,8 +14,8 @@
 	import DialogHeader from '$shared/components/dialog/DialogHeader.svelte';
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
-	import LimitProgressBar from '$domain/inventory/components/LimitProgressBar.svelte';
-	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
+	import LimitProgressBar from '$domain/inventory/components/widgets/LimitProgressBar.svelte';
+	import StatusBadge from '$domain/inventory/components/widgets/StatusBadge.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
 	import PaginationBar from '$shared/components/table/PaginationBar.svelte';
 	import { toastSuccess, toastError, toastWarning, toastInfo } from '$shared/components/toast/toast.svelte.js';

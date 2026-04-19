@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import AppointmentBookingWizard from '$domain/appointments/components/AppointmentBookingWizard.svelte';
+	import AppointmentBookingWizard from '$domain/appointments/components/wizards/AppointmentBookingWizard.svelte';
 
 	let { data }: { data: PageData } = $props();
 </script>

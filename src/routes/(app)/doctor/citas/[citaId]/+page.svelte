@@ -3,7 +3,7 @@
 	import { enhance, deserialize } from '$app/forms';
 	import { beforeNavigate } from '$app/navigation';
 	import { browser } from '$app/environment';
-	import AppointmentStatusBadge from '$domain/appointments/components/AppointmentStatusBadge.svelte';
+	import AppointmentStatusBadge from '$domain/appointments/components/widgets/AppointmentStatusBadge.svelte';
 	import { toastSuccess, toastError } from '$shared/components/toast/toast.svelte.js';
 	import FormEngine from '$domain/medical-records/components/form-engine/FormEngine.svelte';
 	import ObservacionesSection from '$domain/medical-records/components/form-engine/ObservacionesSection.svelte';

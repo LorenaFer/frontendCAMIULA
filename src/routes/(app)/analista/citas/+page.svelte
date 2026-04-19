@@ -5,8 +5,8 @@
 	import type { AppointmentFilters as AppointmentFiltersType, CitaConPaciente } from '$domain/appointments/types.js';
 	import type { DataTableColumn, RowMenuItem } from '$shared/components/table/types.js';
 	type CitaRow = CitaConPaciente & Record<string, unknown>;
-	import AppointmentFilters from '$domain/appointments/components/AppointmentFilters.svelte';
-	import AppointmentStatusBadge from '$domain/appointments/components/AppointmentStatusBadge.svelte';
+	import AppointmentFilters from '$domain/appointments/components/filters/AppointmentFilters.svelte';
+	import AppointmentStatusBadge from '$domain/appointments/components/widgets/AppointmentStatusBadge.svelte';
 	import DataTable from '$shared/components/table/DataTable.svelte';
 	import StatCard from '$shared/components/card/StatCard.svelte';
 	import Card from '$shared/components/card/Card.svelte';
@@ -16,8 +16,8 @@
 	import DialogBody from '$shared/components/dialog/DialogBody.svelte';
 	import DialogFooter from '$shared/components/dialog/DialogFooter.svelte';
 	import Sparkline from '$shared/components/sparkline/Sparkline.svelte';
-	import DoctorAvailabilityCalendar from '$domain/appointments/components/DoctorAvailabilityCalendar.svelte';
-	import TimeSlotPicker from '$domain/appointments/components/TimeSlotPicker.svelte';
+	import DoctorAvailabilityCalendar from '$domain/appointments/components/widgets/DoctorAvailabilityCalendar.svelte';
+	import TimeSlotPicker from '$domain/appointments/components/widgets/TimeSlotPicker.svelte';
 	import type { TimeSlot } from '$domain/appointments/types.js';
 	import type { DoctorOption } from '$domain/staff/types.js';
 	import { enhance, deserialize } from '$app/forms';

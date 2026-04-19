@@ -4,8 +4,8 @@
 	import Badge from '$shared/components/badge/Badge.svelte';
 	import EmptyState from '$shared/components/empty-state/EmptyState.svelte';
 	import Breadcrumbs from '$shared/components/layout/Breadcrumbs.svelte';
-	import AppointmentStatusBadge from '$domain/appointments/components/AppointmentStatusBadge.svelte';
-	import StatusBadge from '$domain/inventory/components/StatusBadge.svelte';
+	import AppointmentStatusBadge from '$domain/appointments/components/widgets/AppointmentStatusBadge.svelte';
+	import StatusBadge from '$domain/inventory/components/widgets/StatusBadge.svelte';
 	import { TabGroup } from '$shared/components/tabs';
 
 	let { data }: { data: PageData } = $props();
